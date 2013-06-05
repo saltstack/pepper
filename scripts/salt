@@ -103,7 +103,7 @@ def main():
     if len(args) < 2:
         parser.error("Command not recognized.")
 
-    fun, tgt = args.pop(), args.pop()
+    tgt, fun = args.pop(0), args.pop(0)
 
     lowstate = [{
         'client': 'local',

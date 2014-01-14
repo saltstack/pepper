@@ -1,6 +1,7 @@
 '''
-A Python library for working with Salt's REST API (the rest_cherrypy netapi
-module)
+A Python library for working with Salt's REST API
+
+(Specifically the rest_cherrypy netapi module.)
 
 '''
 import functools

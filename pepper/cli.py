@@ -12,6 +12,8 @@ import logging
 import optparse
 import os
 
+from . import version
+
 try:
     from logging import NullHandler
 except ImportError: # Python < 2.7

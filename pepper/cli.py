@@ -7,7 +7,7 @@ A central place to store repeat functionality between all the pepper scripts
 As well as common operations such as reading/writing the auth token to a file.
 
 '''
-import ConfigParser
+import json
 import logging
 import optparse
 import os
@@ -24,8 +24,6 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler())
 
-RCFILE = '.pepperrc'
-
 def get_parser():
     '''
     Return a basic optparse parser object
@@ -34,6 +32,13 @@ def get_parser():
             description=DESCRIPTION,
             usage="%prog [opts]",
             version=version.__version__)
+
+    parser.add_option('-c', dest='config',
+        default=os.environ.get('PEPPERRC',
+            os.path.join(os.path.expanduser('~'), '.pepperrc')),
+        help=textwrap.dedent('''\
+            Configuration file location. Default is a file path in the
+            "PEPPERRC" environment variable or ~/.pepperrc.'''))
 
     parser.add_option('-v', dest='verbose', default=0, action='count',
             help=textwrap.dedent("""\
@@ -44,13 +49,11 @@ def get_parser():
 
     return parser
 
-def get_config():
+def get_config(file_path):
     '''
     Read a user's configuration file
     '''
-    home = os.path.expanduser("~")
+    with open(file_path, 'rb') as f:
+        config = json.load(f)
 
-    f=os.path.join(home, RCFILE)
-    config = ConfigParser.ConfigParser()
-    config.read(f)
-    return config.sections()
+    return config

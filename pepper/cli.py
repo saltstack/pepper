@@ -29,9 +29,9 @@ def get_parser():
     Return a basic optparse parser object
     '''
     parser = optparse.OptionParser(
-            description=DESCRIPTION,
-            usage="%prog [opts]",
-            version=version.__version__)
+        description=DESCRIPTION,
+        usage='%prog [opts]',
+        version=version.__version__)
 
     parser.add_option('-c', dest='config',
         default=os.environ.get('PEPPERRC',
@@ -41,8 +41,8 @@ def get_parser():
             "PEPPERRC" environment variable or ~/.pepperrc.'''))
 
     parser.add_option('-v', dest='verbose', default=0, action='count',
-            help=textwrap.dedent("""\
-            Increment output verbosity; may be specified multiple times"""))
+        help=textwrap.dedent('''\
+            Increment output verbosity; may be specified multiple times'''))
 
     logger.addHandler(logging.StreamHandler())
     logger.setLevel(max(logging.ERROR - (opts.verbose * 10), 1))

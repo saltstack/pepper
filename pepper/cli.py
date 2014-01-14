@@ -35,7 +35,12 @@ def get_parser():
             usage="%prog [opts]",
             version=version.__version__)
 
-    # TODO: add logging levels
+    parser.add_option('-v', dest='verbose', default=0, action='count',
+            help=textwrap.dedent("""\
+            Increment output verbosity; may be specified multiple times"""))
+
+    logger.addHandler(logging.StreamHandler())
+    logger.setLevel(max(logging.ERROR - (opts.verbose * 10), 1))
 
     return parser
 

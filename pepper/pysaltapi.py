@@ -11,10 +11,7 @@ import urllib
 import urllib2
 import urlparse
 
-# Logging placeholder; just output to console for now
 logger = logging.getLogger(__name__)
-logger.addHandler(logging.StreamHandler())
-logger.setLevel(logging.DEBUG)
 
 HEADERS = {
     'Accept': 'application/json',

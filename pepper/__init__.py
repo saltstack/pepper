@@ -1,7 +1,26 @@
-'''\
-Pepper is CLI tool that accesses a running Salt system via an external salt-api
-interface.
-
-The Pepper CLI scripts purposefully mimic the regular Salt CLI tools.
+'''
+Pepper is a CLI front-end to salt-api
 
 '''
+import json
+import os
+
+__all__ = ('__version__',)
+
+try:
+    # First try to grab the version from the version.json build file.
+    vfile = os.path.join(os.path.dirname(__file__), 'version.json')
+
+    with open(vfile, 'rb') as f:
+        version = json.load(f).get('version')
+except IOError:
+    # Build version file doesn't exist; we may be running from a clone.
+    setup_file = os.path.join(os.path.dirname(__file__), os.pardir, 'setup.py')
+
+    if os.path.exists(setup_file):
+        import imp
+
+        setup = imp.load_source('pepper_setup', setup_file)
+        __version__ = setup.read_version_tag() or 'Unknown'
+else:
+    __version__ = version or 'Unknown'

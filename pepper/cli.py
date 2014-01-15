@@ -12,7 +12,7 @@ import logging
 import optparse
 import os
 
-from . import version
+import pepper
 
 try:
     from logging import NullHandler
@@ -31,7 +31,7 @@ def get_parser():
     parser = optparse.OptionParser(
         description=DESCRIPTION,
         usage='%prog [opts]',
-        version=version.__version__)
+        version=pepper.__version__)
 
     parser.add_option('-c', dest='config',
         default=os.environ.get('PEPPERRC',

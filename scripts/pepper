@@ -14,7 +14,6 @@ import pepper.cli
 import pepper.version
 
 from pepper.cli import logger
-from pepper import pysaltapi
 
 # Auth values placeholder; grab interactively at CLI or from config file
 SALTURL = os.environ.get('SALTAPI_URL', 'http://localhost:8000/')
@@ -114,7 +113,7 @@ def main():
 
     logger.debug('Executing lowstate: {0}'.format(lowstate))
 
-    api = pysaltapi.SaltAPI(SALTURL)
+    api = pepper.Pepper(SALTURL)
     auth = api.login(SALTUSER, SALTPASS, SALTEAUTH)
     ret = api.run(lowstate)
 

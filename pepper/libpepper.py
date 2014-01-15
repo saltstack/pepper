@@ -20,12 +20,12 @@ HEADERS = {
     'X-Requested-With': 'XMLHttpRequest',
 }
 
-class SaltAPI(object):
+class Pepper(object):
     '''
     A thin wrapper for making HTTP calls to the salt-api rest_cherrpy REST
     interface
 
-    >>> api = SaltAPI('http://localhost:8000')
+    >>> api = Pepper('http://localhost:8000')
     >>> api.login('saltdev', 'saltdev', 'pam')
     {"return": [
             {

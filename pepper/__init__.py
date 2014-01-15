@@ -5,7 +5,9 @@ Pepper is a CLI front-end to salt-api
 import json
 import os
 
-__all__ = ('__version__',)
+from pepper.libpepper import Pepper
+
+__all__ = ('__version__', 'Pepper')
 
 try:
     # First try to grab the version from the version.json build file.

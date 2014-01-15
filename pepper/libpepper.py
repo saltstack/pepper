@@ -92,18 +92,13 @@ class Pepper(object):
 
         return ret
 
-    def cmd(self, lowstate, auth=None, path='/'):
+    def low(self, lowstate, path='/'):
         '''
         Execute a command through salt-api and return the response
 
         :param string path: URL path to be joined with the API hostname
 
         :param list lowstate: a list of lowstate dictionaries
-
-        :param type auth: dictionary or None
-        :param auth: authentication credentials to be added to each lowstate
-            chunk in the data param; credentials may be passed in directly or
-            set on the instance via the login() method
 
         '''
         return self.req(path, [dict(i, **auth or self.auth) for i in lowstate])

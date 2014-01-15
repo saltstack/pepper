@@ -48,7 +48,7 @@ class Pepper(object):
               u'ms-4': True}]}
 
     '''
-    def __init__(self, api_url):
+    def __init__(self, api_url='http://localhost:8000'):
         '''
         Initialize the class with the URL of the API
 

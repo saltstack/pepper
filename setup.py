@@ -40,7 +40,7 @@ setup_kwargs = {
         ('share/man/man1', ['doc/man/pepper.1']),
     ],
     'scripts': [
-        'scripts/salt'
+        'scripts/pepper'
     ],
 }
 

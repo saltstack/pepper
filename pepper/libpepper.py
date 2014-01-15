@@ -92,7 +92,7 @@ class Pepper(object):
 
         return ret
 
-    def cmd(self, path, lowstate, auth=None):
+    def cmd(self, lowstate, auth=None, path='/'):
         '''
         Execute a command through salt-api and return the response
 
@@ -113,7 +113,7 @@ class Pepper(object):
         A convenience method for sending requests through the /run URL
 
         '''
-        return self.cmd('/run', *args, **kwargs)
+        return self.cmd(path='/run', *args, **kwargs)
 
     def login(self, username, password, eauth):
         '''

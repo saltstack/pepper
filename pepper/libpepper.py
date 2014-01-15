@@ -121,19 +121,7 @@ class Pepper(object):
         authentication token
 
         '''
-        # FIXME: this should send a login request and return the auth token for
-        # future requests; this first implementation relies on the /run URL and
-        # inlining full auth credentials
-        auth = {
+        self.auth = self.req('/login', {
             'username': username,
             'password': password,
-            'eauth': eauth
-        }
-        self.auth = auth
-
-        # Implementation should look something like:
-        # ret = self.req('/login', auth)
-        # # If the login succeeded, store the auth token on the instance
-        # if 'token' in ret:
-        #     self.auth = {'token': ret['token'], 'eauth': ret['eauth']}
-        # return {}
+            'eauth': eauth})

@@ -11,7 +11,6 @@ from textwrap import dedent
 
 import pepper
 import pepper.cli
-import pepper.version
 
 from pepper.cli import logger
 
@@ -91,7 +90,7 @@ def main():
     parser = optparse.OptionParser(
             description=pepper.__doc__,
             usage="%prog [opts] <tgt> <mod.fun> [arg] [arg=val]",
-            version=pepper.version.__version__)
+            version=pepper.__version__)
 
     add_globalopts(parser)
     add_tgtopts(parser)

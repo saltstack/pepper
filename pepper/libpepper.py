@@ -63,7 +63,8 @@ class Pepper(object):
         '''
         A thin wrapper around urllib2 to send requests and return the response
 
-        Suppresses (and logs) exceptions.
+        If the current instance contains an authentication token it will be
+        attached to the request as a custom header.
 
         :rtype: dictionary
 
@@ -79,6 +80,9 @@ class Pepper(object):
 
         if data != None:
             req.add_header('Content-Length', clen)
+
+        if self.auth and 'token' in self.auth and self.auth['token']:
+            req.add_header('X-Auth-Token', self.auth['token'])
 
         try:
             f = urllib2.urlopen(req)
@@ -99,9 +103,8 @@ class Pepper(object):
         :param string path: URL path to be joined with the API hostname
 
         :param list lowstate: a list of lowstate dictionaries
-
         '''
-        return self.req(path, [dict(i, **auth or self.auth) for i in lowstate])
+        return self.req(path, lowstate)
 
     def local(self, tgt, fun, *args, **kwargs):
         '''

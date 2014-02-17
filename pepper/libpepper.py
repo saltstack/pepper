@@ -103,12 +103,38 @@ class Pepper(object):
         '''
         return self.req(path, [dict(i, **auth or self.auth) for i in lowstate])
 
-    def run(self, *args, **kwargs):
+    def local(self, tgt, fun, *args, **kwargs):
         '''
-        A convenience method for sending requests through the /run URL
+        Run a single command using the ``local`` client
 
+        Wraps :meth:`low`.
         '''
-        return self.cmd(path='/run', *args, **kwargs)
+        low = {
+            'client': 'local',
+            'tgt': tgt,
+            'fun': fun,
+        }
+
+        if args:
+            low['arg'] = args
+
+        if kwargs:
+            low['kwarg'] = kwargs
+
+        return self.low([low], path='/')
+
+    def runner(self, fun, *args, **kwargs):
+        '''
+        Run a single command using the ``runner`` client
+
+        Wraps :meth:`low`.
+        '''
+        low = {
+            'client': 'runner',
+            'fun': fun,
+        }
+
+        return self.low([low], path='/')
 
     def login(self, username, password, eauth):
         '''

@@ -142,10 +142,12 @@ class Pepper(object):
     def login(self, username, password, eauth):
         '''
         Authenticate with salt-api and return the user permissions and
-        authentication token
+        authentication token or an empty dict
 
         '''
         self.auth = self.req('/login', {
             'username': username,
             'password': password,
-            'eauth': eauth})
+            'eauth': eauth}).get('return', [{}])[0]
+
+        return self.auth

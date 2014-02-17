@@ -38,6 +38,10 @@ def get_parser():
         help=textwrap.dedent('''\
             Increment output verbosity; may be specified multiple times'''))
 
+    parser.add_option('-H', '--debug-http', dest='debug_http', default=False,
+        action='store_true', help=textwrap.dedent('''\
+        Output the HTTP request/response headers on stderr'''))
+
     return parser
 
 def add_globalopts(parser):
@@ -133,7 +137,7 @@ def main():
     saltpass = os.environ.get('SALTAPI_PASS', 'saltdev')
     salteauth = os.environ.get('SALTAPI_EAUTH', 'auto')
 
-    api = pepper.Pepper(salturl)
+    api = pepper.Pepper(salturl, debug_http=opts.debug_http)
     auth = api.login(saltuser, saltpass, salteauth)
     ret = api.local(tgt, fun)
 

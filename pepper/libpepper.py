@@ -44,15 +44,17 @@ class Pepper(object):
               u'ms-4': True}]}
 
     '''
-    def __init__(self, api_url='http://localhost:8000'):
+    def __init__(self, api_url='http://localhost:8000', debug_http=False):
         '''
         Initialize the class with the URL of the API
 
         :param api_url: Host or IP address of the salt-api URL;
             include the port number
 
+        :param debug_http: Add a flag to urllib2 to output the HTTP exchange
         '''
         self.api_url = api_url
+        self.debug_http = debug_http
         self.auth = {}
 
     def req(self, path, data=None):
@@ -71,7 +73,7 @@ class Pepper(object):
             'X-Requested-With': 'XMLHttpRequest',
         }
 
-        handler=urllib2.HTTPHandler()
+        handler=urllib2.HTTPHandler(debuglevel=1 if self.debug_http else 0)
         opener = urllib2.build_opener(handler)
         urllib2.install_opener(opener)
 

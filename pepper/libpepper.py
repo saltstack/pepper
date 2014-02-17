@@ -40,7 +40,7 @@ class Pepper(object):
             }
         ]
     }
-    >>> api.cmd([{'client': 'local', 'tgt': '*', 'fun': 'test.ping'}])
+    >>> api.low([{'client': 'local', 'tgt': '*', 'fun': 'test.ping'}])
     {u'return': [{u'ms-0': True,
               u'ms-1': True,
               u'ms-2': True,

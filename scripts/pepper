@@ -103,18 +103,13 @@ def main():
 
     tgt, fun = args.pop(0), args.pop(0)
 
-    lowstate = [{
-        'client': 'local',
-        'tgt': tgt,
-        'fun': fun,
-        'arg': args,
-    }]
-
-    logger.debug('Executing lowstate: {0}'.format(lowstate))
+    arg = None # placeholder
+    kwarg = None # placeholder
+    kwargs = opts.__dict__
 
     api = pepper.Pepper(SALTURL)
     auth = api.login(SALTUSER, SALTPASS, SALTEAUTH)
-    ret = api.run(lowstate)
+    ret = api.local(tgt, fun)
 
     # TODO: temporary pretty-printing until Salt outputters are in place
     return json.dumps(ret, sort_keys=True, indent=4)

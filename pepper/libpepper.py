@@ -14,6 +14,8 @@ import urlparse
 
 logger = logging.getLogger(__name__)
 
+class PepperException(Exception): pass
+
 class Pepper(object):
     '''
     A thin wrapper for making HTTP calls to the salt-api rest_cherrpy REST

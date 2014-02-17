@@ -14,12 +14,6 @@ import urlparse
 
 logger = logging.getLogger(__name__)
 
-HEADERS = {
-    'Accept': 'application/json',
-    'Content-Type': 'application/json',
-    'X-Requested-With': 'XMLHttpRequest',
-}
-
 class Pepper(object):
     '''
     A thin wrapper for making HTTP calls to the salt-api rest_cherrpy REST
@@ -69,21 +63,34 @@ class Pepper(object):
         :rtype: dictionary
 
         '''
+        headers = {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+        }
+
+        handler=urllib2.HTTPHandler()
+        opener = urllib2.build_opener(handler)
+        urllib2.install_opener(opener)
+
         # Build POST data
         if data != None:
             postdata = json.dumps(data).encode()
             clen = len(postdata)
 
-        # Send request
+        # Create request object
         url = urlparse.urljoin(self.api_url, path)
-        req = urllib2.Request(url, postdata, HEADERS)
+        req = urllib2.Request(url, postdata, headers)
 
+        # Add POST data to request
         if data != None:
             req.add_header('Content-Length', clen)
 
+        # Add auth header to request
         if self.auth and 'token' in self.auth and self.auth['token']:
             req.add_header('X-Auth-Token', self.auth['token'])
 
+        # Send request
         try:
             f = urllib2.urlopen(req)
             ret = json.loads(f.read())

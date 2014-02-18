@@ -1,24 +1,44 @@
 #!/usr/bin/env python
 '''
-A CLI interface that mimics the interface of Salt's ``salt`` CLI interface
+A CLI interface to a remote salt-api instance
 
 '''
 import json
+import logging
 import optparse
 import os
-
-from textwrap import dedent
+import textwrap
 
 import pepper
-import pepper.cli
 
-from pepper.cli import logger
+try:
+    from logging import NullHandler
+except ImportError: # Python < 2.7
+    class NullHandler(logging.Handler):
+        def emit(self, record): pass
 
-# Auth values placeholder; grab interactively at CLI or from config file
-SALTURL = os.environ.get('SALTAPI_URL', 'http://localhost:8000/')
-SALTUSER = os.environ.get('SALTAPI_USER', 'saltdev')
-SALTPASS = os.environ.get('SALTAPI_PASS', 'saltdev')
-SALTEAUTH = os.environ.get('SALTAPI_EAUTH', 'pam')
+logging.basicConfig(format='%(levelname)s %(asctime)s %(module)s: %(message)s')
+logger = logging.getLogger(__name__)
+logger.addHandler(NullHandler())
+
+def get_parser():
+    parser = optparse.OptionParser(
+        description=__doc__,
+        usage='%prog [opts]',
+        version=pepper.__version__)
+
+    parser.add_option('-c', dest='config',
+        default=os.environ.get('PEPPERRC',
+            os.path.join(os.path.expanduser('~'), '.pepperrc')),
+        help=textwrap.dedent('''\
+            Configuration file location. Default is a file path in the
+            "PEPPERRC" environment variable or ~/.pepperrc.'''))
+
+    parser.add_option('-v', dest='verbose', default=0, action='count',
+        help=textwrap.dedent('''\
+            Increment output verbosity; may be specified multiple times'''))
+
+    return parser
 
 def add_globalopts(parser):
     '''
@@ -27,14 +47,14 @@ def add_globalopts(parser):
     optgroup = optparse.OptionGroup(parser, "Pepper ``salt`` Options",
             "Mimic the ``salt`` CLI")
 
-    # optgroup.add_option('-t', '--timeout', action='store_true',
-    #     help="Specify wait time before returning control to the shell")
+    optgroup.add_option('-t', '--timeout', action='store_true',
+        help="Specify wait time before returning control to the shell")
 
-    # optgroup.add_option('--out', '--output', dest='output',
-    #         help="Specify the output format for the command output")
+    optgroup.add_option('--out', '--output', dest='output',
+            help="Specify the output format for the command output")
 
-    # optgroup.add_option('--return', default='', metavar='RETURNER',
-    #     help="Redirect the output from a command to a persistent data store")
+    optgroup.add_option('--return', default='', metavar='RETURNER',
+        help="Redirect the output from a command to a persistent data store")
 
     parser.add_option_group(optgroup)
 
@@ -45,17 +65,17 @@ def add_tgtopts(parser):
     optgroup = optparse.OptionGroup(parser, "Targeting Options",
             "Target which minions to run commands on")
 
-    # optgroup.add_option('-E', '--pcre', default=False, action='store_true',
-    #     help="Target hostnames using PCRE regular expressions")
+    optgroup.add_option('-E', '--pcre', default=False, action='store_true',
+        help="Target hostnames using PCRE regular expressions")
 
-    # optgroup.add_option('-L', '--list', default=False, action='store_true',
-    #     help="Specify a comma delimited list of hostnames")
+    optgroup.add_option('-L', '--list', default=False, action='store_true',
+        help="Specify a comma delimited list of hostnames")
 
-    # optgroup.add_option('-G', '--grain', default=False, action='store_true',
-    #     help="Target based on system properties")
+    optgroup.add_option('-G', '--grain', default=False, action='store_true',
+        help="Target based on system properties")
 
-    # optgroup.add_option('--grain-pcre', default=False, action='store_true',
-    #     help="Target based on PCRE matches on system properties")
+    optgroup.add_option('--grain-pcre', default=False, action='store_true',
+        help="Target based on PCRE matches on system properties")
 
     parser.add_option_group(optgroup)
 
@@ -64,20 +84,20 @@ def add_authopts(parser):
     Authentication options
     '''
     optgroup = optparse.OptionGroup(parser, "Authentication Options",
-            dedent("""\
+            textwrap.dedent("""\
             Authentication credentials can optionally be supplied via the
             environment variables:
             SALTAPI_URL, SALTAPI_USER, SALTAPI_PASS, SALTAPI_EAUTH.
             """))
 
     # optgroup.add_option('-a', '--auth', '--eauth', '--extended-auth',
-    #     default='', dest='eauth', help=dedent("""\
+    #     default='', dest='eauth', help=textwrap.dedent("""\
     #             Specify the external_auth backend to authenticate against and
     #             interactively prompt for credentials"""))
 
     # optgroup.add_option('-T', '--make-token', default=False,
     #     dest='mktoken', action='store_true',
-    #     help=dedent("""\
+    #     help=textwrap.dedent("""\
     #         Generate and save an authentication token for re-use. The token is
     #         generated and made available for the period defined in the Salt
     #         Master."""))
@@ -87,16 +107,16 @@ def add_authopts(parser):
 def main():
     '''
     '''
-    parser = optparse.OptionParser(
-            description=pepper.__doc__,
-            usage="%prog [opts] <tgt> <mod.fun> [arg] [arg=val]",
-            version=pepper.__version__)
+    parser = get_parser()
 
-    add_globalopts(parser)
-    add_tgtopts(parser)
+    # add_globalopts(parser)
+    # add_tgtopts(parser)
     add_authopts(parser)
 
     opts, args = parser.parse_args()
+
+    logger.addHandler(logging.StreamHandler())
+    logger.setLevel(max(logging.ERROR - (opts.verbose * 10), 1))
 
     if len(args) < 2:
         parser.error("Command not recognized.")
@@ -107,8 +127,14 @@ def main():
     kwarg = None # placeholder
     kwargs = opts.__dict__
 
-    api = pepper.Pepper(SALTURL)
-    auth = api.login(SALTUSER, SALTPASS, SALTEAUTH)
+    # Auth values placeholder; grab interactively at CLI or from config file
+    salturl = os.environ.get('SALTAPI_URL', 'http://localhost:8000/')
+    saltuser = os.environ.get('SALTAPI_USER', 'saltdev')
+    saltpass = os.environ.get('SALTAPI_PASS', 'saltdev')
+    salteauth = os.environ.get('SALTAPI_EAUTH', 'auto')
+
+    api = pepper.Pepper(salturl)
+    auth = api.login(saltuser, saltpass, salteauth)
     ret = api.local(tgt, fun)
 
     # TODO: temporary pretty-printing until Salt outputters are in place

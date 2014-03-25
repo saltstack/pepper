@@ -23,6 +23,8 @@ except IOError:
         import imp
 
         setup = imp.load_source('pepper_setup', setup_file)
-        __version__ = setup.read_version_tag() or 'Unknown'
-else:
-    __version__ = version or 'Unknown'
+        version = setup.read_version_tag()
+    else:
+        version = 'Unknown'
+
+__version__ = version or 'Unknown'

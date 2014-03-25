@@ -7,7 +7,7 @@ import json
 import os
 
 from distutils.core import setup
-from distutils.command.sdist import sdist
+from distutils.command import sdist, install_data
 
 setup_kwargs = {
     'name': 'pepper',
@@ -61,16 +61,34 @@ def read_version_tag():
 
     return None
 
-class PepperSdist(sdist):
+def write_version_file(base_dir):
+    ver_path = os.path.join(base_dir, 'pepper', 'version.json')
+
+    with open(ver_path, 'wb') as f:
+        version = read_version_tag()
+        json.dump({'version': version}, f)
+
+class PepperSdist(sdist.sdist):
+    '''
+    Write the version.json file to the sdist tarball build directory
+    '''
     def make_release_tree(self, base_dir, files):
-        sdist.make_release_tree(self, base_dir, files)
+        sdist.sdist.make_release_tree(self, base_dir, files)
+        write_version_file(base_dir)
 
-        ver_path = os.path.join(base_dir, 'pepper', 'version.json')
+class PepperInstallData(install_data.install_data):
+    '''
+    Write the version.json file to the installation directory
+    '''
+    def run(self):
+        install_cmd = self.get_finalized_command('install')
+        install_dir = getattr(install_cmd, 'install_lib')
+        write_version_file(install_dir)
 
-        with open(ver_path, 'wb') as f:
-            version = read_version_tag()
-            json.dump({'version': version}, f)
+        return install_data.install_data.run(self)
 
 if __name__ == '__main__':
-    setup(cmdclass={'sdist': PepperSdist}, version=read_version_tag(),
-            **setup_kwargs)
+    setup(cmdclass={
+        'sdist': PepperSdist,
+        'install_data': PepperInstallData,
+    }, version=read_version_tag(), **setup_kwargs)

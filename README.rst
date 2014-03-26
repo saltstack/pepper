@@ -24,8 +24,9 @@ Basic usage is in heavy flux.
 
 .. code-block:: bash
 
-    SALTAPI_USER=saltdev SALTAPI_PASS=saltdev SALTAPI_EAUTH=pam pepper '*' test.ping
-    SALTAPI_USER=saltdev SALTAPI_PASS=saltdev SALTAPI_EAUTH=pam pepper '*' test.kwarg hello=dolly
+    export SALTAPI_USER=saltdev SALTAPI_PASS=saltdev SALTAPI_EAUTH=pam
+    pepper '*' test.ping
+    pepper '*' test.kwarg hello=dolly
 
 Current status
 --------------

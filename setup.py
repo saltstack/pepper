@@ -36,9 +36,6 @@ setup_kwargs = {
     'package_data': {
         'pepper': ['version.json'],
     },
-    'data_files': [
-        ('share/man/man1', ['doc/man/pepper.1']),
-    ],
     'scripts': [
         'scripts/pepper'
     ],

@@ -1,0 +1,4 @@
+/build
+*.py[co]
+*.swp
+*.DS_Store

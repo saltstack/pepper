@@ -169,7 +169,7 @@ def main():
 
     api = pepper.Pepper(salturl, debug_http=opts.debug_http)
     auth = api.login(saltuser, saltpass, salteauth)
-    ret = api.local(tgt, fun)
+    ret = api.local(tgt, fun, *args)
 
     # TODO: temporary pretty-printing until Salt outputters are in place
     return json.dumps(ret, sort_keys=True, indent=4)

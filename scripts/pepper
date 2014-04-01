@@ -159,10 +159,6 @@ def main():
 
     tgt, fun = args.pop(0), args.pop(0)
 
-    arg = None # placeholder
-    kwarg = None # placeholder
-    kwargs = opts.__dict__
-
     login_details = get_login_details(opts.config)
 
     # Auth values placeholder; grab interactively at CLI or from config file

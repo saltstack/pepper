@@ -9,6 +9,7 @@ import optparse
 import os
 import textwrap
 import ConfigParser
+import getpass
 
 import pepper
 
@@ -95,10 +96,10 @@ def add_authopts(parser):
             SALTAPI_URL, SALTAPI_USER, SALTAPI_PASS, SALTAPI_EAUTH.
             """))
 
-    # optgroup.add_option('-a', '--auth', '--eauth', '--extended-auth',
-    #     default='', dest='eauth', help=textwrap.dedent("""\
-    #             Specify the external_auth backend to authenticate against and
-    #             interactively prompt for credentials"""))
+    optgroup.add_option('-a', '--auth', '--eauth', '--extended-auth',
+        default='', dest='eauth', help=textwrap.dedent("""\
+                Specify the external_auth backend to authenticate against and
+                interactively prompt for credentials"""))
 
     # optgroup.add_option('-T', '--make-token', default=False,
     #     dest='mktoken', action='store_true',
@@ -109,7 +110,7 @@ def add_authopts(parser):
 
     parser.add_option_group(optgroup)
 
-def get_login_details(config_file, profile='main'):
+def get_login_details(opts):
     '''
     This parses the config file and environment variables
     and returns the config values
@@ -125,8 +126,11 @@ def get_login_details(config_file, profile='main'):
         'SALTAPI_EAUTH': 'auto',
     }
 
+    valid_auths = ('pam')
+    profile = 'main'
+
     config = ConfigParser.RawConfigParser()
-    config.read(config_file)
+    config.read(opts.config)
 
     # read file
     if config.has_section(profile):
@@ -137,6 +141,11 @@ def get_login_details(config_file, profile='main'):
     # get environment values
     for key, value in results.items():
         results[key] = os.environ.get(key, results[key])
+
+    # get eauth prompt options
+    if opts.eauth and opts.eauth in valid_auths:
+        results['SALTAPI_USER'] = raw_input('Username: ')
+        results['SALTAPI_PASS'] = getpass.getpass(prompt='Password: ')
 
     return results
 
@@ -159,7 +168,7 @@ def main():
 
     tgt, fun = args.pop(0), args.pop(0)
 
-    login_details = get_login_details(opts.config)
+    login_details = get_login_details(opts)
 
     # Auth values placeholder; grab interactively at CLI or from config file
     salturl = login_details['SALTAPI_URL']

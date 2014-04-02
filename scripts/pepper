@@ -102,7 +102,7 @@ def add_authopts(parser):
             """))
 
     optgroup.add_option('-a', '--auth', '--eauth', '--extended-auth',
-        default='', dest='eauth', help=textwrap.dedent("""\
+        dest='eauth', help=textwrap.dedent("""\
                 Specify the external_auth backend to authenticate against and
                 interactively prompt for credentials"""))
 

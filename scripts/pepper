@@ -131,7 +131,6 @@ def get_login_details(opts):
         'SALTAPI_EAUTH': 'auto',
     }
 
-    valid_auths = ('pam')
     profile = 'main'
 
     config = ConfigParser.RawConfigParser()
@@ -148,7 +147,7 @@ def get_login_details(opts):
         results[key] = os.environ.get(key, results[key])
 
     # get eauth prompt options
-    if opts.eauth and opts.eauth in valid_auths:
+    if opts.eauth:
         results['SALTAPI_USER'] = raw_input('Username: ')
         results['SALTAPI_PASS'] = getpass.getpass(prompt='Password: ')
 

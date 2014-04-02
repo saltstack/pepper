@@ -71,18 +71,23 @@ def add_tgtopts(parser):
     optgroup = optparse.OptionGroup(parser, "Targeting Options",
             "Target which minions to run commands on")
 
-    optgroup.add_option('-E', '--pcre', default=False, action='store_true',
+    optgroup.add_option('-E', '--pcre', dest='expr_form',
+            action='store_const', const='pcre',
         help="Target hostnames using PCRE regular expressions")
 
-    optgroup.add_option('-L', '--list', default=False, action='store_true',
+    optgroup.add_option('-L', '--list', dest='expr_form',
+            action='store_const', const='list',
         help="Specify a comma delimited list of hostnames")
 
-    optgroup.add_option('-G', '--grain', default=False, action='store_true',
+    optgroup.add_option('-G', '--grain', dest='expr_form',
+            action='store_const', const='grain',
         help="Target based on system properties")
 
-    optgroup.add_option('--grain-pcre', default=False, action='store_true',
+    optgroup.add_option('--grain-pcre', dest='expr_form',
+            action='store_const', const='grain_pcre',
         help="Target based on PCRE matches on system properties")
 
+    parser.set_defaults(expr_form='glob')
     parser.add_option_group(optgroup)
 
 def add_authopts(parser):
@@ -155,7 +160,7 @@ def main():
     parser = get_parser()
 
     # add_globalopts(parser)
-    # add_tgtopts(parser)
+    add_tgtopts(parser)
     add_authopts(parser)
 
     opts, args = parser.parse_args()
@@ -178,7 +183,7 @@ def main():
 
     api = pepper.Pepper(salturl, debug_http=opts.debug_http)
     auth = api.login(saltuser, saltpass, salteauth)
-    ret = api.local(tgt, fun, *args)
+    ret = api.local(tgt, fun, arg=args, kwarg=None, expr_form=opts.expr_form)
 
     # TODO: temporary pretty-printing until Salt outputters are in place
     return json.dumps(ret, sort_keys=True, indent=4)

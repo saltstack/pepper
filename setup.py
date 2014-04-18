@@ -10,7 +10,7 @@ from distutils.core import setup
 from distutils.command import sdist, install_data
 
 setup_kwargs = {
-    'name': 'pepper',
+    'name': 'salt-pepper',
     'description': __doc__,
     'author': 'Seth House',
     'author_email': 'shouse@saltstack.com',

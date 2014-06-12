@@ -105,6 +105,9 @@ def add_authopts(parser):
             SALTAPI_URL, SALTAPI_USER, SALTAPI_PASS, SALTAPI_EAUTH.
             """))
 
+    optgroup.add_option('-s', '--saltapi-url', dest='saltapiurl',
+            help="Specify the host url.  Defaults to http://localhost:8080")
+
     optgroup.add_option('-a', '--auth', '--eauth', '--extended-auth',
         dest='eauth', help=textwrap.dedent("""\
                 Specify the external_auth backend to authenticate against and
@@ -163,21 +166,25 @@ def get_login_details(opts):
         results[key] = os.environ.get(key, results[key])
 
     # get eauth prompt options
+    if opts.saltapiurl:
+        results['SALTAPI_URL'] = opts.saltapiurl
+
     if opts.eauth:
-        if username == None:
-          if interactive:
+        results['SALTAPI_EAUTH'] = opts.eauth
+        if opts.username == None:
+          if opts.interactive:
             results['SALTAPI_USER'] = raw_input('Username: ')
           else:
             parser.error("SALTAPI_USER required")
         else:
-          results['SALTAPI_USER'] = username
-        if password == None:
-          if interactive:
+          results['SALTAPI_USER'] = opts.username
+        if opts.password == None:
+          if opts.interactive:
             results['SALTAPI_PASS'] = getpass.getpass(prompt='Password: ')
           else:
             parser.error("SALTAPI_PASS required")
         else:
-          results['SALTAPI_PASS'] = password
+          results['SALTAPI_PASS'] = opts.password
 
     return results
 

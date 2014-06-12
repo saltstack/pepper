@@ -62,6 +62,10 @@ def add_globalopts(parser):
     optgroup.add_option('--return', default='', metavar='RETURNER',
         help="Redirect the output from a command to a persistent data store")
 
+    optgroup.add_option('-f','--fail', action='store_true',
+        dest='fail_if_minions_dont_respond',
+        help="Optional, fail if minions do not respond",default=False)
+
     parser.add_option_group(optgroup)
 
 def add_tgtopts(parser):
@@ -106,6 +110,18 @@ def add_authopts(parser):
                 Specify the external_auth backend to authenticate against and
                 interactively prompt for credentials"""))
 
+    optgroup.add_option('-u', '--username',
+        dest='username', help=textwrap.dedent("""\
+                Optional, defaults to user name. will be prompt if empty unless --non-interactive"""))
+
+    optgroup.add_option('-p', '--password',
+        dest='password', help=textwrap.dedent("""\
+                Optional, but will be prompted unless --non-interactive"""))
+
+    optgroup.add_option('-z', '--non-interactive',
+        action='store_false', dest='interactive', help=textwrap.dedent("""\
+                Optional, fail rather than waiting for input"""),default=interactive_check)
+
     # optgroup.add_option('-T', '--make-token', default=False,
     #     dest='mktoken', action='store_true',
     #     help=textwrap.dedent("""\
@@ -148,14 +164,32 @@ def get_login_details(opts):
 
     # get eauth prompt options
     if opts.eauth:
-        results['SALTAPI_USER'] = raw_input('Username: ')
-        results['SALTAPI_PASS'] = getpass.getpass(prompt='Password: ')
+        if username == None:
+          if interactive:
+            results['SALTAPI_USER'] = raw_input('Username: ')
+          else:
+            parser.error("SALTAPI_USER required")
+        else:
+          results['SALTAPI_USER'] = username
+        if password == None:
+          if interactive:
+            results['SALTAPI_PASS'] = getpass.getpass(prompt='Password: ')
+          else:
+            parser.error("SALTAPI_PASS required")
+        else:
+          results['SALTAPI_PASS'] = password
 
     return results
 
 def main():
     '''
     '''
+    global interactive_check
+    if hasattr(main, '__file__'):
+      interactive_check = False
+    else:
+      interactive_check = True
+
     parser = get_parser()
 
     # add_globalopts(parser)

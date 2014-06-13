@@ -98,8 +98,8 @@ class Pepper(object):
         try:
             f = urllib2.urlopen(req)
             ret = json.loads(f.read())
-        except (urllib2.HTTPError, urllib2.URLError):
-            logger.debug('Error with request', exc_info=True)
+        except (urllib2.HTTPError, urllib2.URLError) as e:
+            logger.debug('Error with request ' + str(e), exc_info=True)
             ret = {}
         except AttributeError:
             logger.debug('Error converting response from JSON', exc_info=True)

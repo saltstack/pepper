@@ -149,7 +149,7 @@ class Pepper(object):
 
     def local_async(self, tgt, fun, arg=None, kwarg=None, expr_form='glob', timeout=None, ret=None):
         '''
-        Run a single command using the ``local`` client
+        Run a single command using the ``local_async`` client
 
         Wraps :meth:`low`.
         '''

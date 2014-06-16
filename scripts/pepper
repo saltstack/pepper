@@ -24,6 +24,9 @@ logging.basicConfig(format='%(levelname)s %(asctime)s %(module)s: %(message)s')
 logger = logging.getLogger(__name__)
 logger.addHandler(NullHandler())
 
+default_timeout_in_seconds = 60 * 60
+seconds_to_wait = 3
+
 def get_parser():
     parser = optparse.OptionParser(
         description=__doc__,
@@ -54,19 +57,20 @@ def add_globalopts(parser):
     optgroup = optparse.OptionGroup(parser, "Pepper ``salt`` Options",
             "Mimic the ``salt`` CLI")
 
-    optgroup.add_option('-t', '--timeout', action='store_true',
-        help="Specify wait time before returning control to the shell")
+    optgroup.add_option('-t', '--timeout', dest='timeout', type ='int',
+        help="Specify wait time (in seconds) before returning control to the shell")
 
-    optgroup.add_option('--out', '--output', dest='output',
-            help="Specify the output format for the command output")
+    #optgroup.add_option('--out', '--output', dest='output',
+    #        help="Specify the output format for the command output")
 
-    optgroup.add_option('--return', default='', metavar='RETURNER',
-        help="Redirect the output from a command to a persistent data store")
+    #optgroup.add_option('--return', default='', metavar='RETURNER',
+    #    help="Redirect the output from a command to a persistent data store")
 
-    optgroup.add_option('-f','--fail', action='store_true',
-        dest='fail_if_minions_dont_respond',
-        help="Optional, fail if minions do not respond",default=False)
+    #optgroup.add_option('-f','--fail', action='store_true',
+    #    dest='fail_if_minions_dont_respond',
+    #    help="Optional, fail if minions do not respond",default=False)
 
+    parser.set_defaults(timeout=default_timeout_in_seconds)
     parser.add_option_group(optgroup)
 
 def add_tgtopts(parser):
@@ -202,7 +206,7 @@ def main():
 
     parser = get_parser()
 
-    # add_globalopts(parser)
+    add_globalopts(parser)
     add_tgtopts(parser)
     add_authopts(parser)
 
@@ -244,7 +248,7 @@ def main():
     auth = api.login(saltuser, saltpass, salteauth)
     nodesJidRet = api.local_async(tgt=tgt, fun='test.ping', expr_form=opts.expr_form)
     nodesJid = nodesJidRet['return'][0]['jid']
-    time.sleep(3)
+    time.sleep(seconds_to_wait)
     nodesRet = api.lookup_jid(nodesJid)
     if fun == 'test.ping':
         return json.dumps(nodesRet['return'][0], sort_keys=True, indent=4)
@@ -254,12 +258,17 @@ def main():
     commandJidRet = api.local_async(tgt=nodes, fun=fun, arg=args, expr_form='list')
     commandJid = commandJidRet['return'][0]['jid']
     # keep trying until all expected nodes return
-    returnedNodes = []
+    commandRet = api.lookup_jid(commandJid)
+    returnedNodes = commandRet['return'][0].keys()
+    total_time = seconds_to_wait
     while set(returnedNodes) != set(nodes):
-      time.sleep(3)
+      if total_time > opts.timeout :
+         break
+      time.sleep(seconds_to_wait)
       commandRet = api.lookup_jid(commandJid)
       returnedNodes = commandRet['return'][0].keys()
 
+    # TODO: set return code based on fail_if_minions_dont_respond and our expected vs. returned list of minions
 
     # TODO: temporary pretty-printing until Salt outputters are in place
     return json.dumps(commandRet['return'][0], sort_keys=True, indent=4)

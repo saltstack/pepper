@@ -147,15 +147,45 @@ class Pepper(object):
 
         return self.low([low], path='/')
 
-    def runner(self, fun, *args, **kwargs):
+    def local_async(self, tgt, fun, arg=None, kwarg=None, expr_form='glob', timeout=None, ret=None):
         '''
-        Run a single command using the ``runner`` client
+        Run a single command using the ``local`` client
+
+        Wraps :meth:`low`.
+        '''
+        low = {
+            'client': 'local_async',
+            'tgt': tgt,
+            'fun': fun,
+        }
+
+        if arg:
+            low['arg'] = arg
+
+        if kwarg:
+            low['kwarg'] = kwarg
+
+        if expr_form:
+            low['expr_form'] = expr_form
+
+        if timeout:
+            low['timeout'] = timeout
+
+        if ret:
+            low['ret'] = ret
+
+        return self.low([low], path='/')
+
+    def lookup_jid(self, jid):
+        '''
+        Get job results
 
         Wraps :meth:`low`.
         '''
         low = {
             'client': 'runner',
-            'fun': fun,
+            'fun': 'jobs.lookup_jid',
+            'jid': jid
         }
 
         return self.low([low], path='/')

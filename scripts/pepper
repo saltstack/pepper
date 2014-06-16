@@ -10,6 +10,7 @@ import os
 import textwrap
 import ConfigParser
 import getpass
+import time
 
 import pepper
 
@@ -214,6 +215,22 @@ def main():
         parser.error("Command not recognized.")
 
     tgt, fun = args.pop(0), args.pop(0)
+    if type(tgt) == type(''):
+      tgt = tgt.replace('[','')
+      tgt = tgt.replace(']','')
+      tgt = tgt.replace('"','')
+      tgt = tgt.replace(' ','')
+      tgt = tgt.replace("'","")
+      tgt = tgt.split(',')
+      if len(tgt) == 1:
+        tgt = tgt[0]
+    if type(tgt) == type([]):
+      glob_detected = False
+      for node in tgt:
+        if '*' in node:
+          glob_detected = True
+      if glob_detected == False:
+        opts.expr_form = 'list'
 
     login_details = get_login_details(opts)
 
@@ -225,10 +242,27 @@ def main():
 
     api = pepper.Pepper(salturl, debug_http=opts.debug_http)
     auth = api.login(saltuser, saltpass, salteauth)
-    ret = api.local(tgt, fun, arg=args, kwarg=None, expr_form=opts.expr_form)
+    nodesJidRet = api.local_async(tgt=tgt, fun='test.ping', expr_form=opts.expr_form)
+    nodesJid = nodesJidRet['return'][0]['jid']
+    time.sleep(3)
+    nodesRet = api.lookup_jid(nodesJid)
+    if fun == 'test.ping':
+        return json.dumps(nodesRet['return'][0], sort_keys=True, indent=4)
+    nodes = nodesRet['return'][0].keys()
+    if nodes == []:
+        return json.dumps({})
+    commandJidRet = api.local_async(tgt=nodes, fun=fun, arg=args, expr_form='list')
+    commandJid = commandJidRet['return'][0]['jid']
+    # keep trying until all expected nodes return
+    returnedNodes = []
+    while set(returnedNodes) != set(nodes):
+      time.sleep(3)
+      commandRet = api.lookup_jid(commandJid)
+      returnedNodes = commandRet['return'][0].keys()
+
 
     # TODO: temporary pretty-printing until Salt outputters are in place
-    return json.dumps(ret, sort_keys=True, indent=4)
+    return json.dumps(commandRet['return'][0], sort_keys=True, indent=4)
 
 if __name__ == '__main__':
     try:

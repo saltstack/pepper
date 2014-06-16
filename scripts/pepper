@@ -66,11 +66,12 @@ def add_globalopts(parser):
     #optgroup.add_option('--return', default='', metavar='RETURNER',
     #    help="Redirect the output from a command to a persistent data store")
 
-    #optgroup.add_option('-f','--fail', action='store_true',
-    #    dest='fail_if_minions_dont_respond',
-    #    help="Optional, fail if minions do not respond",default=False)
+    optgroup.add_option('-f','--fail', action='store_true',
+        dest='fail_if_minions_dont_respond',
+        help="Optional, fail if minions do not respond")
 
     parser.set_defaults(timeout=default_timeout_in_seconds)
+    parser.set_defaults(fail_if_minions_dont_respond=False)
     parser.add_option_group(optgroup)
 
 def add_tgtopts(parser):
@@ -251,10 +252,10 @@ def main():
     time.sleep(seconds_to_wait)
     nodesRet = api.lookup_jid(nodesJid)
     if fun == 'test.ping':
-        return json.dumps(nodesRet['return'][0], sort_keys=True, indent=4)
+        return (0,json.dumps(nodesRet['return'][0], sort_keys=True, indent=4))
     nodes = nodesRet['return'][0].keys()
     if nodes == []:
-        return json.dumps({})
+        return (0,json.dumps({}))
     commandJidRet = api.local_async(tgt=nodes, fun=fun, arg=args, expr_form='list')
     commandJid = commandJidRet['return'][0]['jid']
     # keep trying until all expected nodes return
@@ -268,14 +269,19 @@ def main():
       commandRet = api.lookup_jid(commandJid)
       returnedNodes = commandRet['return'][0].keys()
 
-    # TODO: set return code based on fail_if_minions_dont_respond and our expected vs. returned list of minions
+    if set(returnedNodes) != set(nodes) and opts.fail_if_minions_dont_respond is True:
+         exit_code = 1
+    else:
+         exit_code = 0
 
-    # TODO: temporary pretty-printing until Salt outputters are in place
-    return json.dumps(commandRet['return'][0], sort_keys=True, indent=4)
+    return (exit_code,json.dumps(commandRet['return'][0], sort_keys=True, indent=4))
 
 if __name__ == '__main__':
     try:
-        raise SystemExit(main())
+        exit_code, results = main()
+        # TODO: temporary printing until Salt outputters are in place
+        print(results)
+        raise SystemExit(exit_code)
     except KeyboardInterrupt:
         # TODO: mimic CLI and output JID on ctrl-c
         raise SystemExit(0)

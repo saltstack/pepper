@@ -220,22 +220,6 @@ def main():
         parser.error("Command not recognized.")
 
     tgt, fun = args.pop(0), args.pop(0)
-    if type(tgt) == type(''):
-      tgt = tgt.replace('[','')
-      tgt = tgt.replace(']','')
-      tgt = tgt.replace('"','')
-      tgt = tgt.replace(' ','')
-      tgt = tgt.replace("'","")
-      tgt = tgt.split(',')
-      if len(tgt) == 1:
-        tgt = tgt[0]
-    if type(tgt) == type([]):
-      glob_detected = False
-      for node in tgt:
-        if '*' in node:
-          glob_detected = True
-      if glob_detected == False:
-        opts.expr_form = 'list'
 
     login_details = get_login_details(opts)
 

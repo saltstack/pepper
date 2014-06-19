@@ -66,9 +66,9 @@ def add_globalopts(parser):
     #optgroup.add_option('--return', default='', metavar='RETURNER',
     #    help="Redirect the output from a command to a persistent data store")
 
-    optgroup.add_option('-f','--fail', action='store_true',
+    optgroup.add_option('--fail-if-incomplete', action='store_true',
         dest='fail_if_minions_dont_respond',
-        help="Optional, fail if minions do not respond")
+        help="Optional, return a failure exit code if not all minions respond")
 
     parser.set_defaults(timeout=default_timeout_in_seconds)
     parser.set_defaults(fail_if_minions_dont_respond=False)
@@ -111,7 +111,7 @@ def add_authopts(parser):
             SALTAPI_URL, SALTAPI_USER, SALTAPI_PASS, SALTAPI_EAUTH.
             """))
 
-    optgroup.add_option('-s', '--saltapi-url', dest='saltapiurl',
+    optgroup.add_option('--saltapi-url', dest='saltapiurl',
             help="Specify the host url.  Defaults to http://localhost:8080")
 
     optgroup.add_option('-a', '--auth', '--eauth', '--extended-auth',
@@ -119,15 +119,15 @@ def add_authopts(parser):
                 Specify the external_auth backend to authenticate against and
                 interactively prompt for credentials"""))
 
-    optgroup.add_option('-u', '--username',
+    optgroup.add_option('--username',
         dest='username', help=textwrap.dedent("""\
                 Optional, defaults to user name. will be prompt if empty unless --non-interactive"""))
 
-    optgroup.add_option('-p', '--password',
+    optgroup.add_option('--password',
         dest='password', help=textwrap.dedent("""\
                 Optional, but will be prompted unless --non-interactive"""))
 
-    optgroup.add_option('-z', '--non-interactive',
+    optgroup.add_option('--non-interactive',
         action='store_false', dest='interactive', help=textwrap.dedent("""\
                 Optional, fail rather than waiting for input"""),default=interactive_check)
 

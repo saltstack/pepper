@@ -12,6 +12,10 @@ import ConfigParser
 import getpass
 import time
 
+import salt.config, salt.output
+
+__opts__ = salt.config.client_config('')
+
 import pepper
 
 try:
@@ -85,6 +89,10 @@ def add_tgtopts(parser):
             action='store_const', const='pcre',
         help="Target hostnames using PCRE regular expressions")
 
+    optgroup.add_option('-C', '--compound', dest='expr_form',
+            action='store_const', const='compound',
+        help="Target hostnames using compound expressions")
+
     optgroup.add_option('-L', '--list', dest='expr_form',
             action='store_const', const='list',
         help="Specify a comma delimited list of hostnames")
@@ -126,6 +134,10 @@ def add_authopts(parser):
     optgroup.add_option('--password',
         dest='password', help=textwrap.dedent("""\
                 Optional, but will be prompted unless --non-interactive"""))
+
+    optgroup.add_option('--OUT', '--OUTPUT',
+        dest='output', help=textwrap.dedent("""\
+                Print the output from the 'salt' command using the specified outputter."""))
 
     optgroup.add_option('--non-interactive',
         action='store_false', dest='interactive', help=textwrap.dedent("""\
@@ -236,10 +248,11 @@ def main():
     time.sleep(seconds_to_wait)
     nodesRet = api.lookup_jid(nodesJid)
     if fun == 'test.ping':
-        return (0,json.dumps(nodesRet['return'][0], sort_keys=True, indent=4))
+        salt.output.display_output(nodesRet['return'][0], opts.output or 'nested', __opts__)
+        return 0
     nodes = nodesRet['return'][0].keys()
     if nodes == []:
-        return (0,json.dumps({}))
+        return 0
     commandJidRet = api.local_async(tgt=nodes, fun=fun, arg=args, expr_form='list')
     commandJid = commandJidRet['return'][0]['jid']
     # keep trying until all expected nodes return
@@ -258,14 +271,12 @@ def main():
     else:
          exit_code = 0
 
-    return (exit_code,json.dumps(commandRet['return'][0], sort_keys=True, indent=4))
+    salt.output.display_output(nodesRet['return'][0], opts.output or 'nested', __opts__)
+    return exit_code
 
 if __name__ == '__main__':
     try:
-        exit_code, results = main()
-        # TODO: temporary printing until Salt outputters are in place
-        print(results)
-        raise SystemExit(exit_code)
+        raise SystemExit(main())
     except KeyboardInterrupt:
         # TODO: mimic CLI and output JID on ctrl-c
         raise SystemExit(0)

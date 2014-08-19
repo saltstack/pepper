@@ -39,6 +39,9 @@ setup_kwargs = {
     'scripts': [
         'scripts/pepper'
     ],
+    'requires': [
+        'salt'
+    ]
 }
 
 def read_version_tag():

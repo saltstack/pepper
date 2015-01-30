@@ -112,7 +112,7 @@ def add_authopts(parser):
             """))
 
     optgroup.add_option('--saltapi-url', dest='saltapiurl',
-            help="Specify the host url.  Defaults to http://localhost:8080")
+            help="Specify the host url.  Defaults to https://localhost:8080")
 
     optgroup.add_option('-a', '--auth', '--eauth', '--extended-auth',
         dest='eauth', help=textwrap.dedent("""\
@@ -150,7 +150,7 @@ def get_login_details(opts):
 
     # setting default values
     results = {
-        'SALTAPI_URL': 'http://localhost:8000/',
+        'SALTAPI_URL': 'https://localhost:8000/',
         'SALTAPI_USER': 'saltdev',
         'SALTAPI_PASS': 'saltdev',
         'SALTAPI_EAUTH': 'auto',

@@ -21,7 +21,7 @@ class Pepper(object):
     A thin wrapper for making HTTP calls to the salt-api rest_cherrpy REST
     interface
 
-    >>> api = Pepper('http://localhost:8000')
+    >>> api = Pepper('https://localhost:8000')
     >>> api.login('saltdev', 'saltdev', 'pam')
     {"return": [
             {
@@ -44,7 +44,7 @@ class Pepper(object):
               u'ms-4': True}]}
 
     '''
-    def __init__(self, api_url='http://localhost:8000', debug_http=False):
+    def __init__(self, api_url='https://localhost:8000', debug_http=False):
         '''
         Initialize the class with the URL of the API
 

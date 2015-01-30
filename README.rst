@@ -31,7 +31,8 @@ Basic usage is in heavy flux.
 Configuration
 -------------
 
-You can configure pepper through the command line, using environment variables or in a configuration file $HOME/.pepperrc with the following syntax : 
+You can configure pepper through the command line, using environment variables 
+or in a configuration file ``$HOME/.pepperrc`` with the following syntax : 
 
 .. code-block:: 
 

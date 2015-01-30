@@ -27,6 +27,19 @@ Basic usage is in heavy flux.
     export SALTAPI_USER=saltdev SALTAPI_PASS=saltdev SALTAPI_EAUTH=pam
     pepper '*' test.ping
     pepper '*' test.kwarg hello=dolly
+    
+Configuration
+-------------
+
+You can configure pepper through the command line, using environment variables or in a configuration file $HOME/.pepperrc with the following syntax : 
+
+.. code-block:: 
+
+  [main]
+  SALTAPI_URL=https://localhost:8000/
+  SALTAPI_USER=saltdev
+  SALTAPI_PASS=saltdev
+  SALTAPI_EAUTH=pam
 
 Current status
 --------------

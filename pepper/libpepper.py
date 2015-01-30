@@ -12,7 +12,7 @@ import urllib
 import urllib2
 import urlparse
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('pepper')
 
 class PepperException(Exception): pass
 

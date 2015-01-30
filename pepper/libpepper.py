@@ -86,6 +86,10 @@ class Pepper(object):
         url = urlparse.urljoin(self.api_url, path)
         req = urllib2.Request(url, postdata, headers)
 
+        if not url.startswith('http'):
+            raise PepperException("salt-api URL missing HTTP(s) protocol: {0}"
+                    .format(self.api_url))
+
         # Add POST data to request
         if data != None:
             req.add_header('Content-Length', clen)

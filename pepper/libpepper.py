@@ -102,12 +102,21 @@ class Pepper(object):
         try:
             f = urllib2.urlopen(req)
             ret = json.loads(f.read())
-        except (urllib2.HTTPError, urllib2.URLError) as e:
-            logger.debug('Error with request ' + str(e), exc_info=True)
-            ret = {}
+        except (urllib2.HTTPError, urllib2.URLError) as exc:
+            logger.debug('Error with request', exc_info=True)
+            status = getattr(exc, 'code', None)
+
+            if status == 401:
+                raise PepperException('Authentication denied')
+
+            if status == 500:
+                raise PepperException('Server error.')
+
+            logger.error('Error with request: {0}'.format(exc))
+            raise
         except AttributeError:
             logger.debug('Error converting response from JSON', exc_info=True)
-            ret = {}
+            raise PepperException('Unable to parse the server response.')
 
         return ret
 

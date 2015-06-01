@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 '''
 A CLI interface to a remote salt-api instance
 
@@ -19,7 +18,7 @@ import pepper
 
 try:
     from logging import NullHandler
-except ImportError: # Python < 2.7
+except ImportError:  # Python < 2.7
     class NullHandler(logging.Handler):
         def emit(self, record): pass
 
@@ -199,11 +198,11 @@ def get_login_details(opts):
 
     return results
 
-def main():
+def pepper_main():
     '''
     '''
     global interactive_check
-    if hasattr(main, '__file__'):
+    if hasattr(pepper_main, '__file__'):
       interactive_check = False
     else:
       interactive_check = True
@@ -263,9 +262,9 @@ def main():
 
     return (exit_code,json.dumps(commandRet['return'][0], sort_keys=True, indent=4))
 
-if __name__ == '__main__':
+def pepper_cli():
     try:
-        exit_code, results = main()
+        exit_code, results = pepper_main()
         # TODO: temporary printing until Salt outputters are in place
         print(results)
         raise SystemExit(exit_code)

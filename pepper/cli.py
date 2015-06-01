@@ -8,7 +8,6 @@ import json
 import logging
 import optparse
 import os
-import sys
 import textwrap
 import ConfigParser
 import getpass
@@ -75,10 +74,10 @@ class PepperCli(object):
         optgroup.add_option('-t', '--timeout', dest='timeout', type ='int',
             help="Specify wait time (in seconds) before returning control to the shell")
 
-        #optgroup.add_option('--out', '--output', dest='output',
+        # optgroup.add_option('--out', '--output', dest='output',
         #        help="Specify the output format for the command output")
 
-        #optgroup.add_option('--return', default='', metavar='RETURNER',
+        # optgroup.add_option('--return', default='', metavar='RETURNER',
         #    help="Redirect the output from a command to a persistent data store")
 
         optgroup.add_option('--fail-if-incomplete', action='store_true',
@@ -123,7 +122,7 @@ class PepperCli(object):
                 SALTAPI_URL, SALTAPI_USER, SALTAPI_PASS, SALTAPI_EAUTH.
                 """))
 
-        optgroup.add_option('--saltapi-url', dest='saltapiurl', default='https://localhost:8000/',
+        optgroup.add_option('-u', '--saltapi-url', dest='saltapiurl', default='https://localhost:8000/',
                 help="Specify the host url.  Defaults to https://localhost:8080")
 
         optgroup.add_option('-a', '--auth', '--eauth', '--extended-auth',
@@ -141,7 +140,7 @@ class PepperCli(object):
 
         optgroup.add_option('--non-interactive',
             action='store_false', dest='interactive', help=textwrap.dedent("""\
-                    Optional, fail rather than waiting for input"""),default=True)
+                    Optional, fail rather than waiting for input"""), default=True)
 
         # optgroup.add_option('-T', '--make-token', default=False,
         #     dest='mktoken', action='store_true',
@@ -188,7 +187,7 @@ class PepperCli(object):
 
         if self.options.eauth:
             results['SALTAPI_EAUTH'] = self.options.eauth
-            if self.options.username == None:
+            if self.options.username is None:
                 if self.options.interactive:
                     results['SALTAPI_USER'] = raw_input('Username: ')
                 else:
@@ -196,7 +195,7 @@ class PepperCli(object):
                     raise SystemExit(1)
             else:
                 results['SALTAPI_USER'] = self.options.username
-            if self.options.password == None:
+            if self.options.password is None:
                 if self.options.interactive:
                     results['SALTAPI_PASS'] = getpass.getpass(prompt='Password: ')
                 else:
@@ -234,7 +233,7 @@ class PepperCli(object):
         auth = api.login(saltuser, saltpass, salteauth)
         nodesJidRet = api.local_async(tgt=tgt, fun='test.ping', expr_form=self.options.expr_form)
         nodesJid = nodesJidRet['return'][0]['jid']
-        time.sleep(seconds_to_wait)
+        time.sleep(self.seconds_to_wait)
         nodesRet = api.lookup_jid(nodesJid)
 
         if fun == 'test.ping':
@@ -249,13 +248,13 @@ class PepperCli(object):
         # keep trying until all expected nodes return
         commandRet = api.lookup_jid(commandJid)
         returnedNodes = commandRet['return'][0].keys()
-        total_time = seconds_to_wait
+        total_time = self.seconds_to_wait
 
         while set(returnedNodes) != set(nodes):
             if total_time > self.options.timeout :
                 break
 
-            time.sleep(seconds_to_wait)
+            time.sleep(self.seconds_to_wait)
             commandRet = api.lookup_jid(commandJid)
             returnedNodes = commandRet['return'][0].keys()
 

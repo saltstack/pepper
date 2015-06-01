@@ -261,21 +261,3 @@ def pepper_main():
          exit_code = 0
 
     return (exit_code,json.dumps(commandRet['return'][0], sort_keys=True, indent=4))
-
-def pepper_cli():
-    try:
-        exit_code, results = pepper_main()
-        # TODO: temporary printing until Salt outputters are in place
-        print(results)
-        raise SystemExit(exit_code)
-    except pepper.PepperException as exc:
-        print('Pepper error: {0}'.format(exc), file=sys.stderr)
-        raise SystemExit(1)
-    except KeyboardInterrupt:
-        # TODO: mimic CLI and output JID on ctrl-c
-        raise SystemExit(0)
-    except Exception:
-        print('Uncaught Pepper error (increase verbosity for the full traceback).',
-                file=sys.stderr)
-        logger.debug('Uncaught traceback:', exc_info=True)
-        raise SystemExit(1)

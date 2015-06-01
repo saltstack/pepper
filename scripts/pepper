@@ -1,0 +1,40 @@
+#!/usr/bin/env python
+'''
+A CLI interface to a remote salt-api instance
+'''
+from __future__ import print_function
+
+import sys
+import logging
+
+from pepper.cli import pepper_main
+from pepper import PepperException
+
+try:
+    from logging import NullHandler
+except ImportError: # Python < 2.7
+    class NullHandler(logging.Handler):
+        def emit(self, record): pass
+
+logging.basicConfig(format='%(levelname)s %(asctime)s %(module)s: %(message)s')
+logger = logging.getLogger('pepper')
+logger.addHandler(NullHandler())
+
+if __name__ == '__main__':
+    try:
+        exit_code, results = pepper_main()
+        # TODO: temporary printing until Salt outputters are in place
+        print(results)
+        raise SystemExit(exit_code)
+    except PepperException as exc:
+        print('Pepper error: {0}'.format(exc), file=sys.stderr)
+        raise SystemExit(1)
+    except KeyboardInterrupt:
+        # TODO: mimic CLI and output JID on ctrl-c
+        raise SystemExit(0)
+    except Exception as e:
+        print(e)
+        print('Uncaught Pepper error (increase verbosity for the full traceback).',
+                file=sys.stderr)
+        logger.debug('Uncaught traceback:', exc_info=True)
+        raise SystemExit(1)

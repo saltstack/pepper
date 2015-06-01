@@ -6,7 +6,8 @@ A CLI front-end to a running salt-api system
 import json
 import os
 
-from setuptools import setup
+from distutils.core import setup
+from distutils.dist import Distribution
 from distutils.command import sdist, install_data
 
 setup_kwargs = {
@@ -36,11 +37,9 @@ setup_kwargs = {
     'package_data': {
         'pepper': ['version.json'],
     },
-    'entry_points': {
-        'console_scripts': [
-            'pepper = pepper.cli:pepper_cli'
-        ]
-    }
+    'scripts': [
+        'scripts/pepper',
+    ]
 }
 
 def read_version_tag():

@@ -7,7 +7,7 @@ from __future__ import print_function
 import sys
 import logging
 
-from pepper.cli import pepper_main
+from pepper.cli import PepperCli
 from pepper import PepperException
 
 try:
@@ -22,7 +22,8 @@ logger.addHandler(NullHandler())
 
 if __name__ == '__main__':
     try:
-        exit_code, results = pepper_main()
+        cli = PepperCli()
+        exit_code, results = cli.run()
         # TODO: temporary printing until Salt outputters are in place
         print(results)
         raise SystemExit(exit_code)

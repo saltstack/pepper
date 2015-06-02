@@ -122,7 +122,7 @@ class PepperCli(object):
                 SALTAPI_URL, SALTAPI_USER, SALTAPI_PASS, SALTAPI_EAUTH.
                 """))
 
-        optgroup.add_option('-u', '--saltapi-url', dest='saltapiurl', default='https://localhost:8000/',
+        optgroup.add_option('-u', '--saltapi-url', dest='saltapiurl',
                 help="Specify the host url.  Defaults to https://localhost:8080")
 
         optgroup.add_option('-a', '--auth', '--eauth', '--extended-auth',

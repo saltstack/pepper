@@ -243,7 +243,7 @@ class PepperCli(object):
         if nodes == []:
             return (0,json.dumps({}))
 
-        commandJidRet = api.local_async(tgt=nodes, fun=fun, arg=args[2:], expr_form='list')
+        commandJidRet = api.local_async(tgt=nodes, fun=fun, arg=self.args[2:], expr_form='list')
         commandJid = commandJidRet['return'][0]['jid']
         # keep trying until all expected nodes return
         commandRet = api.lookup_jid(commandJid)

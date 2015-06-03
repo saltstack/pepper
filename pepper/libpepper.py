@@ -8,13 +8,22 @@ import functools
 import json
 import logging
 import os
-import urllib
-import urllib2
-import urlparse
+try:
+    from urllib.request import HTTPHandler, Request, urlopen, \
+        install_opener, build_opener
+    from urllib.error import HTTPError, URLError
+    import urllib.parse as urlparse
+except ImportError:
+    from urllib2 import HTTPHandler, Request, urlopen, install_opener, build_opener, \
+        HTTPError, URLError
+    import urlparse
 
 logger = logging.getLogger('pepper')
 
-class PepperException(Exception): pass
+
+class PepperException(Exception):
+    pass
+
 
 class Pepper(object):
     '''
@@ -54,7 +63,7 @@ class Pepper(object):
         :param debug_http: Add a flag to urllib2 to output the HTTP exchange
         '''
         self.api_url = api_url
-        self.debug_http = debug_http
+        self.debug_http = int(debug_http)
         self.auth = {}
 
     def req(self, path, data=None):
@@ -73,25 +82,25 @@ class Pepper(object):
             'X-Requested-With': 'XMLHttpRequest',
         }
 
-        handler=urllib2.HTTPHandler(debuglevel=1 if self.debug_http else 0)
-        opener = urllib2.build_opener(handler)
-        urllib2.install_opener(opener)
+        handler = HTTPHandler(debuglevel=self.debug_http)
+        opener = build_opener(handler)
+        install_opener(opener)
 
         # Build POST data
-        if data != None:
+        if data is not None:
             postdata = json.dumps(data).encode()
             clen = len(postdata)
 
         # Create request object
         url = urlparse.urljoin(self.api_url, path)
-        req = urllib2.Request(url, postdata, headers)
+        req = Request(url, postdata, headers)
 
         if not url.startswith('http'):
             raise PepperException("salt-api URL missing HTTP(s) protocol: {0}"
-                    .format(self.api_url))
+                                  .format(self.api_url))
 
         # Add POST data to request
-        if data != None:
+        if data is not None:
             req.add_header('Content-Length', clen)
 
         # Add auth header to request
@@ -100,9 +109,9 @@ class Pepper(object):
 
         # Send request
         try:
-            f = urllib2.urlopen(req)
-            ret = json.loads(f.read())
-        except (urllib2.HTTPError, urllib2.URLError) as exc:
+            f = urlopen(req)
+            ret = json.loads(f.read().decode('utf-8'))
+        except (HTTPError, URLError) as exc:
             logger.debug('Error with request', exc_info=True)
             status = getattr(exc, 'code', None)
 
@@ -131,7 +140,7 @@ class Pepper(object):
         return self.req(path, lowstate)
 
     def local(self, tgt, fun, arg=None, kwarg=None, expr_form='glob',
-            timeout=None, ret=None):
+              timeout=None, ret=None):
         '''
         Run a single command using the ``local`` client
 
@@ -160,7 +169,8 @@ class Pepper(object):
 
         return self.low([low], path='/')
 
-    def local_async(self, tgt, fun, arg=None, kwarg=None, expr_form='glob', timeout=None, ret=None):
+    def local_async(self, tgt, fun, arg=None, kwarg=None, expr_form='glob',
+                    timeout=None, ret=None):
         '''
         Run a single command using the ``local_async`` client
 

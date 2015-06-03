@@ -8,9 +8,15 @@ import functools
 import json
 import logging
 import os
-import urllib
-import urllib2
-import urlparse
+try:
+    from urllib.request import HTTPHandler, Request, urlopen, \
+        install_opener, build_opener
+    from urllib.error import HTTPError, URLError
+    import urllib.parse as urlparse
+except ImportError:
+    from urllib2 import HTTPHandler, Request, urlopen, install_opener, build_opener, \
+        HTTPError, URLError
+    import urlparse
 
 logger = logging.getLogger('pepper')
 
@@ -73,9 +79,9 @@ class Pepper(object):
             'X-Requested-With': 'XMLHttpRequest',
         }
 
-        handler=urllib2.HTTPHandler(debuglevel=1 if self.debug_http else 0)
-        opener = urllib2.build_opener(handler)
-        urllib2.install_opener(opener)
+        handler=HTTPHandler(debuglevel=1 if self.debug_http else 0)
+        opener = build_opener(handler)
+        install_opener(opener)
 
         # Build POST data
         if data != None:
@@ -84,7 +90,7 @@ class Pepper(object):
 
         # Create request object
         url = urlparse.urljoin(self.api_url, path)
-        req = urllib2.Request(url, postdata, headers)
+        req = Request(url, postdata, headers)
 
         if not url.startswith('http'):
             raise PepperException("salt-api URL missing HTTP(s) protocol: {0}"
@@ -100,9 +106,9 @@ class Pepper(object):
 
         # Send request
         try:
-            f = urllib2.urlopen(req)
-            ret = json.loads(f.read())
-        except (urllib2.HTTPError, urllib2.URLError) as exc:
+            f = urlopen(req)
+            ret = json.loads(f.read().decode('utf-8'))
+        except (HTTPError, URLError) as exc:
             logger.debug('Error with request', exc_info=True)
             status = getattr(exc, 'code', None)
 

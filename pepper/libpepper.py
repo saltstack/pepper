@@ -63,7 +63,7 @@ class Pepper(object):
         :param debug_http: Add a flag to urllib2 to output the HTTP exchange
         '''
         self.api_url = api_url
-        self.debug_http = debug_http
+        self.debug_http = int(debug_http)
         self.auth = {}
 
     def req(self, path, data=None):
@@ -82,7 +82,7 @@ class Pepper(object):
             'X-Requested-With': 'XMLHttpRequest',
         }
 
-        handler = HTTPHandler(debuglevel=1 if self.debug_http else 0)
+        handler = HTTPHandler(debuglevel=self.debug_http)
         opener = build_opener(handler)
         install_opener(opener)
 

@@ -20,7 +20,10 @@ except ImportError:
 
 logger = logging.getLogger('pepper')
 
-class PepperException(Exception): pass
+
+class PepperException(Exception):
+    pass
+
 
 class Pepper(object):
     '''
@@ -79,12 +82,12 @@ class Pepper(object):
             'X-Requested-With': 'XMLHttpRequest',
         }
 
-        handler=HTTPHandler(debuglevel=1 if self.debug_http else 0)
+        handler = HTTPHandler(debuglevel=1 if self.debug_http else 0)
         opener = build_opener(handler)
         install_opener(opener)
 
         # Build POST data
-        if data != None:
+        if data is not None:
             postdata = json.dumps(data).encode()
             clen = len(postdata)
 
@@ -94,10 +97,10 @@ class Pepper(object):
 
         if not url.startswith('http'):
             raise PepperException("salt-api URL missing HTTP(s) protocol: {0}"
-                    .format(self.api_url))
+                                  .format(self.api_url))
 
         # Add POST data to request
-        if data != None:
+        if data is not None:
             req.add_header('Content-Length', clen)
 
         # Add auth header to request
@@ -137,7 +140,7 @@ class Pepper(object):
         return self.req(path, lowstate)
 
     def local(self, tgt, fun, arg=None, kwarg=None, expr_form='glob',
-            timeout=None, ret=None):
+              timeout=None, ret=None):
         '''
         Run a single command using the ``local`` client
 
@@ -166,7 +169,8 @@ class Pepper(object):
 
         return self.low([low], path='/')
 
-    def local_async(self, tgt, fun, arg=None, kwarg=None, expr_form='glob', timeout=None, ret=None):
+    def local_async(self, tgt, fun, arg=None, kwarg=None, expr_form='glob',
+                    timeout=None, ret=None):
         '''
         Run a single command using the ``local_async`` client
 

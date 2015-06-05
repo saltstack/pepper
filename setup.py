@@ -5,6 +5,7 @@ A CLI front-end to a running salt-api system
 '''
 import json
 import os
+import re
 
 from distutils.core import setup
 from distutils.dist import Distribution
@@ -59,11 +60,41 @@ def read_version_tag():
 
     return None
 
+def parse_version_tag(tag):
+    '''
+    Parse the output from Git describe
+
+    Returns a tuple of the version number, number of commits (if any), and the
+    Git SHA (if available).
+    '''
+    if '-g' not in tag:
+        return tag, None, None
+
+    match = re.search('(?P<version>.*)-(?P<num_commits>[0-9]+)-g(?P<sha>[0-9a-fA-F]+)', tag)
+
+    if not match:
+        return tag, None, None
+
+    match_dict = match.groupdict()
+    return (
+        match_dict.get('version'),
+        match_dict.get('num_commits'),
+        match_dict.get('sha'))
+
+def get_version():
+    '''
+    Return a tuple of the version and Git SHA
+    '''
+    version, num_commits, sha = parse_version_tag(read_version_tag())
+    if sha:
+        version = '{0}.dev{1}'.format(version, num_commits)
+    return version, sha
+
 def write_version_file(base_dir):
     ver_path = os.path.join(base_dir, 'pepper', 'version.json')
+    version, sha = get_version()
 
     with open(ver_path, 'wb') as f:
-        version = read_version_tag()
         json.dump({'version': version}, f)
 
 class PepperSdist(sdist.sdist):
@@ -86,7 +117,9 @@ class PepperInstallData(install_data.install_data):
         return install_data.install_data.run(self)
 
 if __name__ == '__main__':
+    version, sha = get_version()
+
     setup(cmdclass={
         'sdist': PepperSdist,
         'install_data': PepperInstallData,
-    }, version=read_version_tag(), **setup_kwargs)
+    }, version=version, git_sha=sha, **setup_kwargs)

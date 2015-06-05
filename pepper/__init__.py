@@ -7,7 +7,7 @@ import os
 
 from pepper.libpepper import Pepper, PepperException
 
-__all__ = ('__version__', 'Pepper', 'PepperException')
+__all__ = ('__version__', '__gitrev__', 'Pepper', 'PepperException')
 
 try:
     # First try to grab the version from the version.json build file.
@@ -23,8 +23,9 @@ except IOError:
         import imp
 
         setup = imp.load_source('pepper_setup', setup_file)
-        version = setup.read_version_tag()
+        version, sha = setup.get_version()
     else:
-        version = 'Unknown'
+        version, sha = None, None
 
 __version__ = version or 'Unknown'
+__gitrev__ = sha

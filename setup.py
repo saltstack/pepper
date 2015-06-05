@@ -92,9 +92,9 @@ def get_version():
 
 def write_version_file(base_dir):
     ver_path = os.path.join(base_dir, 'pepper', 'version.json')
+    version, sha = get_version()
 
     with open(ver_path, 'wb') as f:
-        version = read_version_tag()
         json.dump({'version': version}, f)
 
 class PepperSdist(sdist.sdist):
@@ -117,7 +117,9 @@ class PepperInstallData(install_data.install_data):
         return install_data.install_data.run(self)
 
 if __name__ == '__main__':
+    version, sha = get_version()
+
     setup(cmdclass={
         'sdist': PepperSdist,
         'install_data': PepperInstallData,
-    }, version=read_version_tag(), **setup_kwargs)
+    }, version=version, git_sha=sha, **setup_kwargs)

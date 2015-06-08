@@ -13,6 +13,7 @@ try:
         install_opener, build_opener
     from urllib.error import HTTPError, URLError
     import urllib.parse as urlparse
+    SUPPORTS_COOKIES = False
 except ImportError:
     from urllib2 import HTTPHandler, Request, urlopen, install_opener, build_opener, \
         HTTPError, URLError, HTTPCookieProcessor

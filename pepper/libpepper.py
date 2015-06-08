@@ -231,6 +231,4 @@ class Pepper(object):
             'password': password,
             'eauth': eauth}).get('return', [{}])[0]
 
-        print self.auth
-
         return self.auth

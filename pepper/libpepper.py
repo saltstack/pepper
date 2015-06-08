@@ -15,8 +15,10 @@ try:
     import urllib.parse as urlparse
 except ImportError:
     from urllib2 import HTTPHandler, Request, urlopen, install_opener, build_opener, \
-        HTTPError, URLError
+        HTTPError, URLError, HTTPCookieProcessor
     import urlparse
+    from cookielib import CookieJar
+    SUPPORTS_COOKIES = True
 
 logger = logging.getLogger('pepper')
 
@@ -65,6 +67,8 @@ class Pepper(object):
         self.api_url = api_url
         self.debug_http = int(debug_http)
         self.auth = {}
+        if SUPPORTS_COOKIES:
+            self.cj = CookieJar()
 
     def req(self, path, data=None):
         '''
@@ -83,7 +87,10 @@ class Pepper(object):
         }
 
         handler = HTTPHandler(debuglevel=self.debug_http)
-        opener = build_opener(handler)
+        if SUPPORTS_COOKIES:
+            opener = build_opener(handler, HTTPCookieProcessor(self.cj))
+        else:
+            opener = build_opener(handler)
         install_opener(opener)
 
         # Build POST data
@@ -223,5 +230,7 @@ class Pepper(object):
             'username': username,
             'password': password,
             'eauth': eauth}).get('return', [{}])[0]
+
+        print self.auth
 
         return self.auth

@@ -14,7 +14,9 @@ try:
     vfile = os.path.join(os.path.dirname(__file__), 'version.json')
 
     with open(vfile, 'rb') as f:
-        version = json.load(f).get('version')
+        ret = json.load(f)
+        version = ret.get('version')
+        sha = ret.get('sha')
 except IOError:
     # Build version file doesn't exist; we may be running from a clone.
     setup_file = os.path.join(os.path.dirname(__file__), os.pardir, 'setup.py')

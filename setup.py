@@ -95,7 +95,7 @@ def write_version_file(base_dir):
     version, sha = get_version()
 
     with open(ver_path, 'wb') as f:
-        json.dump({'version': version}, f)
+        json.dump({'version': version, 'sha': sha}, f)
 
 class PepperSdist(sdist.sdist):
     '''

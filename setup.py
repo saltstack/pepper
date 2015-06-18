@@ -67,7 +67,7 @@ def parse_version_tag(tag):
     Returns a tuple of the version number, number of commits (if any), and the
     Git SHA (if available).
     '''
-    if '-g' not in tag:
+    if not tag or '-g' not in tag:
         return tag, None, None
 
     match = re.search('(?P<version>.*)-(?P<num_commits>[0-9]+)-g(?P<sha>[0-9a-fA-F]+)', tag)

@@ -185,6 +185,9 @@ class PepperCli(object):
         if self.options.saltapiurl:
             results['SALTAPI_URL'] = self.options.saltapiurl
 
+        if results['SALTAPI_EAUTH'] == 'kerberos':
+            results['SALTAPI_PASS'] = None
+
         if self.options.eauth:
             results['SALTAPI_EAUTH'] = self.options.eauth
             if self.options.username is None:

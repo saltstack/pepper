@@ -203,13 +203,25 @@ class Pepper(object):
         '''
         Get job results
 
-        Wraps :meth:`low`.
+        Wraps :meth:`runner`.
+        '''
+
+        return self.runner('jobs.lookup_jid', jid='{0}'.format(jid))
+
+
+    def runner(self, fun, **kwargs):
+        '''
+        Run a single command using the ``runner`` client
+
+        Usage::
+          runner('jobs.lookup_jid', jid=12345)
         '''
         low = {
             'client': 'runner',
-            'fun': 'jobs.lookup_jid',
-            'jid': jid
+            'fun': fun,
         }
+
+        low.update(kwargs)
 
         return self.low([low], path='/')
 

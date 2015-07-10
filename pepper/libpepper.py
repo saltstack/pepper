@@ -76,6 +76,9 @@ class Pepper(object):
         :rtype: dictionary
 
         '''
+        if (hasattr(data, 'get') and data.get('eauth') == 'kerberos') or self.auth.get('eauth') == 'kerberos':
+            return self.req_requests(path, data)
+
         headers = {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
@@ -128,6 +131,45 @@ class Pepper(object):
             raise PepperException('Unable to parse the server response.')
 
         return ret
+
+    def req_requests(self, path, data=None):
+        '''
+        A thin wrapper around request and request_kerberos to send
+        requests and return the response
+
+        If the current instance contains an authentication token it will be
+        attached to the request as a custom header.
+
+        :rtype: dictionary
+
+        '''
+        import requests
+        from requests_kerberos import HTTPKerberosAuth, OPTIONAL
+        auth = HTTPKerberosAuth(mutual_authentication=OPTIONAL)
+        headers = {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+        }
+        if self.auth and 'token' in self.auth and self.auth['token']:
+            headers.setdefault('X-Auth-Token', self.auth['token'])
+        # TODO make an option
+        self._ssl_verify = False
+        params = {'url': self.api_url + path,
+                  'headers': headers,
+                  'verify': self._ssl_verify,
+                  'auth': auth,
+                  'data': json.dumps(data),
+                  }
+        logger.debug('postdata {0}'.format(params))
+        resp = requests.post(**params)
+        if resp.status_code == 401:
+            # TODO should be resp.raise_from_status
+            raise PepperException('Authentication denied')
+        if resp.status_code == 500:
+            # TODO should be resp.raise_from_status
+            raise PepperException('Server error.')
+        return resp.json()
 
     def low(self, lowstate, path='/'):
         '''

@@ -209,6 +209,46 @@ class PepperCli(object):
 
         return results
 
+    def parse_login(self):
+        '''
+        Extract the authentication credentials
+        '''
+        login_details = self.get_login_details()
+
+        # Auth values placeholder; grab interactively at CLI or from config file
+        url = login_details['SALTAPI_URL']
+        user = login_details['SALTAPI_USER']
+        passwd = login_details['SALTAPI_PASS']
+        eauth = login_details['SALTAPI_EAUTH']
+
+        return url, user, passwd, eauth
+
+    def parse_cmd(self):
+        '''
+        Extract the low data for a command from the passed CLI params
+        '''
+        args = list(self.args)
+
+        client = self.options.client
+        low = {'client': client}
+
+        if client.startswith('local'):
+            if len(args) < 2:
+                self.parser.error("Command or target not specified")
+
+            low['expr_form'] = self.options.expr_form
+            low['tgt'] = args.pop(0)
+            low['fun'] = args.pop(0)
+            low['arg'] = args
+        else:
+            if len(args) < 1:
+                self.parser.error("Command not specified")
+
+            low['fun'] = args.pop(0)
+            low['arg'] = args
+
+        return [low]
+
     def run(self):
         '''
         Parse all arguments and call salt-api
@@ -219,24 +259,13 @@ class PepperCli(object):
         logger.addHandler(logging.StreamHandler())
         logger.setLevel(max(logging.ERROR - (self.options.verbose * 10), 1))
 
-        if len(self.args) < 2:
-            self.parser.error("Command not specified")
+        load = self.parse_cmd()
+        creds = iter(self.parse_login())
 
-        args = list(self.args)
-        tgt, fun = args.pop(0), args.pop(0)
+        api = pepper.Pepper(creds.next(), debug_http=self.options.debug_http)
+        auth = api.login(*list(creds))
 
-        login_details = self.get_login_details()
-
-        # Auth values placeholder; grab interactively at CLI or from config file
-        salturl = login_details['SALTAPI_URL']
-        saltuser = login_details['SALTAPI_USER']
-        saltpass = login_details['SALTAPI_PASS']
-        salteauth = login_details['SALTAPI_EAUTH']
-
-        api = pepper.Pepper(salturl, debug_http=self.options.debug_http)
-        auth = api.login(saltuser, saltpass, salteauth)
-
-        ret = api.local(tgt, fun, arg=args, kwarg=None, expr_form=self.options.expr_form)
+        ret = api.low(load)
         exit_code = 0
 
         return (exit_code, json.dumps(ret, sort_keys=True, indent=4))

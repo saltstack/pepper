@@ -72,7 +72,10 @@ class PepperCli(object):
                 "Mimic the ``salt`` CLI")
 
         optgroup.add_option('-t', '--timeout', dest='timeout', type ='int',
-            help="Specify wait time (in seconds) before returning control to the shell")
+            help=textwrap.dedent('''\
+            Specify wait time (in seconds) before returning control to the
+            shell'''))
+
         optgroup.add_option('--client', dest='client', default='local',
             help=textwrap.dedent('''\
             specify the salt-api client to use (local, local_async,

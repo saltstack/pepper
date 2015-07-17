@@ -72,7 +72,14 @@ class PepperCli(object):
                 "Mimic the ``salt`` CLI")
 
         optgroup.add_option('-t', '--timeout', dest='timeout', type ='int',
-            help="Specify wait time (in seconds) before returning control to the shell")
+            help=textwrap.dedent('''\
+            Specify wait time (in seconds) before returning control to the
+            shell'''))
+
+        optgroup.add_option('--client', dest='client', default='local',
+            help=textwrap.dedent('''\
+            specify the salt-api client to use (local, local_async,
+            runner, etc)'''))
 
         # optgroup.add_option('--out', '--output', dest='output',
         #        help="Specify the output format for the command output")
@@ -82,7 +89,10 @@ class PepperCli(object):
 
         optgroup.add_option('--fail-if-incomplete', action='store_true',
             dest='fail_if_minions_dont_respond',
-            help="Optional, return a failure exit code if not all minions respond")
+            help=textwrap.dedent('''\
+            Return a failure exit code if not all minions respond. This option
+            requires the authenticated user have access to run the
+            `jobs.list_jobs` runner function.'''))
 
         return optgroup
 
@@ -209,6 +219,79 @@ class PepperCli(object):
 
         return results
 
+    def parse_login(self):
+        '''
+        Extract the authentication credentials
+        '''
+        login_details = self.get_login_details()
+
+        # Auth values placeholder; grab interactively at CLI or from config file
+        url = login_details['SALTAPI_URL']
+        user = login_details['SALTAPI_USER']
+        passwd = login_details['SALTAPI_PASS']
+        eauth = login_details['SALTAPI_EAUTH']
+
+        return url, user, passwd, eauth
+
+    def parse_cmd(self):
+        '''
+        Extract the low data for a command from the passed CLI params
+        '''
+        args = list(self.args)
+
+        client = self.options.client
+        low = {'client': client}
+
+        if client.startswith('local'):
+            if len(args) < 2:
+                self.parser.error("Command or target not specified")
+
+            low['expr_form'] = self.options.expr_form
+            low['tgt'] = args.pop(0)
+            low['fun'] = args.pop(0)
+            low['arg'] = args
+        else:
+            if len(args) < 1:
+                self.parser.error("Command not specified")
+
+            low['fun'] = args.pop(0)
+            low['arg'] = args
+
+        return [low]
+
+    def poll_for_returns(self, api, load):
+        '''
+        Run a command with the local_async client and periodically poll the job
+        cache for returns for the job.
+        '''
+        load[0]['client'] = 'local_async'
+        async_ret = api.low(load)
+        jid = async_ret['return'][0]['jid']
+        nodes = async_ret['return'][0]['minions']
+
+        # keep trying until all expected nodes return
+        total_time = self.seconds_to_wait
+        ret = {}
+        exit_code = 0
+        while True:
+            if total_time > self.options.timeout:
+                break
+
+            jid_ret = api.lookup_jid(jid)
+            ret_nodes = jid_ret['return'][0].keys()
+
+            if set(ret_nodes) == set(nodes):
+                ret = jid_ret
+                exit_code = 0
+                break
+            else:
+                exit_code = 1
+                time.sleep(self.seconds_to_wait)
+                continue
+
+        exit_code = exit_code if self.options.fail_if_minions_dont_respond else 0
+        return exit_code, ret
+
     def run(self):
         '''
         Parse all arguments and call salt-api
@@ -219,51 +302,16 @@ class PepperCli(object):
         logger.addHandler(logging.StreamHandler())
         logger.setLevel(max(logging.ERROR - (self.options.verbose * 10), 1))
 
-        if len(self.args) < 2:
-            self.parser.error("Command not specified")
+        load = self.parse_cmd()
+        creds = iter(self.parse_login())
 
-        tgt, fun = self.args[0:2]
+        api = pepper.Pepper(creds.next(), debug_http=self.options.debug_http)
+        auth = api.login(*list(creds))
 
-        login_details = self.get_login_details()
-
-        # Auth values placeholder; grab interactively at CLI or from config file
-        salturl = login_details['SALTAPI_URL']
-        saltuser = login_details['SALTAPI_USER']
-        saltpass = login_details['SALTAPI_PASS']
-        salteauth = login_details['SALTAPI_EAUTH']
-
-        api = pepper.Pepper(salturl, debug_http=self.options.debug_http)
-        auth = api.login(saltuser, saltpass, salteauth)
-        nodesJidRet = api.local_async(tgt=tgt, fun='test.ping', expr_form=self.options.expr_form)
-        nodesJid = nodesJidRet['return'][0]['jid']
-        time.sleep(self.seconds_to_wait)
-        nodesRet = api.lookup_jid(nodesJid)
-
-        if fun == 'test.ping':
-            return (0,json.dumps(nodesRet['return'][0], sort_keys=True, indent=4))
-
-        nodes = nodesRet['return'][0].keys()
-        if nodes == []:
-            return (0,json.dumps({}))
-
-        commandJidRet = api.local_async(tgt=nodes, fun=fun, arg=self.args[2:], expr_form='list')
-        commandJid = commandJidRet['return'][0]['jid']
-        # keep trying until all expected nodes return
-        commandRet = api.lookup_jid(commandJid)
-        returnedNodes = commandRet['return'][0].keys()
-        total_time = self.seconds_to_wait
-
-        while set(returnedNodes) != set(nodes):
-            if total_time > self.options.timeout :
-                break
-
-            time.sleep(self.seconds_to_wait)
-            commandRet = api.lookup_jid(commandJid)
-            returnedNodes = commandRet['return'][0].keys()
-
-        if set(returnedNodes) != set(nodes) and self.options.fail_if_minions_dont_respond is True:
-            exit_code = 1
+        if self.options.fail_if_minions_dont_respond:
+            exit_code, ret = self.poll_for_returns(api, load)
         else:
+            ret = api.low(load)
             exit_code = 0
 
-        return (exit_code,json.dumps(commandRet['return'][0], sort_keys=True, indent=4))
+        return (exit_code, json.dumps(ret, sort_keys=True, indent=4))

@@ -89,7 +89,10 @@ class PepperCli(object):
 
         optgroup.add_option('--fail-if-incomplete', action='store_true',
             dest='fail_if_minions_dont_respond',
-            help="Optional, return a failure exit code if not all minions respond")
+            help=textwrap.dedent('''\
+            Return a failure exit code if not all minions respond. This option
+            requires the authenticated user have access to run the
+            `jobs.list_jobs` runner function.'''))
 
         return optgroup
 
@@ -256,6 +259,39 @@ class PepperCli(object):
 
         return [low]
 
+    def poll_for_returns(self, api, load):
+        '''
+        Run a command with the local_async client and periodically poll the job
+        cache for returns for the job.
+        '''
+        load[0]['client'] = 'local_async'
+        async_ret = api.low(load)
+        jid = async_ret['return'][0]['jid']
+        nodes = async_ret['return'][0]['minions']
+
+        # keep trying until all expected nodes return
+        total_time = self.seconds_to_wait
+        ret = {}
+        exit_code = 0
+        while True:
+            if total_time > self.options.timeout:
+                break
+
+            jid_ret = api.lookup_jid(jid)
+            ret_nodes = jid_ret['return'][0].keys()
+
+            if set(ret_nodes) == set(nodes):
+                ret = jid_ret
+                exit_code = 0
+                break
+            else:
+                exit_code = 1
+                time.sleep(self.seconds_to_wait)
+                continue
+
+        exit_code = exit_code if self.options.fail_if_minions_dont_respond else 0
+        return exit_code, ret
+
     def run(self):
         '''
         Parse all arguments and call salt-api
@@ -272,7 +308,10 @@ class PepperCli(object):
         api = pepper.Pepper(creds.next(), debug_http=self.options.debug_http)
         auth = api.login(*list(creds))
 
-        ret = api.low(load)
-        exit_code = 0
+        if self.options.fail_if_minions_dont_respond:
+            exit_code, ret = self.poll_for_returns(api, load)
+        else:
+            ret = api.low(load)
+            exit_code = 0
 
         return (exit_code, json.dumps(ret, sort_keys=True, indent=4))

@@ -222,7 +222,8 @@ class PepperCli(object):
         if len(self.args) < 2:
             self.parser.error("Command not specified")
 
-        tgt, fun = self.args[0:2]
+        args = list(self.args)
+        tgt, fun = args.pop(0), args.pop(0)
 
         login_details = self.get_login_details()
 
@@ -234,36 +235,8 @@ class PepperCli(object):
 
         api = pepper.Pepper(salturl, debug_http=self.options.debug_http)
         auth = api.login(saltuser, saltpass, salteauth)
-        nodesJidRet = api.local_async(tgt=tgt, fun='test.ping', expr_form=self.options.expr_form)
-        nodesJid = nodesJidRet['return'][0]['jid']
-        time.sleep(self.seconds_to_wait)
-        nodesRet = api.lookup_jid(nodesJid)
 
-        if fun == 'test.ping':
-            return (0,json.dumps(nodesRet['return'][0], sort_keys=True, indent=4))
+        ret = api.local(tgt, fun, arg=args, kwarg=None, expr_form=self.options.expr_form)
+        exit_code = 0
 
-        nodes = nodesRet['return'][0].keys()
-        if nodes == []:
-            return (0,json.dumps({}))
-
-        commandJidRet = api.local_async(tgt=nodes, fun=fun, arg=self.args[2:], expr_form='list')
-        commandJid = commandJidRet['return'][0]['jid']
-        # keep trying until all expected nodes return
-        commandRet = api.lookup_jid(commandJid)
-        returnedNodes = commandRet['return'][0].keys()
-        total_time = self.seconds_to_wait
-
-        while set(returnedNodes) != set(nodes):
-            if total_time > self.options.timeout :
-                break
-
-            time.sleep(self.seconds_to_wait)
-            commandRet = api.lookup_jid(commandJid)
-            returnedNodes = commandRet['return'][0].keys()
-
-        if set(returnedNodes) != set(nodes) and self.options.fail_if_minions_dont_respond is True:
-            exit_code = 1
-        else:
-            exit_code = 0
-
-        return (exit_code,json.dumps(commandRet['return'][0], sort_keys=True, indent=4))
+        return (exit_code, json.dumps(ret, sort_keys=True, indent=4))

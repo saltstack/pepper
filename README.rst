@@ -17,6 +17,12 @@ additional CLI scripts maintain the same interface as Salt's own CLI scripts
 
 .. __: https://github.com/saltstack/salt-api
 
+Installation
+------------
+.. code-block:: bash
+
+    pip install salt-pepper
+
 Usage
 -----
 
@@ -42,15 +48,9 @@ or in a configuration file ``$HOME/.pepperrc`` with the following syntax :
   SALTAPI_PASS=saltdev
   SALTAPI_EAUTH=pam
 
-Current status
---------------
-
-The project is currently pre-alpha.
-
-Follow progress by `watching the project milestones`__. We'll tag and upload a
-release to PyPI once the project is ready for a first release.
+Contributing
+------------
 
 Please feel free to get involved by sending pull requests or join us on the
 Salt mailing list or on IRC in #salt or #salt-devel.
 
-.. __: https://github.com/saltstack/pepper/issues/milestones

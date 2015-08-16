@@ -119,6 +119,10 @@ class PepperCli(object):
                 action='store_const', const='grain_pcre',
             help="Target based on PCRE matches on system properties")
 
+        optgroup.add_option('-R', '--range', dest='expr_form',
+                action='store_const', const='range',
+            help="Target based on range expression")
+
         return optgroup
 
     def add_authopts(self):

@@ -254,6 +254,11 @@ class PepperCli(object):
             low['tgt'] = args.pop(0)
             low['fun'] = args.pop(0)
             low['arg'] = args
+        elif client.startswith('runner'):
+            low['fun'] = args.pop(0)
+            for arg in args:
+                key, value = arg.split('=')
+                low[key] = value
         else:
             if len(args) < 1:
                 self.parser.error("Command not specified")

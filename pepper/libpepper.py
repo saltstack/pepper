@@ -61,7 +61,15 @@ class Pepper(object):
             include the port number
 
         :param debug_http: Add a flag to urllib2 to output the HTTP exchange
+
+        :raises PepperException: if the api_url is misformed
+
         '''
+        split = urlparse.urlsplit(api_url)
+        if not split.scheme in ['http', 'https']:
+            raise PepperException("salt-api URL missing HTTP(s) protocol: {0}"
+                                  .format(self.api_url))
+
         self.api_url = api_url
         self.debug_http = int(debug_http)
         self.auth = {}
@@ -95,12 +103,8 @@ class Pepper(object):
             clen = len(postdata)
 
         # Create request object
-        url = urlparse.urljoin(self.api_url, path)
+        url = self._construct_url(path)
         req = Request(url, postdata, headers)
-
-        if not url.startswith('http'):
-            raise PepperException("salt-api URL missing HTTP(s) protocol: {0}"
-                                  .format(self.api_url))
 
         # Add POST data to request
         if data is not None:
@@ -155,7 +159,7 @@ class Pepper(object):
             headers.setdefault('X-Auth-Token', self.auth['token'])
         # TODO make an option
         self._ssl_verify = False
-        params = {'url': self.api_url + path,
+        params = {'url': self._construct_url(path),
                   'headers': headers,
                   'verify': self._ssl_verify,
                   'auth': auth,
@@ -279,3 +283,18 @@ class Pepper(object):
             'eauth': eauth}).get('return', [{}])[0]
 
         return self.auth
+
+    def _construct_url(self, path):
+        '''
+        Construct the url to salt-api for the given path
+
+        Args:
+            path: the path to the salt-api resource
+
+        >>> api = Pepper('https://localhost:8000/salt-api/')
+        >>> api._construct_url('/login')
+        'https://localhost:8000/salt-api/login'
+        '''
+
+        relative_path = path.lstrip('/')
+        return urlparse.urljoin(self.api_url, relative_path)

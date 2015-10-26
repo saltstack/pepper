@@ -123,6 +123,9 @@ class PepperCli(object):
                 action='store_const', const='range',
             help="Target based on range expression")
 
+        optgroup.add_option('-e', '--environment', dest='saltenv',
+                            help='Salt environment to use')
+
         return optgroup
 
     def add_authopts(self):
@@ -245,6 +248,9 @@ class PepperCli(object):
 
         client = self.options.client
         low = {'client': client}
+
+        if self.options.saltenv is not None:
+            low['kwarg'] = {'saltenv': self.options.saltenv}
 
         if client.startswith('local'):
             if len(args) < 2:

@@ -123,6 +123,9 @@ class PepperCli(object):
                 action='store_const', const='range',
             help="Target based on range expression")
 
+        optgroup.add_option('-e', '--environment', dest='saltenv',
+                            help='Salt environment to use')
+
         return optgroup
 
     def add_authopts(self):
@@ -246,9 +249,13 @@ class PepperCli(object):
         client = self.options.client
         low = {'client': client}
 
+
         if client.startswith('local'):
             if len(args) < 2:
                 self.parser.error("Command or target not specified")
+
+            if self.options.saltenv is not None:
+                low['kwarg'] = {'saltenv': self.options.saltenv}
 
             low['expr_form'] = self.options.expr_form
             low['tgt'] = args.pop(0)
@@ -256,9 +263,13 @@ class PepperCli(object):
             low['arg'] = args
         elif client.startswith('runner'):
             low['fun'] = args.pop(0)
+
+            if self.options.saltenv is not None:
+                low['saltenv'] = self.options.saltenv
             for arg in args:
                 key, value = arg.split('=')
                 low[key] = value
+
         else:
             if len(args) < 1:
                 self.parser.error("Command not specified")

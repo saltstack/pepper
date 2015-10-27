@@ -123,6 +123,10 @@ class PepperCli(object):
                 action='store_const', const='range',
             help="Target based on range expression")
 
+        optgroup.add_option('-C', '--compound', dest='expr_form',
+                action='store_const', const='compound',
+            help="Target based on compound expression")
+
         return optgroup
 
     def add_authopts(self):

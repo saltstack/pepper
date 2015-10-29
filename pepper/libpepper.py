@@ -9,6 +9,11 @@ import json
 import logging
 import os
 try:
+    import ssl
+    ssl._create_default_https_context = ssl._create_unverified_context
+except:
+    pass
+try:
     from urllib.request import HTTPHandler, Request, urlopen, \
         install_opener, build_opener
     from urllib.error import HTTPError, URLError

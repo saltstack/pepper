@@ -4,19 +4,10 @@ A Python library for working with Salt's REST API
 (Specifically the rest_cherrypy netapi module.)
 
 '''
-import functools
 import json
 import logging
-import os
-try:
-    from urllib.request import HTTPHandler, Request, urlopen, \
-        install_opener, build_opener
-    from urllib.error import HTTPError, URLError
-    import urllib.parse as urlparse
-except ImportError:
-    from urllib2 import HTTPHandler, Request, urlopen, install_opener, build_opener, \
-        HTTPError, URLError
-    import urlparse
+import requests
+import urlparse
 
 logger = logging.getLogger('pepper')
 
@@ -66,7 +57,7 @@ class Pepper(object):
 
         '''
         split = urlparse.urlsplit(api_url)
-        if not split.scheme in ['http', 'https']:
+        if split.scheme not in ['http', 'https']:
             raise PepperException("salt-api URL missing HTTP(s) protocol: {0}"
                                   .format(self.api_url))
 
@@ -84,87 +75,30 @@ class Pepper(object):
         :rtype: dictionary
 
         '''
-        if (hasattr(data, 'get') and data.get('eauth') == 'kerberos') or self.auth.get('eauth') == 'kerberos':
-            return self.req_requests(path, data)
+        auth = None
+        if (hasattr(data, 'get') and data.get('eauth') == 'kerberos') \
+                or self.auth.get('eauth') == 'kerberos':
+            from requests_kerberos import HTTPKerberosAuth, OPTIONAL
+            auth = HTTPKerberosAuth(mutual_authentication=OPTIONAL)
 
         headers = {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
             'X-Requested-With': 'XMLHttpRequest',
         }
-
-        handler = HTTPHandler(debuglevel=self.debug_http)
-        opener = build_opener(handler)
-        install_opener(opener)
-
-        # Build POST data
-        if data is not None:
-            postdata = json.dumps(data).encode()
-            clen = len(postdata)
-
-        # Create request object
-        url = self._construct_url(path)
-        req = Request(url, postdata, headers)
-
-        # Add POST data to request
-        if data is not None:
-            req.add_header('Content-Length', clen)
-
         # Add auth header to request
         if self.auth and 'token' in self.auth and self.auth['token']:
-            req.add_header('X-Auth-Token', self.auth['token'])
+            headers['X-Auth-Token'] = self.auth['token']
 
-        # Send request
-        try:
-            f = urlopen(req)
-            ret = json.loads(f.read().decode('utf-8'))
-        except (HTTPError, URLError) as exc:
-            logger.debug('Error with request', exc_info=True)
-            status = getattr(exc, 'code', None)
-
-            if status == 401:
-                raise PepperException('Authentication denied')
-
-            if status == 500:
-                raise PepperException('Server error.')
-
-            logger.error('Error with request: {0}'.format(exc))
-            raise
-        except AttributeError:
-            logger.debug('Error converting response from JSON', exc_info=True)
-            raise PepperException('Unable to parse the server response.')
-
-        return ret
-
-    def req_requests(self, path, data=None):
-        '''
-        A thin wrapper around request and request_kerberos to send
-        requests and return the response
-
-        If the current instance contains an authentication token it will be
-        attached to the request as a custom header.
-
-        :rtype: dictionary
-
-        '''
-        import requests
-        from requests_kerberos import HTTPKerberosAuth, OPTIONAL
-        auth = HTTPKerberosAuth(mutual_authentication=OPTIONAL)
-        headers = {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest',
-        }
-        if self.auth and 'token' in self.auth and self.auth['token']:
-            headers.setdefault('X-Auth-Token', self.auth['token'])
-        # TODO make an option
         self._ssl_verify = False
+        requests.packages.urllib3.disable_warnings()
         params = {'url': self._construct_url(path),
                   'headers': headers,
                   'verify': self._ssl_verify,
                   'auth': auth,
                   'data': json.dumps(data),
                   }
+
         logger.debug('postdata {0}'.format(params))
         resp = requests.post(**params)
         if resp.status_code == 401:
@@ -253,7 +187,6 @@ class Pepper(object):
         '''
 
         return self.runner('jobs.lookup_jid', jid='{0}'.format(jid))
-
 
     def runner(self, fun, **kwargs):
         '''

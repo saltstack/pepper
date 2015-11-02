@@ -62,6 +62,10 @@ class PepperCli(object):
             action='store_true', help=textwrap.dedent('''\
             Output the HTTP request/response headers on stderr'''))
 
+        self.parser.add_option('-I', '--no-check-certificate', dest='ssl_verify', default=True,
+            action='store_false', help=textwrap.dedent('''\
+            Ignore SSL certificate verification'''))
+
         self.options, self.args = self.parser.parse_args()
 
     def add_globalopts(self):
@@ -318,7 +322,8 @@ class PepperCli(object):
         load = self.parse_cmd()
         creds = iter(self.parse_login())
 
-        api = pepper.Pepper(creds.next(), debug_http=self.options.debug_http)
+        api = pepper.Pepper(creds.next(), debug_http=self.options.debug_http,
+                            ssl_verify=self.options.ssl_verify)
         auth = api.login(*list(creds))
 
         if self.options.fail_if_minions_dont_respond:

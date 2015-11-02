@@ -44,7 +44,8 @@ class Pepper(object):
               u'ms-4': True}]}
 
     '''
-    def __init__(self, api_url='https://localhost:8000', debug_http=False):
+    def __init__(self, api_url='https://localhost:8000', debug_http=False,
+                 ssl_verify=True):
         '''
         Initialize the class with the URL of the API
 
@@ -64,6 +65,7 @@ class Pepper(object):
         self.api_url = api_url
         self.debug_http = int(debug_http)
         self.auth = {}
+        self._ssl_verify = ssl_verify
 
     def req(self, path, data=None):
         '''
@@ -89,15 +91,15 @@ class Pepper(object):
         # Add auth header to request
         if self.auth and 'token' in self.auth and self.auth['token']:
             headers['X-Auth-Token'] = self.auth['token']
-
-        self._ssl_verify = False
-        requests.packages.urllib3.disable_warnings()
         params = {'url': self._construct_url(path),
                   'headers': headers,
                   'verify': self._ssl_verify,
                   'auth': auth,
                   'data': json.dumps(data),
                   }
+
+        if not self._ssl_verify:
+            requests.packages.urllib3.disable_warnings()
 
         logger.debug('postdata {0}'.format(params))
         resp = requests.post(**params)

@@ -32,6 +32,7 @@ setup_kwargs = {
         'Topic :: System :: Clustering',
         'Topic :: System :: Distributed Computing',
     ],
+    'install_requires': ['requests'],
     'packages': [
         'pepper',
     ],

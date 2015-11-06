@@ -58,6 +58,9 @@ def read_version_tag():
         else:
             return out.strip() or None
 
+    else:
+        return read_version_from_json_file()
+
     return None
 
 def read_version_from_json_file():
@@ -72,7 +75,7 @@ def parse_version_tag(tag):
     Git SHA (if available).
     '''
     if not tag or '-g' not in tag:
-        return read_version_from_json_file(), None, None
+        return tag, None, None
 
     match = re.search('(?P<version>.*)-(?P<num_commits>[0-9]+)-g(?P<sha>[0-9a-fA-F]+)', tag)
 

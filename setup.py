@@ -60,6 +60,10 @@ def read_version_tag():
 
     return None
 
+def read_version_from_json_file():
+    with open(os.path.join(os.path.dirname(__file__), "pepper", "version.json")) as f:
+        return json.load(f)['version']
+
 def parse_version_tag(tag):
     '''
     Parse the output from Git describe
@@ -68,7 +72,7 @@ def parse_version_tag(tag):
     Git SHA (if available).
     '''
     if not tag or '-g' not in tag:
-        return tag, None, None
+        return read_version_from_json_file(), None, None
 
     match = re.search('(?P<version>.*)-(?P<num_commits>[0-9]+)-g(?P<sha>[0-9a-fA-F]+)', tag)
 

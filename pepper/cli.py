@@ -11,6 +11,7 @@ import textwrap
 import ConfigParser
 import getpass
 import time
+
 import pepper
 
 try:
@@ -29,11 +30,11 @@ class PepperCli(object):
         self.seconds_to_wait = seconds_to_wait
         self.parser = self.get_parser()
         self.parser.option_groups.extend([self.add_globalopts(),
-                                          self.add_tgtopts(),
-                                          self.add_authopts()])
+            self.add_tgtopts(),
+            self.add_authopts()])
         self.parser.defaults.update({'timeout': default_timeout_in_seconds,
-                                     'fail_if_minions_dont_respond': False,
-                                     'expr_form': 'glob'})
+            'fail_if_minions_dont_respond': False,
+            'expr_form': 'glob'})
 
     def get_parser(self):
         return optparse.OptionParser(
@@ -46,18 +47,18 @@ class PepperCli(object):
         Parse all args
         '''
         self.parser.add_option('-c', dest='config',
-                               default=os.environ.get('PEPPERRC',
-                                                      os.path.join(os.path.expanduser('~'), '.pepperrc')),
-                               help=textwrap.dedent('''\
+            default=os.environ.get('PEPPERRC',
+                os.path.join(os.path.expanduser('~'), '.pepperrc')),
+            help=textwrap.dedent('''\
                 Configuration file location. Default is a file path in the
                 "PEPPERRC" environment variable or ~/.pepperrc.'''))
 
         self.parser.add_option('-v', dest='verbose', default=0, action='count',
-                               help=textwrap.dedent('''\
+            help=textwrap.dedent('''\
                 Increment output verbosity; may be specified multiple times'''))
 
         self.parser.add_option('-H', '--debug-http', dest='debug_http', default=False,
-                               action='store_true', help=textwrap.dedent('''\
+            action='store_true', help=textwrap.dedent('''\
             Output the HTTP request/response headers on stderr'''))
 
         self.parser.add_option('--ignore-ssl-errors', action='store_true',
@@ -74,15 +75,15 @@ class PepperCli(object):
         Misc global options
         '''
         optgroup = optparse.OptionGroup(self.parser, "Pepper ``salt`` Options",
-                                        "Mimic the ``salt`` CLI")
+                "Mimic the ``salt`` CLI")
 
         optgroup.add_option('-t', '--timeout', dest='timeout', type='int',
-                            help=textwrap.dedent('''\
+            help=textwrap.dedent('''\
             Specify wait time (in seconds) before returning control to the
             shell'''))
 
         optgroup.add_option('--client', dest='client', default='local',
-                            help=textwrap.dedent('''\
+            help=textwrap.dedent('''\
             specify the salt-api client to use (local, local_async,
             runner, etc)'''))
 
@@ -93,8 +94,8 @@ class PepperCli(object):
         #    help="Redirect the output from a command to a persistent data store")
 
         optgroup.add_option('--fail-if-incomplete', action='store_true',
-                            dest='fail_if_minions_dont_respond',
-                            help=textwrap.dedent('''\
+            dest='fail_if_minions_dont_respond',
+            help=textwrap.dedent('''\
             Return a failure exit code if not all minions respond. This option
             requires the authenticated user have access to run the
             `jobs.list_jobs` runner function.'''))
@@ -106,31 +107,31 @@ class PepperCli(object):
         Targeting
         '''
         optgroup = optparse.OptionGroup(self.parser, "Targeting Options",
-                                        "Target which minions to run commands on")
+                "Target which minions to run commands on")
 
         optgroup.add_option('-E', '--pcre', dest='expr_form',
-                            action='store_const', const='pcre',
-                            help="Target hostnames using PCRE regular expressions")
+                action='store_const', const='pcre',
+            help="Target hostnames using PCRE regular expressions")
 
         optgroup.add_option('-L', '--list', dest='expr_form',
-                            action='store_const', const='list',
-                            help="Specify a comma delimited list of hostnames")
+                action='store_const', const='list',
+            help="Specify a comma delimited list of hostnames")
 
         optgroup.add_option('-G', '--grain', dest='expr_form',
-                            action='store_const', const='grain',
-                            help="Target based on system properties")
+                action='store_const', const='grain',
+            help="Target based on system properties")
 
         optgroup.add_option('--grain-pcre', dest='expr_form',
-                            action='store_const', const='grain_pcre',
-                            help="Target based on PCRE matches on system properties")
+                action='store_const', const='grain_pcre',
+            help="Target based on PCRE matches on system properties")
 
         optgroup.add_option('-R', '--range', dest='expr_form',
-                            action='store_const', const='range',
-                            help="Target based on range expression")
+                action='store_const', const='range',
+            help="Target based on range expression")
 
         optgroup.add_option('-C', '--compound', dest='expr_form',
-                            action='store_const', const='compound',
-                            help="Target based on compound expression")
+                action='store_const', const='compound',
+            help="Target based on compound expression")
 
         return optgroup
 
@@ -139,30 +140,30 @@ class PepperCli(object):
         Authentication options
         '''
         optgroup = optparse.OptionGroup(self.parser, "Authentication Options",
-                                        textwrap.dedent("""\
+                textwrap.dedent("""\
                 Authentication credentials can optionally be supplied via the
                 environment variables:
                 SALTAPI_URL, SALTAPI_USER, SALTAPI_PASS, SALTAPI_EAUTH.
                 """))
 
         optgroup.add_option('-u', '--saltapi-url', dest='saltapiurl',
-                            help="Specify the host url.  Defaults to https://localhost:8080")
+                help="Specify the host url.  Defaults to https://localhost:8080")
 
         optgroup.add_option('-a', '--auth', '--eauth', '--extended-auth',
-                            dest='eauth', help=textwrap.dedent("""\
+            dest='eauth', help=textwrap.dedent("""\
                     Specify the external_auth backend to authenticate against and
                     interactively prompt for credentials"""))
 
         optgroup.add_option('--username',
-                            dest='username', help=textwrap.dedent("""\
+            dest='username', help=textwrap.dedent("""\
                     Optional, defaults to user name. will be prompt if empty unless --non-interactive"""))
 
         optgroup.add_option('--password',
-                            dest='password', help=textwrap.dedent("""\
+            dest='password', help=textwrap.dedent("""\
                     Optional, but will be prompted unless --non-interactive"""))
 
         optgroup.add_option('--non-interactive',
-                            action='store_false', dest='interactive', help=textwrap.dedent("""\
+            action='store_false', dest='interactive', help=textwrap.dedent("""\
                     Optional, fail rather than waiting for input"""), default=True)
 
         # optgroup.add_option('-T', '--make-token', default=False,

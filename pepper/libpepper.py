@@ -75,7 +75,7 @@ class Pepper(object):
 
         self.api_url = api_url
         self.debug_http = int(debug_http)
-        self.ignore_ssl_errors = ignore_ssl_errors
+        self._ssl_verify = not ignore_ssl_errors
         self.auth = {}
 
     def req(self, path, data=None):
@@ -120,7 +120,7 @@ class Pepper(object):
 
         # Send request
         try:
-            if (self.ignore_ssl_errors):
+            if not (self._ssl_verify):
                 con = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
                 #con.check_hostname = False
                 #con.verify_mode = ssl.CERT_NONE

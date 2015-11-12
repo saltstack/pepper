@@ -3,7 +3,6 @@ A CLI interface to a remote salt-api instance
 
 '''
 from __future__ import print_function
-
 import json
 import logging
 import optparse
@@ -27,15 +26,15 @@ logger.addHandler(NullHandler())
 
 
 class PepperCli(object):
-    def __init__(self, default_timeout_in_seconds=60*60, seconds_to_wait=3):
+    def __init__(self, default_timeout_in_seconds=60 * 60, seconds_to_wait=3):
         self.seconds_to_wait = seconds_to_wait
         self.parser = self.get_parser()
         self.parser.option_groups.extend([self.add_globalopts(),
-                                          self.add_tgtopts(),
-                                          self.add_authopts()])
+            self.add_tgtopts(),
+            self.add_authopts()])
         self.parser.defaults.update({'timeout': default_timeout_in_seconds,
-                                     'fail_if_minions_dont_respond': False,
-                                     'expr_form': 'glob'})
+            'fail_if_minions_dont_respond': False,
+            'expr_form': 'glob'})
 
     def get_parser(self):
         return optparse.OptionParser(
@@ -62,6 +61,13 @@ class PepperCli(object):
             action='store_true', help=textwrap.dedent('''\
             Output the HTTP request/response headers on stderr'''))
 
+        self.parser.add_option('--ignore-ssl-errors', action='store_true',
+                            dest='ignore_ssl_certificate_errors',
+                            default=False,
+                            help=textwrap.dedent('''\
+            Ignore any SSL certificate that may be encountered. Note that it is
+            recommended to resolve certificate errors for production.'''))
+
         self.options, self.args = self.parser.parse_args()
 
     def add_globalopts(self):
@@ -71,7 +77,7 @@ class PepperCli(object):
         optgroup = optparse.OptionGroup(self.parser, "Pepper ``salt`` Options",
                 "Mimic the ``salt`` CLI")
 
-        optgroup.add_option('-t', '--timeout', dest='timeout', type ='int',
+        optgroup.add_option('-t', '--timeout', dest='timeout', type='int',
             help=textwrap.dedent('''\
             Specify wait time (in seconds) before returning control to the
             shell'''))
@@ -318,7 +324,7 @@ class PepperCli(object):
         load = self.parse_cmd()
         creds = iter(self.parse_login())
 
-        api = pepper.Pepper(creds.next(), debug_http=self.options.debug_http)
+        api = pepper.Pepper(creds.next(), debug_http=self.options.debug_http, ignore_ssl_errors=self.options.ignore_ssl_certificate_errors)
         auth = api.login(*list(creds))
 
         if self.options.fail_if_minions_dont_respond:

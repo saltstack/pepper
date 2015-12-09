@@ -74,6 +74,7 @@ def parse_version_tag(tag):
     Returns a tuple of the version number, number of commits (if any), and the
     Git SHA (if available).
     '''
+    tag = tag.decode()
     if not tag or '-g' not in tag:
         return tag, None, None
 

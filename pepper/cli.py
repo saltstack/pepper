@@ -8,7 +8,7 @@ import logging
 import optparse
 import os
 import textwrap
-import ConfigParser
+from configparser import ConfigParser
 import getpass
 import time
 

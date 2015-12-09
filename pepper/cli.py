@@ -8,9 +8,14 @@ import logging
 import optparse
 import os
 import textwrap
-from configparser import ConfigParser
 import getpass
 import time
+try:
+    # Python 3
+    from configparser import ConfigParser
+except ImportError:
+    # Python 2
+    import ConfigParser
 
 import pepper
 
@@ -191,7 +196,10 @@ class PepperCli(object):
             'SALTAPI_EAUTH': 'auto',
         }
 
-        config = ConfigParser(interpolation=None)
+        try:
+            config = ConfigParser(interpolation=None)
+        except TypeError as e:
+            config = ConfigParser.RawConfigParser()
         config.read(self.options.config)
 
         # read file

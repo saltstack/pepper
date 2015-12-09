@@ -191,7 +191,7 @@ class PepperCli(object):
             'SALTAPI_EAUTH': 'auto',
         }
 
-        config = ConfigParser.RawConfigParser()
+        config = ConfigParser(interpolation=None)
         config.read(self.options.config)
 
         # read file

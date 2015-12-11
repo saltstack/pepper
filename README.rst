@@ -15,6 +15,10 @@ daemons as though they were running Salt locally. The long-term goal is to add
 additional CLI scripts maintain the same interface as Salt's own CLI scripts
 (``salt``, ``salt-run``, ``salt-key``, etc).
 
+It does not require any additional dependencies and runs on Python 2.5+ and
+Python 3. (Python 3 support is new, please file an issue if you encounter
+trouble.)
+
 .. __: https://github.com/saltstack/salt-api
 
 Installation

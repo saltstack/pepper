@@ -8,9 +8,14 @@ import logging
 import optparse
 import os
 import textwrap
-import ConfigParser
 import getpass
 import time
+try:
+    # Python 3
+    from configparser import ConfigParser
+except ImportError:
+    # Python 2
+    import ConfigParser
 
 import pepper
 
@@ -191,7 +196,10 @@ class PepperCli(object):
             'SALTAPI_EAUTH': 'auto',
         }
 
-        config = ConfigParser.RawConfigParser()
+        try:
+            config = ConfigParser(interpolation=None)
+        except TypeError as e:
+            config = ConfigParser.RawConfigParser()
         config.read(self.options.config)
 
         # read file
@@ -324,7 +332,7 @@ class PepperCli(object):
         load = self.parse_cmd()
         creds = iter(self.parse_login())
 
-        api = pepper.Pepper(creds.next(), debug_http=self.options.debug_http, ignore_ssl_errors=self.options.ignore_ssl_certificate_errors)
+        api = pepper.Pepper(next(creds), debug_http=self.options.debug_http, ignore_ssl_errors=self.options.ignore_ssl_certificate_errors)
         auth = api.login(*list(creds))
 
         if self.options.fail_if_minions_dont_respond:

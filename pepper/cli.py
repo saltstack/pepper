@@ -275,7 +275,7 @@ class PepperCli(object):
         elif client.startswith('runner'):
             low['fun'] = args.pop(0)
             for arg in args:
-                key, value = arg.split('=')
+                key, value = arg.split('=', 1)
                 low[key] = value
         else:
             if len(args) < 1:

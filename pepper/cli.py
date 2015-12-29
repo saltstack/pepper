@@ -344,11 +344,7 @@ class PepperCli(object):
         load = self.parse_cmd()
         creds = iter(self.parse_login())
 
-<<<<<<< HEAD
-        api = pepper.Pepper(next(creds), debug_http=self.options.debug_http)
-=======
         api = pepper.Pepper(next(creds), debug_http=self.options.debug_http, ignore_ssl_errors=self.options.ignore_ssl_certificate_errors)
->>>>>>> 148a7d86dc7d746590d6c61b71da1cb1726c03bf
         auth = api.login(*list(creds))
 
         if self.options.fail_if_minions_dont_respond:

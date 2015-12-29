@@ -58,7 +58,14 @@ def read_version_tag():
         else:
             return out.strip() or None
 
+    else:
+        return read_version_from_json_file()
+
     return None
+
+def read_version_from_json_file():
+    with open(os.path.join(os.path.dirname(__file__), "pepper", "version.json")) as f:
+        return json.load(f)['version']
 
 def parse_version_tag(tag):
     '''
@@ -67,7 +74,8 @@ def parse_version_tag(tag):
     Returns a tuple of the version number, number of commits (if any), and the
     Git SHA (if available).
     '''
-    tag = tag.decode('UTF-8')
+    if isinstance(tag, bytes):
+        tag = tag.decode()
     if not tag or '-g' not in tag:
         return tag, None, None
 

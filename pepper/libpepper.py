@@ -7,6 +7,7 @@ A Python library for working with Salt's REST API
 import functools
 import json
 import logging
+import ssl
 import os
 try:
     import ssl
@@ -58,7 +59,7 @@ class Pepper(object):
               u'ms-4': True}]}
 
     '''
-    def __init__(self, api_url='https://localhost:8000', debug_http=False):
+    def __init__(self, api_url='https://localhost:8000', debug_http=False, ignore_ssl_errors=False):
         '''
         Initialize the class with the URL of the API
 
@@ -66,6 +67,8 @@ class Pepper(object):
             include the port number
 
         :param debug_http: Add a flag to urllib2 to output the HTTP exchange
+
+        :param ignore_ssl_errors: Add a flag to urllib2 to ignore invalid SSL certificates
 
         :raises PepperException: if the api_url is misformed
 
@@ -77,6 +80,7 @@ class Pepper(object):
 
         self.api_url = api_url
         self.debug_http = int(debug_http)
+        self._ssl_verify = not ignore_ssl_errors
         self.auth = {}
 
     def req(self, path, data=None):
@@ -121,7 +125,13 @@ class Pepper(object):
 
         # Send request
         try:
-            f = urlopen(req)
+            if not (self._ssl_verify):
+                con = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+                #con.check_hostname = False
+                #con.verify_mode = ssl.CERT_NONE
+                f = urlopen(req, context=con)
+            else:
+                f = urlopen(req)
             ret = json.loads(f.read().decode('utf-8'))
         except (HTTPError, URLError) as exc:
             logger.debug('Error with request', exc_info=True)
@@ -162,11 +172,11 @@ class Pepper(object):
         }
         if self.auth and 'token' in self.auth and self.auth['token']:
             headers.setdefault('X-Auth-Token', self.auth['token'])
-        # TODO make an option
-        self._ssl_verify = False
+        # Optionally toggle SSL verification
+        self._ssl_verify = self.ignore_ssl_errors
         params = {'url': self._construct_url(path),
                   'headers': headers,
-                  'verify': self._ssl_verify,
+                  'verify': self._ssl_verify == True,
                   'auth': auth,
                   'data': json.dumps(data),
                   }

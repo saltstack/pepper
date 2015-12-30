@@ -196,7 +196,7 @@ class PepperCli(object):
         # setting default values
         results = {
             'SALTAPI_URL': 'https://localhost:8000/',
-            'SALTAPI_USER': 'saltdev',
+            'SALTAPI_USER': None,
             'SALTAPI_PASS': None,
             'SALTAPI_EAUTH': 'auto',
         }
@@ -227,29 +227,22 @@ class PepperCli(object):
 
         if self.options.eauth:
             results['SALTAPI_EAUTH'] = self.options.eauth
-            if self.options.username is None:
-                if self.options.interactive:
-                    results['SALTAPI_USER'] = input('Username: ')
-                else:
-                    logger.error("SALTAPI_USER required")
-                    raise SystemExit(1)
+        if self.options.username is None and results['SALTAPI_USER'] is None:
+            if self.options.interactive:
+                results['SALTAPI_USER'] = input('Username: ')
             else:
-                results['SALTAPI_USER'] = self.options.username
-            if self.options.password is None:
-                if self.options.interactive:
-                    results['SALTAPI_PASS'] = getpass.getpass(prompt='Password: ')
-                else:
-                    logger.error("SALTAPI_PASS required")
-                    raise SystemExit(1)
-            else:
-                results['SALTAPI_PASS'] = self.options.password
-
-        if results['SALTAPI_PASS'] is None:
+                logger.error("SALTAPI_USER required")
+                raise SystemExit(1)
+        else:
+            if self.options.username is not None: results['SALTAPI_USER'] = self.options.username
+        if self.options.password is None and results['SALTAPI_PASS'] is None:
             if self.options.interactive:
                 results['SALTAPI_PASS'] = getpass.getpass(prompt='Password: ')
             else:
                 logger.error("SALTAPI_PASS required")
                 raise SystemExit(1)
+        else:
+            if self.options.password is not None: results['SALTAPI_PASS'] = self.options.password
 
         return results
 

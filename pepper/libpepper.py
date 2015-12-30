@@ -7,7 +7,6 @@ A Python library for working with Salt's REST API
 import functools
 import json
 import logging
-import ssl
 import os
 try:
     import ssl

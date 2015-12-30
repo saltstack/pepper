@@ -13,7 +13,7 @@ try:
     # First try to grab the version from the version.json build file.
     vfile = os.path.join(os.path.dirname(__file__), 'version.json')
 
-    with open(vfile, 'r') as f:
+    with open(vfile, 'rb') as f:
         ret = json.load(f)
         version = ret.get('version')
         sha = ret.get('sha')

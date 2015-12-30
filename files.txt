@@ -1,0 +1,8 @@
+/usr/lib/python3.5/site-packages/pepper/__init__.py
+/usr/lib/python3.5/site-packages/pepper/libpepper.py
+/usr/lib/python3.5/site-packages/pepper/cli.py
+/usr/lib/python3.5/site-packages/pepper/__pycache__/__init__.cpython-35.pyc
+/usr/lib/python3.5/site-packages/pepper/__pycache__/libpepper.cpython-35.pyc
+/usr/lib/python3.5/site-packages/pepper/__pycache__/cli.cpython-35.pyc
+/usr/bin/pepper
+/usr/lib/python3.5/site-packages/salt_pepper-0.4.0.dev21-py3.5.egg-info

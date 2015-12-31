@@ -17,6 +17,11 @@ except ImportError:
     # Python 2
     import ConfigParser
 
+try:
+    input = raw_input
+except NameError:
+    pass
+
 import pepper
 
 try:

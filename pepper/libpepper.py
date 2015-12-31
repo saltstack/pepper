@@ -8,11 +8,12 @@ import functools
 import json
 import logging
 import os
+import ssl
 try:
-    import ssl
-    ssl._create_default_https_context = ssl._create_unverified_context
+    ssl._create_default_https_context = ssl._create_stdlib_context
 except:
     pass
+
 try:
     from urllib.request import HTTPHandler, Request, urlopen, \
         install_opener, build_opener

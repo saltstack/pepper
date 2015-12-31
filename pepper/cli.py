@@ -17,6 +17,11 @@ except ImportError:
     # Python 2
     import ConfigParser
 
+try:
+    input = raw_input
+except NameError:
+    pass
+
 import pepper
 
 try:
@@ -24,6 +29,11 @@ try:
 except ImportError:  # Python < 2.7
     class NullHandler(logging.Handler):
         def emit(self, record): pass
+
+try:
+    import configparser
+except ImportError:
+    import ConfigParser as configparser
 
 logging.basicConfig(format='%(levelname)s %(asctime)s %(module)s: %(message)s')
 logger = logging.getLogger('pepper')
@@ -191,8 +201,8 @@ class PepperCli(object):
         # setting default values
         results = {
             'SALTAPI_URL': 'https://localhost:8000/',
-            'SALTAPI_USER': 'saltdev',
-            'SALTAPI_PASS': 'saltdev',
+            'SALTAPI_USER': None,
+            'SALTAPI_PASS': None,
             'SALTAPI_EAUTH': 'auto',
         }
 
@@ -210,7 +220,7 @@ class PepperCli(object):
                 results[key] = config.get(profile, key)
 
         # get environment values
-        for key, value in results.items():
+        for key, value in list(results.items()):
             results[key] = os.environ.get(key, results[key])
 
         # get eauth prompt options
@@ -222,22 +232,22 @@ class PepperCli(object):
 
         if self.options.eauth:
             results['SALTAPI_EAUTH'] = self.options.eauth
-            if self.options.username is None:
-                if self.options.interactive:
-                    results['SALTAPI_USER'] = raw_input('Username: ')
-                else:
-                    logger.error("SALTAPI_USER required")
-                    raise SystemExit(1)
+        if self.options.username is None and results['SALTAPI_USER'] is None:
+            if self.options.interactive:
+                results['SALTAPI_USER'] = input('Username: ')
             else:
-                results['SALTAPI_USER'] = self.options.username
-            if self.options.password is None:
-                if self.options.interactive:
-                    results['SALTAPI_PASS'] = getpass.getpass(prompt='Password: ')
-                else:
-                    logger.error("SALTAPI_PASS required")
-                    raise SystemExit(1)
+                logger.error("SALTAPI_USER required")
+                raise SystemExit(1)
+        else:
+            if self.options.username is not None: results['SALTAPI_USER'] = self.options.username
+        if self.options.password is None and results['SALTAPI_PASS'] is None:
+            if self.options.interactive:
+                results['SALTAPI_PASS'] = getpass.getpass(prompt='Password: ')
             else:
-                results['SALTAPI_PASS'] = self.options.password
+                logger.error("SALTAPI_PASS required")
+                raise SystemExit(1)
+        else:
+            if self.options.password is not None: results['SALTAPI_PASS'] = self.options.password
 
         return results
 
@@ -305,7 +315,7 @@ class PepperCli(object):
                 break
 
             jid_ret = api.lookup_jid(jid)
-            ret_nodes = jid_ret['return'][0].keys()
+            ret_nodes = list(jid_ret['return'][0].keys())
 
             if set(ret_nodes) == set(nodes):
                 ret = jid_ret

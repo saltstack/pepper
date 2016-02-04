@@ -43,6 +43,9 @@ setup_kwargs = {
     },
     'scripts': [
         'scripts/pepper',
+    ],
+    'install_requires': [
+        'configparser'
     ]
 }
 

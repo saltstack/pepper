@@ -14,7 +14,8 @@ try:
     vfile = os.path.join(os.path.dirname(__file__), 'version.json')
 
     with open(vfile, 'rb') as f:
-        ret = json.load(f)
+        data = f.read().decode("utf-8")
+        ret = json.loads(data)
         version = ret.get('version')
         sha = ret.get('sha')
 except IOError:

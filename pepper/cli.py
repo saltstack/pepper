@@ -148,6 +148,7 @@ class PepperCli(object):
                 action='store_const', const='compound',
             help="Target based on compound expression")
 
+        optgroup.add_option('--batch', dest='batch', default=None)
         return optgroup
 
     def add_authopts(self):
@@ -271,7 +272,7 @@ class PepperCli(object):
         '''
         args = list(self.args)
 
-        client = self.options.client
+        client = self.options.client if not self.options.batch else 'local_batch'
         low = {'client': client}
 
         if client.startswith('local'):
@@ -281,6 +282,7 @@ class PepperCli(object):
             low['expr_form'] = self.options.expr_form
             low['tgt'] = args.pop(0)
             low['fun'] = args.pop(0)
+            low['batch'] = self.options.batch
             low['arg'] = args
         elif client.startswith('runner'):
             low['fun'] = args.pop(0)

@@ -76,7 +76,7 @@ class Pepper(object):
         split = urlparse.urlsplit(api_url)
         if not split.scheme in ['http', 'https']:
             raise PepperException("salt-api URL missing HTTP(s) protocol: {0}"
-                                  .format(self.api_url))
+                                  .format(api_url))
 
         self.api_url = api_url
         self.debug_http = int(debug_http)

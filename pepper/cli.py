@@ -148,6 +148,10 @@ class PepperCli(object):
                 action='store_const', const='compound',
             help="Target based on compound expression")
 
+        optgroup.add_option('-N', '--nodegroup', dest='expr_form',
+                action='store_const', const='nodegroup',
+            help="Target based on a named nodegroup")
+
         return optgroup
 
     def add_authopts(self):

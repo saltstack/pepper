@@ -260,6 +260,36 @@ class Pepper(object):
 
         return self.low([low], path='/')
 
+    def local_batch(self, tgt, fun, arg=None, kwarg=None, expr_form='glob',
+                    batch='50%', ret=None):
+        '''
+        Run a single command using the ``local_batch`` client
+
+        Wraps :meth:`low`.
+        '''
+        low = {
+            'client': 'local_batch',
+            'tgt': tgt,
+            'fun': fun,
+        }
+
+        if arg:
+            low['arg'] = arg
+
+        if kwarg:
+            low['kwarg'] = kwarg
+
+        if expr_form:
+            low['expr_form'] = expr_form
+
+        if batch:
+            low['batch'] = batch
+
+        if ret:
+            low['ret'] = ret
+
+        return self.low([low], path='/')
+
     def lookup_jid(self, jid):
         '''
         Get job results

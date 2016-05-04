@@ -7,7 +7,9 @@ import json
 import logging
 import optparse
 import os
+import pickle
 import textwrap
+import time
 import getpass
 import time
 try:
@@ -95,7 +97,7 @@ class PepperCli(object):
         optgroup.add_option('-t', '--timeout', dest='timeout', type='int',
             help=textwrap.dedent('''\
             Specify wait time (in seconds) before returning control to the
-            shell'''))
+            shell'''), default=60)
 
         optgroup.add_option('--client', dest='client', default='local',
             help=textwrap.dedent('''\
@@ -187,12 +189,12 @@ class PepperCli(object):
             action='store_false', dest='interactive', help=textwrap.dedent("""\
                     Optional, fail rather than waiting for input"""), default=True)
 
-        # optgroup.add_option('-T', '--make-token', default=False,
-        #     dest='mktoken', action='store_true',
-        #     help=textwrap.dedent("""\
-        #         Generate and save an authentication token for re-use. The token is
-        #         generated and made available for the period defined in the Salt
-        #         Master."""))
+        optgroup.add_option('-T', '--make-token', default=False,
+            dest='mktoken', action='store_true',
+            help=textwrap.dedent("""\
+                Generate and save an authentication token for re-use. The token is
+                generated and made available for the period defined in the Salt
+                Master."""))
 
         return optgroup
 
@@ -206,7 +208,6 @@ class PepperCli(object):
 
         # setting default values
         results = {
-            'SALTAPI_URL': 'https://localhost:8000/',
             'SALTAPI_USER': None,
             'SALTAPI_PASS': None,
             'SALTAPI_EAUTH': 'auto',
@@ -221,17 +222,13 @@ class PepperCli(object):
         # read file
         profile = 'main'
         if config.has_section(profile):
-            for key, value in config.items(profile):
-                key = key.upper()
-                results[key] = config.get(profile, key)
+            for key,value in list(results.items()):
+                if config.has_option(profile, key):
+                    results[key] = config.get(profile, key)
 
         # get environment values
         for key, value in list(results.items()):
             results[key] = os.environ.get(key, results[key])
-
-        # get eauth prompt options
-        if self.options.saltapiurl:
-            results['SALTAPI_URL'] = self.options.saltapiurl
 
         if results['SALTAPI_EAUTH'] == 'kerberos':
             results['SALTAPI_PASS'] = None
@@ -257,6 +254,33 @@ class PepperCli(object):
 
         return results
 
+    def parse_url(self):
+        '''
+        Determine api url
+        '''
+        url = 'https://localhost:8000/'
+
+        try:
+            config = ConfigParser(interpolation=None)
+        except TypeError as e:
+            config = ConfigParser.RawConfigParser()
+        config.read(self.options.config)
+
+        # read file
+        profile = 'main'
+        if config.has_section(profile):
+            if config.has_option(profile, "SALTAPI_URL"):
+                url = config.get(profile, "SALTAPI_URL")
+
+        # get environment values
+        url = os.environ.get("SALTAPI_URL", url)
+
+        # get eauth prompt options
+        if self.options.saltapiurl:
+            url = self.options.saltapiurl
+
+        return  url
+
     def parse_login(self):
         '''
         Extract the authentication credentials
@@ -264,12 +288,11 @@ class PepperCli(object):
         login_details = self.get_login_details()
 
         # Auth values placeholder; grab interactively at CLI or from config file
-        url = login_details['SALTAPI_URL']
         user = login_details['SALTAPI_USER']
         passwd = login_details['SALTAPI_PASS']
         eauth = login_details['SALTAPI_EAUTH']
 
-        return url, user, passwd, eauth
+        return user, passwd, eauth
 
     def parse_cmd(self):
         '''
@@ -312,29 +335,26 @@ class PepperCli(object):
         async_ret = api.low(load)
         jid = async_ret['return'][0]['jid']
         nodes = async_ret['return'][0]['minions']
+        ret_nodes = []
+        exit_code = 1
 
-        # keep trying until all expected nodes return
-        total_time = self.seconds_to_wait
-        ret = {}
-        exit_code = 0
-        while True:
-            if total_time > self.options.timeout:
-                break
+        until = time.time()+self.options.timeout
+        while time.time() < until:
 
             jid_ret = api.lookup_jid(jid)
+            responded = set(jid_ret['return'][0].keys()) ^ set(ret_nodes)
+            for node in responded:
+                yield None, "{{{}: {}}}".format(node, jid_ret['return'][0][node])
             ret_nodes = list(jid_ret['return'][0].keys())
 
             if set(ret_nodes) == set(nodes):
-                ret = jid_ret
                 exit_code = 0
                 break
             else:
-                exit_code = 1
                 time.sleep(self.seconds_to_wait)
-                continue
 
         exit_code = exit_code if self.options.fail_if_minions_dont_respond else 0
-        return exit_code, ret
+        yield exit_code, "{{Failed: {}}}".format(list(set(ret_nodes) ^ set(nodes)))
 
     def run(self):
         '''
@@ -342,20 +362,30 @@ class PepperCli(object):
         '''
         self.parse()
 
-        # move logger instantiation to method?
-        logger.addHandler(logging.StreamHandler())
-        logger.setLevel(max(logging.ERROR - (self.options.verbose * 10), 1))
-
         load = self.parse_cmd()
-        creds = iter(self.parse_login())
 
-        api = pepper.Pepper(next(creds), debug_http=self.options.debug_http, ignore_ssl_errors=self.options.ignore_ssl_certificate_errors)
-        auth = api.login(*list(creds))
+        api = pepper.Pepper(self.parse_url(), debug_http=self.options.debug_http, ignore_ssl_errors=self.options.ignore_ssl_certificate_errors)
+        if self.options.mktoken:
+            try:
+                api.auth = pickle.load(open(os.path.join(os.path.expanduser('~'), '.peppercache'), "rb"))
+                if api.auth['expire'] < time.time()+30:
+                    logger.error("Login token expired")
+                    raise
+            except Exception as e:
+                    if type(e) is not FileNotFoundError:
+                        logger.error("Unable to load login token from ~/.peppercache "+str(e))
+                    auth = api.login(*self.parse_login())
+                    try:
+                        pickle.dump(auth, open(os.path.join(os.path.expanduser('~'), '.peppercache'), "wb"))
+                    except Exception as e:
+                        logger.error("Unable to save token to ~/.pepperache "+str(e))
+        else:
+            auth = api.login(*self.parse_login())
 
         if self.options.fail_if_minions_dont_respond:
-            exit_code, ret = self.poll_for_returns(api, load)
+            for exit_code, ret in self.poll_for_returns(api,load):
+                yield exit_code, json.dumps(ret, sort_keys=True, indent=4)
         else:
             ret = api.low(load)
             exit_code = 0
-
-        return (exit_code, json.dumps(ret, sort_keys=True, indent=4))
+            yield exit_code, json.dumps(ret, sort_keys=True, indent=4)

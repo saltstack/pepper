@@ -58,3 +58,8 @@ Contributing
 Please feel free to get involved by sending pull requests or join us on the
 Salt mailing list or on IRC in #salt or #salt-devel.
 
+This repo follows the same `contributing guidelines`__ as Salt and uses
+separate develop and master branches for in-progress additions and bug-fix
+changes respectively.
+
+.. __: https://docs.saltstack.com/en/latest/topics/development/contributing.html

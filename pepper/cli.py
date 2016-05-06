@@ -43,17 +43,13 @@ logger.addHandler(NullHandler())
 
 
 class PepperCli(object):
-    def __init__(self, default_timeout_in_seconds=60 * 60, seconds_to_wait=3):
+    def __init__(self, seconds_to_wait=3):
         self.seconds_to_wait = seconds_to_wait
         self.parser = self.get_parser()
         self.parser.option_groups.extend([
             self.add_globalopts(),
             self.add_tgtopts(),
             self.add_authopts()])
-        self.parser.defaults.update({
-            'timeout': default_timeout_in_seconds,
-            'fail_if_minions_dont_respond': False,
-            'expr_form': 'glob'})
 
     def get_parser(self):
         return optparse.OptionParser(
@@ -146,6 +142,7 @@ class PepperCli(object):
             '--fail-if-incomplete',
             action='store_true',
             dest='fail_if_minions_dont_respond',
+            default=False,
             help=textwrap.dedent('''\
             Return a failure exit code if not all minions respond. This option
             requires the authenticated user have access to run the
@@ -161,6 +158,8 @@ class PepperCli(object):
             self.parser,
             "Targeting Options",
             "Target which minions to run commands on")
+
+        optgroup.defaults.update({'expr_form': 'glob'})
 
         optgroup.add_option(
             '-E',
@@ -222,7 +221,7 @@ class PepperCli(object):
             action='store_const',
             const='nodegroup',
             help=textwrap.dedent('''\
-            Target based on a named nodegroup''')
+            Target based on a named nodegroup'''))
 
         optgroup.add_option(
             '--batch',

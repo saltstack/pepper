@@ -20,8 +20,8 @@ try:
     from urllib.error import HTTPError, URLError
     import urllib.parse as urlparse
 except ImportError:
-    from urllib2 import HTTPHandler, Request, urlopen, install_opener, build_opener, \
-        HTTPError, URLError
+    from urllib2 import HTTPHandler, Request, urlopen, \
+        install_opener, build_opener, HTTPError, URLError
     import urlparse
 
 logger = logging.getLogger('pepper')
@@ -74,7 +74,7 @@ class Pepper(object):
 
         '''
         split = urlparse.urlsplit(api_url)
-        if not split.scheme in ['http', 'https']:
+        if split.scheme not in ['http', 'https']:
             raise PepperException("salt-api URL missing HTTP(s) protocol: {0}"
                                   .format(api_url))
 
@@ -127,8 +127,8 @@ class Pepper(object):
         try:
             if not (self._ssl_verify):
                 con = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-                #con.check_hostname = False
-                #con.verify_mode = ssl.CERT_NONE
+                # con.check_hostname = False
+                # con.verify_mode = ssl.CERT_NONE
                 f = urlopen(req, context=con)
             else:
                 f = urlopen(req)
@@ -176,7 +176,7 @@ class Pepper(object):
         self._ssl_verify = self.ignore_ssl_errors
         params = {'url': self._construct_url(path),
                   'headers': headers,
-                  'verify': self._ssl_verify == True,
+                  'verify': if self._ssl_verify is True,
                   'auth': auth,
                   'data': json.dumps(data),
                   }
@@ -298,7 +298,6 @@ class Pepper(object):
         '''
 
         return self.runner('jobs.lookup_jid', jid='{0}'.format(jid))
-
 
     def runner(self, fun, **kwargs):
         '''

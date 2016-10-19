@@ -37,7 +37,14 @@ Basic usage is in heavy flux.
     export SALTAPI_USER=saltdev SALTAPI_PASS=saltdev SALTAPI_EAUTH=pam
     pepper '*' test.ping
     pepper '*' test.kwarg hello=dolly
-    
+
+Examples leveraging the runner client.
+
+.. code-block:: bash
+
+    pepper --client runner reactor.list
+    pepper --client runner reactor.add event='test/provision/*' reactors='/srv/salt/state/reactor/test-provision.sls'
+
 Configuration
 -------------
 

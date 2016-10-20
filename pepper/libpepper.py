@@ -173,7 +173,6 @@ class Pepper(object):
         if self.auth and 'token' in self.auth and self.auth['token']:
             headers.setdefault('X-Auth-Token', self.auth['token'])
         # Optionally toggle SSL verification
-        self._ssl_verify = self.ignore_ssl_errors
         params = {'url': self._construct_url(path),
                   'headers': headers,
                   'verify': self._ssl_verify == True,

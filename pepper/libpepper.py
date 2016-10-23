@@ -110,6 +110,8 @@ class Pepper(object):
         if data is not None:
             postdata = json.dumps(data).encode()
             clen = len(postdata)
+        else:
+            postdata = None
 
         # Create request object
         url = self._construct_url(path)

@@ -140,6 +140,14 @@ class PepperCli(object):
                 action='store_const', const='grain_pcre',
             help="Target based on PCRE matches on system properties")
 
+        optgroup.add_option('-I', '--pillar', dest='expr_form',
+                action='store_const', const='pillar',
+            help="Target based on pillar values")
+
+        optgroup.add_option('--pillar-pcre', dest='expr_form',
+                action='store_const', const='pillar_pcre',
+            help="Target based on PCRE matches on pillar values")
+
         optgroup.add_option('-R', '--range', dest='expr_form',
                 action='store_const', const='range',
             help="Target based on range expression")

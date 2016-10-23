@@ -23,10 +23,10 @@ logger.addHandler(NullHandler())
 if __name__ == '__main__':
     try:
         cli = PepperCli()
-        exit_code, results = cli.run()
-        # TODO: temporary printing until Salt outputters are in place
-        print(results)
-        raise SystemExit(exit_code)
+        for exit_code, result in cli.run():
+            print(result)
+            if exit_code is not None:
+                raise SystemExit(exit_code)
     except PepperException as exc:
         print('Pepper error: {0}'.format(exc), file=sys.stderr)
         raise SystemExit(1)

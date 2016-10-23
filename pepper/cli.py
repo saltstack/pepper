@@ -302,6 +302,15 @@ class PepperCli(object):
             for arg in args:
                 key, value = arg.split('=', 1)
                 low[key] = value
+        elif client.startswith('ssh'):
+            if len(args) < 2:
+                self.parser.error("Command or target not specified")
+
+            low['expr_form'] = self.options.expr_form
+            low['tgt'] = args.pop(0)
+            low['fun'] = args.pop(0)
+            low['batch'] = self.options.batch
+            low['arg'] = args
         else:
             if len(args) < 1:
                 self.parser.error("Command not specified")

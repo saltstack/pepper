@@ -331,11 +331,14 @@ class PepperCli(object):
         nodes = async_ret['return'][0]['minions']
 
         # keep trying until all expected nodes return
-        total_time = self.seconds_to_wait
+        total_time = 0
+        start_time = time.time()
         ret = {}
         exit_code = 0
         while True:
+            total_time = time.time() - start_time
             if total_time > self.options.timeout:
+                exit_code = 1
                 break
 
             jid_ret = api.lookup_jid(jid)

@@ -178,7 +178,7 @@ class Pepper(object):
         self._ssl_verify = self.ignore_ssl_errors
         params = {'url': self._construct_url(path),
                   'headers': headers,
-                  'verify': if self._ssl_verify is True,
+                  'verify': self._ssl_verify is True,
                   'auth': auth,
                   'data': json.dumps(data),
                   }

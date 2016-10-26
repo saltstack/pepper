@@ -13,10 +13,10 @@ import getpass
 import time
 try:
     # Python 3
-    from configparser import ConfigParser
+    from configparser import ConfigParser, RawConfigParser
 except ImportError:
     # Python 2
-    import ConfigParser
+    from ConfigParser import ConfigParser, RawConfigParser
 
 try:
     input = raw_input
@@ -30,11 +30,6 @@ try:
 except ImportError:  # Python < 2.7
     class NullHandler(logging.Handler):
         def emit(self, record): pass
-
-try:
-    import configparser
-except ImportError:
-    import ConfigParser as configparser
 
 logging.basicConfig(format='%(levelname)s %(asctime)s %(module)s: %(message)s')
 logger = logging.getLogger('pepper')
@@ -221,8 +216,8 @@ class PepperCli(object):
 
         try:
             config = ConfigParser(interpolation=None)
-        except TypeError as e:
-            config = ConfigParser.RawConfigParser()
+        except TypeError:
+            config = RawConfigParser()
         config.read(self.options.config)
 
         # read file
@@ -270,8 +265,8 @@ class PepperCli(object):
 
         try:
             config = ConfigParser(interpolation=None)
-        except TypeError as e:
-            config = ConfigParser.RawConfigParser()
+        except TypeError:
+            config = RawConfigParser()
         config.read(self.options.config)
 
         # read file

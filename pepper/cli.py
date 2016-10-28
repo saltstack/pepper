@@ -7,7 +7,6 @@ import json
 import logging
 import optparse
 import os
-import pickle
 import textwrap
 import getpass
 import time
@@ -393,7 +392,7 @@ class PepperCli(object):
             ignore_ssl_errors=self.options.ignore_ssl_certificate_errors)
         if self.options.mktoken:
             try:
-                api.auth = pickle.load(
+                api.auth = json.load(
                     open(os.path.join(os.path.expanduser('~'), '.peppercache'), "rb"))
                 if api.auth['expire'] < time.time()+30:
                     logger.error('Login token expired')
@@ -403,7 +402,7 @@ class PepperCli(object):
                         logger.error('Unable to load login token from ~/.peppercache '+str(e))
                     auth = api.login(*self.parse_login())
                     try:
-                        pickle.dump(
+                        json.dump(
                             auth,
                             open(os.path.join(os.path.expanduser('~'), '.peppercache'), 'wb'))
                     except Exception as e:

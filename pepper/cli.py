@@ -403,10 +403,14 @@ class PepperCli(object):
                     logger.error('Unable to load login token from ~/.peppercache '+str(e))
                 auth = api.login(*self.parse_login())
                 try:
-                    with open(token_file, 'wb') as f:
+                    oldumask = os.umask(0)
+                    fdsc = os.open(token_file, os.O_WRONLY | os.O_CREAT, 0o600)
+                    with os.fdopen(fdsc, 'wb') as f:
                         json.dump(auth, f)
                 except Exception as e:
                     logger.error('Unable to save token to ~/.pepperache '+str(e))
+                finally:
+                    os.umask(oldumask)
         else:
             auth = api.login(*self.parse_login())
 

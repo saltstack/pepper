@@ -393,7 +393,7 @@ class PepperCli(object):
         if self.options.mktoken:
             token_file = os.path.join(os.path.expanduser('~'), '.peppercache')
             try:
-                with open(token_file, 'rb') as f:
+                with open(token_file, 'rt') as f:
                     api.auth = json.load(f)
                 if api.auth['expire'] < time.time()+30:
                     logger.error('Login token expired')
@@ -405,7 +405,7 @@ class PepperCli(object):
                 try:
                     oldumask = os.umask(0)
                     fdsc = os.open(token_file, os.O_WRONLY | os.O_CREAT, 0o600)
-                    with os.fdopen(fdsc, 'wb') as f:
+                    with os.fdopen(fdsc, 'wt') as f:
                         json.dump(auth, f)
                 except Exception as e:
                     logger.error('Unable to save token to ~/.pepperache '+str(e))

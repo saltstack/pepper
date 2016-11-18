@@ -317,8 +317,19 @@ class PepperCli(object):
         elif client.startswith('runner'):
             low['fun'] = args.pop(0)
             for arg in args:
-                key, value = arg.split('=', 1)
-                low[key] = value
+                if '=' in arg:
+                    key, value = arg.split('=', 1)
+                    low[key] = value
+                else:
+                    low.setdefault('args', []).append(arg)
+        elif client.startswith('wheel'):
+            low['fun'] = args.pop(0)
+            for arg in args:
+                if '=' in arg:
+                    key, value = arg.split('=', 1)
+                    low[key] = value
+                else:
+                    low.setdefault('args', []).append(arg)
         elif client.startswith('ssh'):
             if len(args) < 2:
                 self.parser.error("Command or target not specified")

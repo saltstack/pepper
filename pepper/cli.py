@@ -384,6 +384,10 @@ class PepperCli(object):
         '''
         self.parse()
 
+        # move logger instantiation to method?
+        logger.addHandler(logging.StreamHandler())
+        logger.setLevel(max(logging.ERROR - (self.options.verbose * 10), 1))
+
         load = self.parse_cmd()
 
         api = pepper.Pepper(

@@ -358,4 +358,4 @@ class PepperCli(object):
             ret = api.low(load)
             exit_code = 0
 
-        return (exit_code, json.dumps(ret, sort_keys=True, indent=4))
+        return (exit_code, json.dumps(ret, indent=4))

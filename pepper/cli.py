@@ -94,6 +94,13 @@ class PepperCli(object):
             specify the salt-api client to use (local, local_async,
             runner, etc)'''))
 
+        optgroup.add_option('--json', dest='json_input',
+            help=textwrap.dedent('''\
+            Enter JSON at the CLI instead of positional (text) arguments. This
+            is useful for arguments that need complex data structures.
+            Specifying this argument will cause positional arguments to be
+            ignored.'''))
+
         # optgroup.add_option('--out', '--output', dest='output',
         #        help="Specify the output format for the command output")
 
@@ -300,6 +307,14 @@ class PepperCli(object):
         '''
         Extract the low data for a command from the passed CLI params
         '''
+        # Short-circuit if JSON was given.
+        if self.options.json_input:
+            try:
+                return json.loads(self.options.json_input)
+            except ValueError:
+                logger.error("Invalid JSON given.")
+                raise SystemExit(1)
+
         args = list(self.args)
 
         client = self.options.client if not self.options.batch else 'local_batch'

@@ -12,10 +12,10 @@ import getpass
 import time
 try:
     # Python 3
-    from configparser import ConfigParser
+    from configparser import ConfigParser, RawConfigParser
 except ImportError:
     # Python 2
-    import ConfigParser
+    from ConfigParser import ConfigParser, RawConfigParser
 
 try:
     input = raw_input
@@ -30,26 +30,18 @@ except ImportError:  # Python < 2.7
     class NullHandler(logging.Handler):
         def emit(self, record): pass
 
-try:
-    import configparser
-except ImportError:
-    import ConfigParser as configparser
-
 logging.basicConfig(format='%(levelname)s %(asctime)s %(module)s: %(message)s')
 logger = logging.getLogger('pepper')
 logger.addHandler(NullHandler())
 
 
 class PepperCli(object):
-    def __init__(self, default_timeout_in_seconds=60 * 60, seconds_to_wait=3):
+    def __init__(self, seconds_to_wait=3):
         self.seconds_to_wait = seconds_to_wait
         self.parser = self.get_parser()
         self.parser.option_groups.extend([self.add_globalopts(),
             self.add_tgtopts(),
             self.add_authopts()])
-        self.parser.defaults.update({'timeout': default_timeout_in_seconds,
-            'fail_if_minions_dont_respond': False,
-            'expr_form': 'glob'})
 
     def get_parser(self):
         return optparse.OptionParser(
@@ -93,7 +85,7 @@ class PepperCli(object):
                 "Mimic the ``salt`` CLI")
 
         optgroup.add_option('-t', '--timeout', dest='timeout', type='int',
-            help=textwrap.dedent('''\
+            default=60, help=textwrap.dedent('''\
             Specify wait time (in seconds) before returning control to the
             shell'''))
 
@@ -102,6 +94,13 @@ class PepperCli(object):
             specify the salt-api client to use (local, local_async,
             runner, etc)'''))
 
+        optgroup.add_option('--json', dest='json_input',
+            help=textwrap.dedent('''\
+            Enter JSON at the CLI instead of positional (text) arguments. This
+            is useful for arguments that need complex data structures.
+            Specifying this argument will cause positional arguments to be
+            ignored.'''))
+
         # optgroup.add_option('--out', '--output', dest='output',
         #        help="Specify the output format for the command output")
 
@@ -109,7 +108,7 @@ class PepperCli(object):
         #    help="Redirect the output from a command to a persistent data store")
 
         optgroup.add_option('--fail-if-incomplete', action='store_true',
-            dest='fail_if_minions_dont_respond',
+            dest='fail_if_minions_dont_respond', default=False,
             help=textwrap.dedent('''\
             Return a failure exit code if not all minions respond. This option
             requires the authenticated user have access to run the
@@ -123,6 +122,8 @@ class PepperCli(object):
         '''
         optgroup = optparse.OptionGroup(self.parser, "Targeting Options",
                 "Target which minions to run commands on")
+
+        optgroup.defaults.update({'expr_form': 'glob'})
 
         optgroup.add_option('-E', '--pcre', dest='expr_form',
                 action='store_const', const='pcre',
@@ -139,6 +140,14 @@ class PepperCli(object):
         optgroup.add_option('--grain-pcre', dest='expr_form',
                 action='store_const', const='grain_pcre',
             help="Target based on PCRE matches on system properties")
+
+        optgroup.add_option('-I', '--pillar', dest='expr_form',
+                action='store_const', const='pillar',
+            help="Target based on pillar values")
+
+        optgroup.add_option('--pillar-pcre', dest='expr_form',
+                action='store_const', const='pillar_pcre',
+            help="Target based on PCRE matches on pillar values")
 
         optgroup.add_option('-R', '--range', dest='expr_form',
                 action='store_const', const='range',
@@ -187,12 +196,12 @@ class PepperCli(object):
             action='store_false', dest='interactive', help=textwrap.dedent("""\
                     Optional, fail rather than waiting for input"""), default=True)
 
-        # optgroup.add_option('-T', '--make-token', default=False,
-        #     dest='mktoken', action='store_true',
-        #     help=textwrap.dedent("""\
-        #         Generate and save an authentication token for re-use. The token is
-        #         generated and made available for the period defined in the Salt
-        #         Master."""))
+        optgroup.add_option('-T', '--make-token', default=False,
+            dest='mktoken', action='store_true',
+            help=textwrap.dedent("""\
+                Generate and save an authentication token for re-use. The token is
+                generated and made available for the period defined in the Salt
+                Master."""))
 
         return optgroup
 
@@ -206,7 +215,6 @@ class PepperCli(object):
 
         # setting default values
         results = {
-            'SALTAPI_URL': 'https://localhost:8000/',
             'SALTAPI_USER': None,
             'SALTAPI_PASS': None,
             'SALTAPI_EAUTH': 'auto',
@@ -214,24 +222,20 @@ class PepperCli(object):
 
         try:
             config = ConfigParser(interpolation=None)
-        except TypeError as e:
-            config = ConfigParser.RawConfigParser()
+        except TypeError:
+            config = RawConfigParser()
         config.read(self.options.config)
 
         # read file
         profile = 'main'
         if config.has_section(profile):
-            for key, value in config.items(profile):
-                key = key.upper()
-                results[key] = config.get(profile, key)
+            for key, value in list(results.items()):
+                if config.has_option(profile, key):
+                    results[key] = config.get(profile, key)
 
         # get environment values
         for key, value in list(results.items()):
             results[key] = os.environ.get(key, results[key])
-
-        # get eauth prompt options
-        if self.options.saltapiurl:
-            results['SALTAPI_URL'] = self.options.saltapiurl
 
         if results['SALTAPI_EAUTH'] == 'kerberos':
             results['SALTAPI_PASS'] = None
@@ -245,7 +249,8 @@ class PepperCli(object):
                 logger.error("SALTAPI_USER required")
                 raise SystemExit(1)
         else:
-            if self.options.username is not None: results['SALTAPI_USER'] = self.options.username
+            if self.options.username is not None:
+                results['SALTAPI_USER'] = self.options.username
         if self.options.password is None and results['SALTAPI_PASS'] is None:
             if self.options.interactive:
                 results['SALTAPI_PASS'] = getpass.getpass(prompt='Password: ')
@@ -253,9 +258,37 @@ class PepperCli(object):
                 logger.error("SALTAPI_PASS required")
                 raise SystemExit(1)
         else:
-            if self.options.password is not None: results['SALTAPI_PASS'] = self.options.password
+            if self.options.password is not None:
+                results['SALTAPI_PASS'] = self.options.password
 
         return results
+
+    def parse_url(self):
+        '''
+        Determine api url
+        '''
+        url = 'https://localhost:8000/'
+
+        try:
+            config = ConfigParser(interpolation=None)
+        except TypeError:
+            config = RawConfigParser()
+        config.read(self.options.config)
+
+        # read file
+        profile = 'main'
+        if config.has_section(profile):
+            if config.has_option(profile, "SALTAPI_URL"):
+                url = config.get(profile, "SALTAPI_URL")
+
+        # get environment values
+        url = os.environ.get("SALTAPI_URL", url)
+
+        # get eauth prompt options
+        if self.options.saltapiurl:
+            url = self.options.saltapiurl
+
+        return url
 
     def parse_login(self):
         '''
@@ -263,18 +296,25 @@ class PepperCli(object):
         '''
         login_details = self.get_login_details()
 
-        # Auth values placeholder; grab interactively at CLI or from config file
-        url = login_details['SALTAPI_URL']
+        # Auth values placeholder; grab interactively at CLI or from config
         user = login_details['SALTAPI_USER']
         passwd = login_details['SALTAPI_PASS']
         eauth = login_details['SALTAPI_EAUTH']
 
-        return url, user, passwd, eauth
+        return user, passwd, eauth
 
     def parse_cmd(self):
         '''
         Extract the low data for a command from the passed CLI params
         '''
+        # Short-circuit if JSON was given.
+        if self.options.json_input:
+            try:
+                return json.loads(self.options.json_input)
+            except ValueError:
+                logger.error("Invalid JSON given.")
+                raise SystemExit(1)
+
         args = list(self.args)
 
         client = self.options.client if not self.options.batch else 'local_batch'
@@ -292,8 +332,28 @@ class PepperCli(object):
         elif client.startswith('runner'):
             low['fun'] = args.pop(0)
             for arg in args:
-                key, value = arg.split('=', 1)
-                low[key] = value
+                if '=' in arg:
+                    key, value = arg.split('=', 1)
+                    low[key] = value
+                else:
+                    low.setdefault('args', []).append(arg)
+        elif client.startswith('wheel'):
+            low['fun'] = args.pop(0)
+            for arg in args:
+                if '=' in arg:
+                    key, value = arg.split('=', 1)
+                    low[key] = value
+                else:
+                    low.setdefault('args', []).append(arg)
+        elif client.startswith('ssh'):
+            if len(args) < 2:
+                self.parser.error("Command or target not specified")
+
+            low['expr_form'] = self.options.expr_form
+            low['tgt'] = args.pop(0)
+            low['fun'] = args.pop(0)
+            low['batch'] = self.options.batch
+            low['arg'] = args
         else:
             if len(args) < 1:
                 self.parser.error("Command not specified")
@@ -312,29 +372,37 @@ class PepperCli(object):
         async_ret = api.low(load)
         jid = async_ret['return'][0]['jid']
         nodes = async_ret['return'][0]['minions']
+        ret_nodes = []
+        exit_code = 1
 
         # keep trying until all expected nodes return
-        total_time = self.seconds_to_wait
+        total_time = 0
+        start_time = time.time()
         ret = {}
         exit_code = 0
         while True:
+            total_time = time.time() - start_time
             if total_time > self.options.timeout:
+                exit_code = 1
                 break
 
             jid_ret = api.lookup_jid(jid)
+            responded = set(jid_ret['return'][0].keys()) ^ set(ret_nodes)
+            for node in responded:
+                yield None, "{{{}: {}}}".format(
+                    node,
+                    jid_ret['return'][0][node])
             ret_nodes = list(jid_ret['return'][0].keys())
 
             if set(ret_nodes) == set(nodes):
-                ret = jid_ret
                 exit_code = 0
                 break
             else:
-                exit_code = 1
                 time.sleep(self.seconds_to_wait)
-                continue
 
         exit_code = exit_code if self.options.fail_if_minions_dont_respond else 0
-        return exit_code, ret
+        yield exit_code, "{{Failed: {}}}".format(
+            list(set(ret_nodes) ^ set(nodes)))
 
     def run(self):
         '''
@@ -347,15 +415,39 @@ class PepperCli(object):
         logger.setLevel(max(logging.ERROR - (self.options.verbose * 10), 1))
 
         load = self.parse_cmd()
-        creds = iter(self.parse_login())
 
-        api = pepper.Pepper(next(creds), debug_http=self.options.debug_http, ignore_ssl_errors=self.options.ignore_ssl_certificate_errors)
-        auth = api.login(*list(creds))
+        api = pepper.Pepper(
+            self.parse_url(),
+            debug_http=self.options.debug_http,
+            ignore_ssl_errors=self.options.ignore_ssl_certificate_errors)
+        if self.options.mktoken:
+            token_file = os.path.join(os.path.expanduser('~'), '.peppercache')
+            try:
+                with open(token_file, 'rt') as f:
+                    api.auth = json.load(f)
+                if api.auth['expire'] < time.time()+30:
+                    logger.error('Login token expired')
+                    raise Exception('Login token expired')
+            except Exception as e:
+                if e.args[0] is not 2:
+                    logger.error('Unable to load login token from ~/.peppercache '+str(e))
+                auth = api.login(*self.parse_login())
+                try:
+                    oldumask = os.umask(0)
+                    fdsc = os.open(token_file, os.O_WRONLY | os.O_CREAT, 0o600)
+                    with os.fdopen(fdsc, 'wt') as f:
+                        json.dump(auth, f)
+                except Exception as e:
+                    logger.error('Unable to save token to ~/.pepperache '+str(e))
+                finally:
+                    os.umask(oldumask)
+        else:
+            auth = api.login(*self.parse_login())
 
         if self.options.fail_if_minions_dont_respond:
-            exit_code, ret = self.poll_for_returns(api, load)
+            for exit_code, ret in self.poll_for_returns(api, load):
+                yield exit_code, json.dumps(ret, sort_keys=True, indent=4)
         else:
             ret = api.low(load)
             exit_code = 0
-
-        return (exit_code, json.dumps(ret, sort_keys=True, indent=4))
+            yield exit_code, json.dumps(ret, sort_keys=True, indent=4)

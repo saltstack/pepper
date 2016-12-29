@@ -74,7 +74,7 @@ class Pepper(object):
 
         '''
         split = urlparse.urlsplit(api_url)
-        if not split.scheme in ['http', 'https']:
+        if split.scheme not in ['http', 'https']:
             raise PepperException("salt-api URL missing HTTP(s) protocol: {0}"
                                   .format(api_url))
 
@@ -155,6 +155,8 @@ class Pepper(object):
         if data is not None:
             postdata = json.dumps(data).encode()
             clen = len(postdata)
+        else:
+            postdata = None
 
         # Create request object
         url = self._construct_url(path)
@@ -218,10 +220,9 @@ class Pepper(object):
         if self.auth and 'token' in self.auth and self.auth['token']:
             headers.setdefault('X-Auth-Token', self.auth['token'])
         # Optionally toggle SSL verification
-        self._ssl_verify = self.ignore_ssl_errors
         params = {'url': self._construct_url(path),
                   'headers': headers,
-                  'verify': self._ssl_verify == True,
+                  'verify': self._ssl_verify is True,
                   'auth': auth,
                   'data': json.dumps(data),
                   }
@@ -343,7 +344,6 @@ class Pepper(object):
         '''
 
         return self.runner('jobs.lookup_jid', jid='{0}'.format(jid))
-
 
     def runner(self, fun, **kwargs):
         '''

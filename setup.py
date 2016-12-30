@@ -7,7 +7,10 @@ import json
 import os
 import re
 
-from distutils.core import setup
+try:
+    from setuptools import setup
+except:
+    from distutils.core import setup
 from distutils.dist import Distribution
 from distutils.command import sdist, install_data
 
@@ -40,6 +43,9 @@ setup_kwargs = {
     },
     'scripts': [
         'scripts/pepper',
+    ],
+    'install_requires': [
+        'configparser'
     ]
 }
 

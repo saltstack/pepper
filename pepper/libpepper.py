@@ -4,10 +4,8 @@ A Python library for working with Salt's REST API
 (Specifically the rest_cherrypy netapi module.)
 
 '''
-import functools
 import json
 import logging
-import os
 import ssl
 try:
     ssl._create_default_https_context = ssl._create_stdlib_context
@@ -90,9 +88,8 @@ class Pepper(object):
         print(api.login('salt','salt','pam'))
         print(api.req_get('/keys'))
         '''
-
         import requests
-        
+
         headers = {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
@@ -110,7 +107,7 @@ class Pepper(object):
                   'verify': self._ssl_verify == True,
                   }
         try:
-            resp = requests.get(**params)           
+            resp = requests.get(**params)
 
             if resp.status_code == 401:
                 raise PepperException(str(resp.status_code) + ':Authentication denied')
@@ -127,7 +124,7 @@ class Pepper(object):
             print(e)
             return
         return resp.json()
-        
+
     def req(self, path, data=None):
         '''
         A thin wrapper around urllib2 to send requests and return the response
@@ -356,6 +353,27 @@ class Pepper(object):
             'client': 'runner',
             'fun': fun,
         }
+
+        low.update(kwargs)
+
+        return self.low([low], path='/')
+
+    def wheel(self, fun, arg=None, kwarg=None, **kwargs):
+        '''
+        Run a single command using the ``wheel`` client
+
+        Usage::
+          wheel('key.accept', match='myminion')
+        '''
+        low = {
+            'client': 'wheel',
+            'fun': fun,
+        }
+
+        if arg:
+            low['arg'] = arg
+        if kwarg:
+            low['kwarg'] = kwarg
 
         low.update(kwargs)
 

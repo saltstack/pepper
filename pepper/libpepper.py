@@ -342,7 +342,7 @@ class Pepper(object):
 
         return self.runner('jobs.lookup_jid', jid='{0}'.format(jid))
 
-    def runner(self, fun, **kwargs):
+    def runner(self, fun, arg=None, **kwargs):
         '''
         Run a single command using the ``runner`` client
 
@@ -353,6 +353,8 @@ class Pepper(object):
             'client': 'runner',
             'fun': fun,
         }
+        if arg:
+            low['arg'] = arg
 
         low.update(kwargs)
 

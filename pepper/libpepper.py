@@ -80,6 +80,59 @@ class Pepper(object):
         self.debug_http = int(debug_http)
         self._ssl_verify = not ignore_ssl_errors
         self.auth = {}
+    
+    def req_stream(self, path):
+        '''
+        A thin wrapper to get a response from saltstack api.
+        The body of the response will not be downloaded immediately.
+        Make sure to close the connection after use.
+        api = Pepper('http://ipaddress/api/')
+        print(api.login('salt','salt','pam'))
+        response = api.req_stream('/events')
+
+        :param path: The path to the salt api resource
+
+        :return: :class:`Response <Response>` object
+
+        :rtype: requests.Response
+        '''
+        import requests
+
+        headers = {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+        }
+        if self.auth and 'token' in self.auth and self.auth['token']:
+            headers.setdefault('X-Auth-Token', self.auth['token'])
+        else:
+            raise PepperException('Authentication required')
+            return
+        # Optionally toggle SSL verification
+        #self._ssl_verify = self.ignore_ssl_errors
+        params = {'url': self._construct_url(path),
+                  'headers': headers,
+                  'verify': self._ssl_verify == True,
+                  'stream': True
+                  }
+        try:
+            resp = requests.get(**params)
+
+            if resp.status_code == 401:
+                raise PepperException(str(resp.status_code) + ':Authentication denied')
+                return
+
+            if resp.status_code == 500:
+                raise PepperException(str(resp.status_code) + ':Server error.')
+                return
+
+            if resp.status_code == 404:
+                raise PepperException(str(resp.status_code) +' :This request returns nothing.')
+                return
+        except PepperException as e:
+            print(e)
+            return
+        return resp      
 
     def req_get(self, path):
         '''

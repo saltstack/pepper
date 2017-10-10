@@ -203,6 +203,13 @@ class PepperCli(object):
                 generated and made available for the period defined in the Salt
                 Master."""))
 
+        optgroup.add_option('-x', dest='cache',
+            default=os.environ.get('PEPPERCACHE',
+                os.path.join(os.path.expanduser('~'), '.peppercache')),
+            help=textwrap.dedent('''\
+                Cache file location. Default is a file path in the
+                "PEPPERCACHE" environment variable or ~/.peppercache.'''))
+
         return optgroup
 
     def get_login_details(self):
@@ -421,7 +428,7 @@ class PepperCli(object):
             debug_http=self.options.debug_http,
             ignore_ssl_errors=self.options.ignore_ssl_certificate_errors)
         if self.options.mktoken:
-            token_file = os.path.join(os.path.expanduser('~'), '.peppercache')
+            token_file = self.options.cache
             try:
                 with open(token_file, 'rt') as f:
                     api.auth = json.load(f)
@@ -431,7 +438,7 @@ class PepperCli(object):
                 api.req('/stats')
             except Exception as e:
                 if e.args[0] is not 2:
-                    logger.error('Unable to load login token from ~/.peppercache '+str(e))
+                    logger.error('Unable to load login token from {0} {1}'.format(token_file, str(e)))
                 auth = api.login(*self.parse_login())
                 try:
                     oldumask = os.umask(0)
@@ -439,7 +446,7 @@ class PepperCli(object):
                     with os.fdopen(fdsc, 'wt') as f:
                         json.dump(auth, f)
                 except Exception as e:
-                    logger.error('Unable to save token to ~/.pepperache '+str(e))
+                    logger.error('Unable to save token to {0} {1}'.format(token_file, str(e)))
                 finally:
                     os.umask(oldumask)
         else:

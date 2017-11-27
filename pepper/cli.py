@@ -101,6 +101,10 @@ class PepperCli(object):
             Specifying this argument will cause positional arguments to be
             ignored.'''))
 
+        optgroup.add_option('--json-file', dest='json_file',
+            help=textwrap.dedent('''\
+            Specify file containing the JSON to be used by pepper'''))
+
         # optgroup.add_option('--out', '--output', dest='output',
         #        help="Specify the output format for the command output")
 
@@ -320,6 +324,22 @@ class PepperCli(object):
                 return json.loads(self.options.json_input)
             except ValueError:
                 logger.error("Invalid JSON given.")
+                raise SystemExit(1)
+
+        if self.options.json_file:
+            try:
+                with open(self.options.json_file, 'r') as json_content:
+                    try:
+                        return json.load(json_content)
+                    except ValueError:
+                        logger.error("Invalid JSON given.")
+                        raise SystemExit(1)
+            except Exception as e:
+                logger.error(
+                    'Cannot open file: {0}, {1}'.format(
+                        self.options.json_file, repr(e)
+                    )
+                )
                 raise SystemExit(1)
 
         args = list(self.args)

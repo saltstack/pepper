@@ -397,13 +397,13 @@ class PepperCli(object):
 
         return [low]
 
-    def poll_for_returns(self, api, load):
+    def poll_for_returns(self, api, load, path):
         '''
         Run a command with the local_async client and periodically poll the job
         cache for returns for the job.
         '''
         load[0]['client'] = 'local_async'
-        async_ret = api.low(load)
+        async_ret = api.low(load, path)
         jid = async_ret['return'][0]['jid']
         nodes = async_ret['return'][0]['minions']
         ret_nodes = []
@@ -454,6 +454,10 @@ class PepperCli(object):
             self.parse_url(),
             debug_http=self.options.debug_http,
             ignore_ssl_errors=self.options.ignore_ssl_certificate_errors)
+
+        login = api.token if self.options.userun else api.login
+        path = '/run' if self.options.userun else '/'
+
         if self.options.mktoken:
             token_file = self.options.cache
             try:
@@ -466,7 +470,7 @@ class PepperCli(object):
             except Exception as e:
                 if e.args[0] is not 2:
                     logger.error('Unable to load login token from {0} {1}'.format(token_file, str(e)))
-                auth = api.login(*self.parse_login())
+                auth = login(*self.parse_login())
                 try:
                     oldumask = os.umask(0)
                     fdsc = os.open(token_file, os.O_WRONLY | os.O_CREAT, 0o600)
@@ -477,12 +481,16 @@ class PepperCli(object):
                 finally:
                     os.umask(oldumask)
         else:
-            auth = api.login(*self.parse_login())
+            auth = login(*self.parse_login())
+
+        if self.options.userun:
+            for i in load:
+                i['token'] = auth['token']
 
         if self.options.fail_if_minions_dont_respond:
-            for exit_code, ret in self.poll_for_returns(api, load):
+            for exit_code, ret in self.poll_for_returns(api, load, path):
                 yield exit_code, json.dumps(ret, sort_keys=True, indent=4)
         else:
-            ret = api.low(load)
+            ret = api.low(load, path=path)
             exit_code = 0
             yield exit_code, json.dumps(ret, sort_keys=True, indent=4)

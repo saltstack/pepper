@@ -438,17 +438,24 @@ class Pepper(object):
 
         return self.low([low])
 
-    def login(self, username, password, eauth):
+    def _send_auth(self, path, **kwargs):
+        return self.req(path, kwargs)
+
+    def login(self, **kwargs):
         '''
         Authenticate with salt-api and return the user permissions and
         authentication token or an empty dict
 
         '''
-        self.auth = self.req('/login', {
-            'username': username,
-            'password': password,
-            'eauth': eauth}).get('return', [{}])[0]
+        self.auth = self._send_auth('/login', **kwargs).get('return', [{}])[0]
+        return self.auth
 
+    def token(self, **kwargs):
+        '''
+        Get an eauth token from Salt for use with the /run URL
+
+        '''
+        self.auth = self._send_auth('/token', **kwargs)[0]
         return self.auth
 
     def _construct_url(self, path):

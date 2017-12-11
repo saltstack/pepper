@@ -207,6 +207,13 @@ class PepperCli(object):
                 generated and made available for the period defined in the Salt
                 Master."""))
 
+        optgroup.add_option('-r', '--run-uri', default=False,
+            dest='userun', action='store_true',
+            help=textwrap.dedent("""\
+                Use an eauth token from /token and send commands through the
+                /run URL instead of the traditional session token
+                approach."""))
+
         optgroup.add_option('-x', dest='cache',
             default=os.environ.get('PEPPERCACHE',
                 os.path.join(os.path.expanduser('~'), '.peppercache')),

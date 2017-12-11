@@ -57,7 +57,10 @@ class Pepper(object):
               u'ms-4': True}]}
 
     '''
-    def __init__(self, api_url='https://localhost:8000', debug_http=False, ignore_ssl_errors=False):
+    def __init__(self,
+            api_url='https://localhost:8000',
+            debug_http=False,
+            ignore_ssl_errors=False):
         '''
         Initialize the class with the URL of the API
 
@@ -188,7 +191,8 @@ class Pepper(object):
         :rtype: dictionary
 
         '''
-        if (hasattr(data, 'get') and data.get('eauth') == 'kerberos') or self.auth.get('eauth') == 'kerberos':
+        if ((hasattr(data, 'get') and data.get('eauth') == 'kerberos')
+                or self.auth.get('eauth') == 'kerberos'):
             return self.req_requests(path, data)
 
         headers = {

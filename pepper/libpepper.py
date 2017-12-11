@@ -328,7 +328,7 @@ class Pepper(object):
         if ret:
             low['ret'] = ret
 
-        return self.low([low], path='/')
+        return self.low([low])
 
     def local_async(self, tgt, fun, arg=None, kwarg=None, expr_form='glob',
                     timeout=None, ret=None):
@@ -358,7 +358,7 @@ class Pepper(object):
         if ret:
             low['ret'] = ret
 
-        return self.low([low], path='/')
+        return self.low([low])
 
     def local_batch(self, tgt, fun, arg=None, kwarg=None, expr_form='glob',
                     batch='50%', ret=None):
@@ -388,7 +388,7 @@ class Pepper(object):
         if ret:
             low['ret'] = ret
 
-        return self.low([low], path='/')
+        return self.low([low])
 
     def lookup_jid(self, jid):
         '''
@@ -415,7 +415,7 @@ class Pepper(object):
 
         low.update(kwargs)
 
-        return self.low([low], path='/')
+        return self.low([low])
 
     def wheel(self, fun, arg=None, kwarg=None, **kwargs):
         '''
@@ -436,7 +436,7 @@ class Pepper(object):
 
         low.update(kwargs)
 
-        return self.low([low], path='/')
+        return self.low([low])
 
     def login(self, username, password, eauth):
         '''

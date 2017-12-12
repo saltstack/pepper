@@ -466,7 +466,6 @@ class PepperCli(object):
                 if api.auth['expire'] < time.time()+30:
                     logger.error('Login token expired')
                     raise Exception('Login token expired')
-                api.req('/stats')
             except Exception as e:
                 if e.args[0] is not 2:
                     logger.error('Unable to load login token from {0} {1}'.format(token_file, str(e)))

@@ -397,13 +397,13 @@ class PepperCli(object):
 
         return [low]
 
-    def poll_for_returns(self, api, load, path):
+    def poll_for_returns(self, api, load):
         '''
         Run a command with the local_async client and periodically poll the job
         cache for returns for the job.
         '''
         load[0]['client'] = 'local_async'
-        async_ret = api.low(load, path)
+        async_ret = self.low(api, load)
         jid = async_ret['return'][0]['jid']
         nodes = async_ret['return'][0]['minions']
         ret_nodes = []
@@ -420,7 +420,14 @@ class PepperCli(object):
                 exit_code = 1
                 break
 
-            jid_ret = api.lookup_jid(jid)
+            jid_ret = self.low(api, [{
+                'client': 'runner',
+                'fun': 'jobs.lookup_jid',
+                'kwarg': {
+                    'jid': jid,
+                },
+            }])
+
             responded = set(jid_ret['return'][0].keys()) ^ set(ret_nodes)
             for node in responded:
                 yield None, "{{{}: {}}}".format(
@@ -438,32 +445,15 @@ class PepperCli(object):
         yield exit_code, "{{Failed: {}}}".format(
             list(set(ret_nodes) ^ set(nodes)))
 
-    def run(self):
-        '''
-        Parse all arguments and call salt-api
-        '''
-        self.parse()
-
-        # move logger instantiation to method?
-        logger.addHandler(logging.StreamHandler())
-        logger.setLevel(max(logging.ERROR - (self.options.verbose * 10), 1))
-
-        load = self.parse_cmd()
-
-        api = pepper.Pepper(
-            self.parse_url(),
-            debug_http=self.options.debug_http,
-            ignore_ssl_errors=self.options.ignore_ssl_certificate_errors)
-
+    def login(self, api):
         login = api.token if self.options.userun else api.login
-        path = '/run' if self.options.userun else '/'
 
         if self.options.mktoken:
             token_file = self.options.cache
             try:
                 with open(token_file, 'rt') as f:
-                    api.auth = json.load(f)
-                if api.auth['expire'] < time.time()+30:
+                    auth = json.load(f)
+                if auth['expire'] < time.time()+30:
                     logger.error('Login token expired')
                     raise Exception('Login token expired')
             except Exception as e:
@@ -484,14 +474,42 @@ class PepperCli(object):
         else:
             auth = login(*self.parse_login())
 
+        api.auth = auth
+        self.auth = auth
+        return auth
+
+    def low(self, api, load):
+        path = '/run' if self.options.userun else '/'
+
         if self.options.userun:
             for i in load:
-                i['token'] = auth['token']
+                i['token'] = self.auth['token']
+
+        return api.low(load, path=path)
+
+    def run(self):
+        '''
+        Parse all arguments and call salt-api
+        '''
+        self.parse()
+
+        # move logger instantiation to method?
+        logger.addHandler(logging.StreamHandler())
+        logger.setLevel(max(logging.ERROR - (self.options.verbose * 10), 1))
+
+        load = self.parse_cmd()
+
+        api = pepper.Pepper(
+            self.parse_url(),
+            debug_http=self.options.debug_http,
+            ignore_ssl_errors=self.options.ignore_ssl_certificate_errors)
+
+        self.login(api)
 
         if self.options.fail_if_minions_dont_respond:
-            for exit_code, ret in self.poll_for_returns(api, load, path):
+            for exit_code, ret in self.poll_for_returns(api, load):
                 yield exit_code, json.dumps(ret, sort_keys=True, indent=4)
         else:
-            ret = api.low(load, path=path)
+            ret = self.low(api, load)
             exit_code = 0
             yield exit_code, json.dumps(ret, sort_keys=True, indent=4)

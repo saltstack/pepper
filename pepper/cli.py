@@ -196,6 +196,12 @@ class PepperCli(object):
             dest='password', help=textwrap.dedent("""\
                     Optional, but will be prompted unless --non-interactive"""))
 
+        optgroup.add_option('--token-expire',
+            dest='token_expire', help=textwrap.dedent("""\
+                    Set eauth token expiry in seconds. Must be allowed per
+                    user. See the `token_expire_user_override` Master setting
+                    for more info."""))
+
         optgroup.add_option('--non-interactive',
             action='store_false', dest='interactive', help=textwrap.dedent("""\
                     Optional, fail rather than waiting for input"""), default=True)
@@ -260,6 +266,8 @@ class PepperCli(object):
 
         if self.options.eauth:
             results['SALTAPI_EAUTH'] = self.options.eauth
+        if self.options.token_expire:
+            results['SALTAPI_TOKEN_EXPIRE'] = self.options.token_expire
         if self.options.username is None and results['SALTAPI_USER'] is None:
             if self.options.interactive:
                 results['SALTAPI_USER'] = input('Username: ')
@@ -315,11 +323,17 @@ class PepperCli(object):
         login_details = self.get_login_details()
 
         # Auth values placeholder; grab interactively at CLI or from config
-        user = login_details['SALTAPI_USER']
-        passwd = login_details['SALTAPI_PASS']
+        username = login_details['SALTAPI_USER']
+        password = login_details['SALTAPI_PASS']
         eauth = login_details['SALTAPI_EAUTH']
 
-        return user, passwd, eauth
+        ret = dict(username=username, password=password, eauth=eauth)
+
+        token_expire = login_details.get('SALTAPI_TOKEN_EXPIRE', None)
+        if token_expire:
+            ret['token_expire'] = int(token_expire)
+
+        return ret
 
     def parse_cmd(self):
         '''
@@ -460,7 +474,7 @@ class PepperCli(object):
                 if e.args[0] is not 2:
                     logger.error('Unable to load login token from {0} {1}'
                         .format(token_file, str(e)))
-                auth = login(*self.parse_login())
+                auth = login(**self.parse_login())
                 try:
                     oldumask = os.umask(0)
                     fdsc = os.open(token_file, os.O_WRONLY | os.O_CREAT, 0o600)
@@ -472,7 +486,7 @@ class PepperCli(object):
                 finally:
                     os.umask(oldumask)
         else:
-            auth = login(*self.parse_login())
+            auth = login(**self.parse_login())
 
         api.auth = auth
         self.auth = auth

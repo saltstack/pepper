@@ -441,12 +441,21 @@ class Pepper(object):
     def _send_auth(self, path, **kwargs):
         return self.req(path, kwargs)
 
-    def login(self, **kwargs):
+    def login(self, username=None, password=None, eauth=None, **kwargs):
         '''
         Authenticate with salt-api and return the user permissions and
         authentication token or an empty dict
 
         '''
+        kwargs.update(
+            dict(
+                (key, locals()[key]) for key in (
+                    'username',
+                    'password',
+                    'eauth'
+                ) if locals()[key] is not None
+            )
+        )
         self.auth = self._send_auth('/login', **kwargs).get('return', [{}])[0]
         return self.auth
 

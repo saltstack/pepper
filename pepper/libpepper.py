@@ -447,15 +447,12 @@ class Pepper(object):
         authentication token or an empty dict
 
         '''
-        kwargs.update(
-            dict(
-                (key, locals()[key]) for key in (
-                    'username',
-                    'password',
-                    'eauth'
-                ) if locals()[key] is not None
-            )
-        )
+        auth_dict = {
+            'username': username,
+            'password': password,
+            'eauth': eauth
+        }
+        kwargs.update(auth_dict)
         self.auth = self._send_auth('/login', **kwargs).get('return', [{}])[0]
         return self.auth
 

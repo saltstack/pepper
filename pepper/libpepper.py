@@ -453,7 +453,7 @@ class Pepper(object):
                     'username',
                     'password',
                     'eauth'
-                ) if locals()[key] is not None
+                ) if locals().get(key, None) is not None
             )
         )
         self.auth = self._send_auth('/login', **kwargs).get('return', [{}])[0]

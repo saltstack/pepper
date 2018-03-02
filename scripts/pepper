@@ -35,6 +35,7 @@ class Pepper(object):
             cli = PepperCli()
             for exit_code, result in cli.run():
                 if HAS_SALT:
+                    logger.info('Use Salt outputters')
                     if not hasattr(self, 'opts'):
                         self.opts = salt.config.client_config('/etc/salt/master')
                     if not hasattr(self, 'modules'):
@@ -44,7 +45,8 @@ class Pepper(object):
                     except (KeyError, AttributeError, TypeError):
                         oput = 'nested'
                     for ret in json.loads(result)['return']:
-                        salt.output.display_output(ret, oput, opts=self.opts)
+                        for minionid, minionret in ret.items():
+                            salt.output.display_output({minionid: minionret}, oput, opts=self.opts)
                 else:
                     print(result)
                 if exit_code is not None:

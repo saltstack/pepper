@@ -69,6 +69,12 @@ class PepperCli(object):
                 default: ~/.config/pepper/master
             '''))
 
+        self.parser.add_option('-o', '--out', dest='output',
+            default=None,
+            help=textwrap.dedent('''\
+                Salt outputter to use for printing out returns.
+            '''))
+
         self.parser.add_option('-v', dest='verbose', default=0, action='count',
             help=textwrap.dedent('''\
                 Increment output verbosity; may be specified multiple times'''))

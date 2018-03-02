@@ -29,13 +29,14 @@ logging.basicConfig(format='%(levelname)s %(asctime)s %(module)s: %(message)s')
 logger = logging.getLogger('pepper')
 logger.addHandler(NullHandler())
 
+
 class Pepper(object):
     def __init__(self):
         self.cli = PepperCli()
         self.opts = salt.config.client_config('/etc/salt/master')
 
     @property
-    def output(self, ret):
+    def output(self):
         if not hasattr(self, 'modules'):
             self.modules = salt.loader.minion_mods(self.opts)
         try:
@@ -54,7 +55,11 @@ class Pepper(object):
                             salt.output.display_output(ret['data'], ret.get('outputter', 'nested'), opts=self.opts)
                         else:
                             for minionid, minionret in ret.items():
-                                salt.output.display_output({minionid: minionret}, self.get_output(), opts=self.opts)
+                                salt.output.display_output(
+                                    {minionid: minionret['ret']},
+                                    minionret.get('out', self.output),
+                                    opts=self.opts
+                                )
                 else:
                     print(result)
                 if exit_code is not None:

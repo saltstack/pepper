@@ -377,6 +377,7 @@ class PepperCli(object):
             low['fun'] = args.pop(0)
             low['batch'] = self.options.batch
             low['arg'] = args
+            low['full_return'] = True
         elif client.startswith('runner'):
             low['fun'] = args.pop(0)
             for arg in args:

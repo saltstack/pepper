@@ -42,6 +42,7 @@ class PepperCli(object):
         self.parser.option_groups.extend([self.add_globalopts(),
             self.add_tgtopts(),
             self.add_authopts()])
+        self.parse()
 
     def get_parser(self):
         return optparse.OptionParser(
@@ -59,6 +60,20 @@ class PepperCli(object):
             help=textwrap.dedent('''\
                 Configuration file location. Default is a file path in the
                 "PEPPERRC" environment variable or ~/.pepperrc.'''))
+
+        self.parser.add_option('-m', dest='master',
+            default=os.environ.get('MASTER_CONFIG',
+                os.path.join(os.path.expanduser('~'), '.config', 'pepper', 'master')),
+            help=textwrap.dedent('''\
+                Master Configuration file location for configuring outputters.
+                default: ~/.config/pepper/master
+            '''))
+
+        self.parser.add_option('-o', '--out', dest='output',
+            default=None,
+            help=textwrap.dedent('''\
+                Salt outputter to use for printing out returns.
+            '''))
 
         self.parser.add_option('-v', dest='verbose', default=0, action='count',
             help=textwrap.dedent('''\
@@ -377,6 +392,7 @@ class PepperCli(object):
             low['fun'] = args.pop(0)
             low['batch'] = self.options.batch
             low['arg'] = args
+            low['full_return'] = True
         elif client.startswith('runner'):
             low['fun'] = args.pop(0)
             for arg in args:
@@ -505,8 +521,6 @@ class PepperCli(object):
         '''
         Parse all arguments and call salt-api
         '''
-        self.parse()
-
         # move logger instantiation to method?
         logger.addHandler(logging.StreamHandler())
         logger.setLevel(max(logging.ERROR - (self.options.verbose * 10), 1))

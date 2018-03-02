@@ -5,10 +5,19 @@ A CLI interface to a remote salt-api instance
 from __future__ import print_function
 
 import sys
+import json
 import logging
 
 from pepper.cli import PepperCli
 from pepper import PepperException
+
+try:
+    import salt.loader
+    import salt.config
+    import salt.output
+    HAS_SALT = True
+except ImportError:
+    HAS_SALT = False
 
 try:
     from logging import NullHandler
@@ -20,22 +29,38 @@ logging.basicConfig(format='%(levelname)s %(asctime)s %(module)s: %(message)s')
 logger = logging.getLogger('pepper')
 logger.addHandler(NullHandler())
 
+class Pepper(object):
+    def __call__(self):
+        try:
+            cli = PepperCli()
+            for exit_code, result in cli.run():
+                if HAS_SALT:
+                    if not hasattr(self, 'opts'):
+                        self.opts = salt.config.client_config('/etc/salt/master')
+                    if not hasattr(self, 'modules'):
+                        self.modules = salt.loader.minion_mods(self.opts)
+                    try:
+                        oput = self.modules[cli.args[1]].__outputter__
+                    except (KeyError, AttributeError, TypeError):
+                        oput = 'nested'
+                    for ret in json.loads(result)['return']:
+                        salt.output.display_output(ret, oput, opts=self.opts)
+                else:
+                    print(result)
+                if exit_code is not None:
+                    raise SystemExit(exit_code)
+        except PepperException as exc:
+            print('Pepper error: {0}'.format(exc), file=sys.stderr)
+            raise SystemExit(1)
+        except KeyboardInterrupt:
+            # TODO: mimic CLI and output JID on ctrl-c
+            raise SystemExit(0)
+        except Exception as e:
+            print(e)
+            print('Uncaught Pepper error (increase verbosity for the full traceback).',
+                    file=sys.stderr)
+            logger.debug('Uncaught traceback:', exc_info=True)
+            raise SystemExit(1)
+
 if __name__ == '__main__':
-    try:
-        cli = PepperCli()
-        for exit_code, result in cli.run():
-            print(result)
-            if exit_code is not None:
-                raise SystemExit(exit_code)
-    except PepperException as exc:
-        print('Pepper error: {0}'.format(exc), file=sys.stderr)
-        raise SystemExit(1)
-    except KeyboardInterrupt:
-        # TODO: mimic CLI and output JID on ctrl-c
-        raise SystemExit(0)
-    except Exception as e:
-        print(e)
-        print('Uncaught Pepper error (increase verbosity for the full traceback).',
-                file=sys.stderr)
-        logger.debug('Uncaught traceback:', exc_info=True)
-        raise SystemExit(1)
+    Pepper()()

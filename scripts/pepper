@@ -30,23 +30,31 @@ logger = logging.getLogger('pepper')
 logger.addHandler(NullHandler())
 
 class Pepper(object):
+    def __init__(self):
+        self.cli = PepperCli()
+        self.opts = salt.config.client_config('/etc/salt/master')
+
+    @property
+    def output(self, ret):
+        if not hasattr(self, 'modules'):
+            self.modules = salt.loader.minion_mods(self.opts)
+        try:
+            oput = self.modules[self.cli.args[1]].__outputter__
+        except (KeyError, AttributeError, TypeError):
+            oput = 'nested'
+        return oput
+
     def __call__(self):
         try:
-            cli = PepperCli()
-            for exit_code, result in cli.run():
+            for exit_code, result in self.cli.run():
                 if HAS_SALT:
                     logger.info('Use Salt outputters')
-                    if not hasattr(self, 'opts'):
-                        self.opts = salt.config.client_config('/etc/salt/master')
-                    if not hasattr(self, 'modules'):
-                        self.modules = salt.loader.minion_mods(self.opts)
-                    try:
-                        oput = self.modules[cli.args[1]].__outputter__
-                    except (KeyError, AttributeError, TypeError):
-                        oput = 'nested'
                     for ret in json.loads(result)['return']:
-                        for minionid, minionret in ret.items():
-                            salt.output.display_output({minionid: minionret}, oput, opts=self.opts)
+                        if 'data' in ret:
+                            salt.output.display_output(ret['data'], ret.get('outputter', 'nested'), opts=self.opts)
+                        else:
+                            for minionid, minionret in ret.items():
+                                salt.output.display_output({minionid: minionret}, self.get_output(), opts=self.opts)
                 else:
                     print(result)
                 if exit_code is not None:

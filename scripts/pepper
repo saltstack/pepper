@@ -55,11 +55,19 @@ class Pepper(object):
                             salt.output.display_output(ret['data'], ret.get('outputter', 'nested'), opts=self.opts)
                         else:
                             for minionid, minionret in ret.items():
-                                salt.output.display_output(
-                                    {minionid: minionret['ret']},
-                                    minionret.get('out', self.output),
-                                    opts=self.opts
-                                )
+                                if isinstance(minionret, dict) and 'ret' in minionret:
+                                    # version >= 2017.7
+                                    salt.output.display_output(
+                                        {minionid: minionret['ret']},
+                                        minionret.get('out', self.output),
+                                        opts=self.opts
+                                    )
+                                else:
+                                    salt.output.display_output(
+                                        {minionid: minionret},
+                                        self.output,
+                                        opts=self.opts
+                                    )
                 else:
                     print(result)
                 if exit_code is not None:

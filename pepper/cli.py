@@ -490,11 +490,13 @@ class PepperCli(object):
                 if e.args[0] is not 2:
                     logger.error('Unable to load login token from {0} {1}'
                         .format(token_file, str(e)))
+                    if os.path.isfile(token_file):
+                        os.remove(token_file)
                 auth = login(**self.parse_login())
                 try:
                     oldumask = os.umask(0)
                     fdsc = os.open(token_file, os.O_WRONLY | os.O_CREAT, 0o600)
-                    with os.fdopen(fdsc, 'wt') as f:
+                    with os.fdopen(fdsc, 'w+t') as f:
                         json.dump(auth, f)
                 except Exception as e:
                     logger.error('Unable to save token to {0} {1}'

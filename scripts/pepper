@@ -51,33 +51,34 @@ class Pepper(object):
                 if HAS_SALT:
                     logger.info('Use Salt outputters')
                     for ret in json.loads(result)['return']:
-                        if 'data' in ret:
-                            salt.output.display_output(
-                                ret['data'],
-                                self.cli.options.output or ret.get('outputter', 'nested'),
-                                opts=self.opts
-                            )
-                        elif isinstance(ret, list):
+                        if isinstance(ret, dict):
+                            if 'data' in ret:
+                                salt.output.display_output(
+                                    ret['data'],
+                                    self.cli.options.output or ret.get('outputter', 'nested'),
+                                    opts=self.opts
+                                )
+                            else:
+                                for minionid, minionret in ret.items():
+                                    if isinstance(minionret, dict) and 'ret' in minionret:
+                                        # version >= 2017.7
+                                        salt.output.display_output(
+                                            {minionid: minionret['ret']},
+                                            self.cli.options.output or minionret.get('out', self.output),
+                                            opts=self.opts
+                                        )
+                                    else:
+                                        salt.output.display_output(
+                                            {minionid: minionret},
+                                            self.cli.options.output or self.output,
+                                            opts=self.opts
+                                        )
+                        else:
                             salt.output.display_output(
                                 {self.cli.options.client: ret},
                                 'nested',
                                 opts=self.opts,
                             )
-                        else:
-                            for minionid, minionret in ret.items():
-                                if isinstance(minionret, dict) and 'ret' in minionret:
-                                    # version >= 2017.7
-                                    salt.output.display_output(
-                                        {minionid: minionret['ret']},
-                                        self.cli.options.output or minionret.get('out', self.output),
-                                        opts=self.opts
-                                    )
-                                else:
-                                    salt.output.display_output(
-                                        {minionid: minionret},
-                                        self.cli.options.output or self.output,
-                                        opts=self.opts
-                                    )
                 else:
                     print(result)
                 if exit_code is not None:

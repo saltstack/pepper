@@ -52,13 +52,7 @@ class Pepper(object):
                     logger.info('Use Salt outputters')
                     for ret in json.loads(result)['return']:
                         if isinstance(ret, dict):
-                            if 'data' in ret:
-                                salt.output.display_output(
-                                    ret['data'],
-                                    self.cli.options.output or ret.get('outputter', 'nested'),
-                                    opts=self.opts
-                                )
-                            else:
+                            if self.cli.options.client == 'local':
                                 for minionid, minionret in ret.items():
                                     if isinstance(minionret, dict) and 'ret' in minionret:
                                         # version >= 2017.7
@@ -73,6 +67,18 @@ class Pepper(object):
                                             self.cli.options.output or self.output,
                                             opts=self.opts
                                         )
+                            elif 'data' in ret:
+                                salt.output.display_output(
+                                    ret['data'],
+                                    self.cli.options.output or ret.get('outputter', 'nested'),
+                                    opts=self.opts
+                                )
+                            else:
+                                salt.output.display_output(
+                                    {self.cli.options.client: ret},
+                                    self.cli.options.output or ret.get('outputter', 'nested'),
+                                    opts=self.opts
+                                )
                         else:
                             salt.output.display_output(
                                 {self.cli.options.client: ret},

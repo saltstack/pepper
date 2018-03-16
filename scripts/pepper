@@ -64,7 +64,7 @@ class Pepper(object):
                                         # version >= 2017.7
                                         salt.output.display_output(
                                             {minionid: minionret['ret']},
-                                            self.cli.options.output or minionret.get('out', self.output),
+                                            self.cli.options.output or minionret.get('out', None) or self.output,
                                             opts=self.opts
                                         )
                                     else:

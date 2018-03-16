@@ -57,6 +57,12 @@ class Pepper(object):
                                 self.cli.options.output or ret.get('outputter', 'nested'),
                                 opts=self.opts
                             )
+                        elif isinstance(ret, list):
+                            salt.output.display_output(
+                                {self.cli.options.client: ret},
+                                'nested',
+                                opts=self.opts,
+                            )
                         else:
                             for minionid, minionret in ret.items():
                                 if isinstance(minionret, dict) and 'ret' in minionret:

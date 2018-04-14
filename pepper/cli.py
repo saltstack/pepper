@@ -41,8 +41,8 @@ class PepperCli(object):
         self.parser.option_groups.extend([
             self.add_globalopts(),
             self.add_tgtopts(),
-            self.add_authopts()
-        ])
+            self.add_authopts(),
+            self.add_retcodeopts()])
         self.parse()
 
     def get_parser(self):
@@ -125,6 +125,12 @@ class PepperCli(object):
         )
 
         self.options, self.args = self.parser.parse_args()
+
+        option_names = ["fail_any", "fail_any_none", "fail_all", "fail_all_none"]
+        toggled_options = [name for name in option_names if getattr(self.options, name)]
+        if len(toggled_options) > 1:
+            s = repr(toggled_options).strip("[]")
+            self.parser.error("Options %s are mutually exclusive" % s)
 
     def add_globalopts(self):
         '''
@@ -319,6 +325,31 @@ class PepperCli(object):
         )
 
         return optgroup
+
+
+    def add_retcodeopts(self):
+        '''
+        ret code validation options
+        '''
+        optgroup = optparse.OptionGroup(self.parser, "retcode Field Validation Options",
+                textwrap.dedent("""\
+                Validate return.HOST.retcode fields
+                """))
+
+        optgroup.add_option('--fail-any', dest='fail_any', action='store_true',
+                help="Fail if any of retcode field is non zero.")
+
+        optgroup.add_option('--fail-any-none', dest='fail_any_none', action='store_true',
+                help="Fail if any of retcode field is non zero or there is no retcode at all.")
+
+        optgroup.add_option('--fail-all', dest='fail_all', action='store_true',
+                help="Fail if all retcode fields are non zero.")
+
+        optgroup.add_option('--fail-all-none', dest='fail_all_none', action='store_true',
+                help="Fail if all retcode fields are non zero or there is no retcode at all.")
+
+        return optgroup
+
 
     def get_login_details(self):
         '''

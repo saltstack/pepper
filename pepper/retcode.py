@@ -44,7 +44,8 @@ class PepperRetcode(object):
             if isinstance(result[0], dict):
                 minion = result[0]
                 retcodes = list(minion[name].get('retcode')
-                                for name in minion if minion[name].get('retcode') is not None)
+                                for name in minion if isinstance(minion[name], dict) and
+                                minion[name].get('retcode') is not None)
                 return next((r for r in retcodes if r != 0), 0)
         return 0
 
@@ -63,7 +64,8 @@ class PepperRetcode(object):
             if isinstance(result[0], dict):
                 minion = result[0]
                 retcodes = list(minion[name].get('retcode')
-                                for name in minion if minion[name].get('retcode') is not None)
+                                for name in minion if isinstance(minion[name], dict) and
+                                minion[name].get('retcode') is not None)
                 if not retcodes:
                     return -1 # there are no retcodes
                 return next((r for r in retcodes if r != 0), 0)
@@ -84,7 +86,8 @@ class PepperRetcode(object):
             if isinstance(result[0], dict):
                 minion = result[0]
                 retcodes = list(minion[name].get('retcode')
-                                for name in minion if minion[name].get('retcode') is not None)
+                                for name in minion if isinstance(minion[name], dict) and
+                                minion[name].get('retcode') is not None)
                 if all(r for r in retcodes if r != 0):
                     return next((r for r in retcodes if r != 0), 0)
         return 0
@@ -104,7 +107,8 @@ class PepperRetcode(object):
             if isinstance(result[0], dict):
                 minion = result[0]
                 retcodes = list(minion[name].get('retcode')
-                                for name in minion if minion[name].get('retcode') is not None)
+                                for name in minion if isinstance(minion[name], dict) and
+                                minion[name].get('retcode') is not None)
                 if not retcodes:
                     return -1 # there are no retcodes
                 if all(r for r in retcodes if r != 0):

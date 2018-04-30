@@ -387,7 +387,7 @@ class PepperCli(object):
             if len(args) < 2:
                 self.parser.error("Command or target not specified")
 
-            low['expr_form'] = self.options.expr_form
+            low['tgt_type'] = self.options.expr_form
             low['tgt'] = args.pop(0)
             low['fun'] = args.pop(0)
             low['batch'] = self.options.batch
@@ -413,7 +413,7 @@ class PepperCli(object):
             if len(args) < 2:
                 self.parser.error("Command or target not specified")
 
-            low['expr_form'] = self.options.expr_form
+            low['tgt_type'] = self.options.expr_form
             low['tgt'] = args.pop(0)
             low['fun'] = args.pop(0)
             low['batch'] = self.options.batch

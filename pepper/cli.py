@@ -61,6 +61,13 @@ class PepperCli(object):
                 Configuration file location. Default is a file path in the
                 "PEPPERRC" environment variable or ~/.pepperrc.'''))
 
+        self.parser.add_option('-p', dest='profile',
+            default=os.environ.get('PEPPERPROFILE', 'main'),
+            help=textwrap.dedent('''\
+                Profile in config file to use. Default is "PEPPERPROFILE" environment
+                variable or 'main'
+                '''))
+
         self.parser.add_option('-m', dest='master',
             default=os.environ.get('MASTER_CONFIG',
                 os.path.join(os.path.expanduser('~'), '.config', 'pepper', 'master')),
@@ -266,7 +273,7 @@ class PepperCli(object):
         config.read(self.options.config)
 
         # read file
-        profile = 'main'
+        profile = self.options.profile
         if config.has_section(profile):
             for key, value in list(results.items()):
                 if config.has_option(profile, key):
@@ -317,7 +324,7 @@ class PepperCli(object):
         config.read(self.options.config)
 
         # read file
-        profile = 'main'
+        profile = self.options.profile
         if config.has_section(profile):
             if config.has_option(profile, "SALTAPI_URL"):
                 url = config.get(profile, "SALTAPI_URL")

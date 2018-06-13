@@ -607,6 +607,21 @@ class PepperCli(object):
             for exit_code, ret in self.poll_for_returns(api, load):
                 yield exit_code, json.dumps(ret, sort_keys=True, indent=4)
         else:
-            ret = self.low(api, load)
             exit_code = 0
+            # keep trying until all expected nodes return
+            total_time = 0
+            start_time = time.time()
+            while True:
+                total_time = time.time() - start_time
+                if total_time > self.options.timeout:
+                    exit_code = 1
+                    break
+                try:
+                    ret = self.low(api, load)
+                    if all(ret["return"][0].values()):
+                        break
+                    logger.debug('Incorrect reply %s', ret)
+                except Exception:
+                    logger.debug('Error with self.low(api, load) request', exc_info=True)
+                time.sleep(self.seconds_to_wait)
             yield exit_code, json.dumps(ret, sort_keys=True, indent=4)

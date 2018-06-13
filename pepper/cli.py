@@ -620,9 +620,8 @@ class PepperCli(object):
                     ret = self.low(api, load)
                     if all(ret["return"][0].values()):
                         break
-                    logger.debug('Incorrect reply {}'.format(str(ret)))
-                except:
+                    logger.debug('Incorrect reply %s', ret)
+                except Exception:
                     logger.debug('Error with self.low(api, load) request', exc_info=True)
-                    pass
                 time.sleep(self.seconds_to_wait)
             yield exit_code, json.dumps(ret, sort_keys=True, indent=4)

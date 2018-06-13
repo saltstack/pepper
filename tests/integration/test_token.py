@@ -1,16 +1,19 @@
 import json
 import time
 
-
-def test_local_token(tokfile, pepper_cli):
+def test_local_token(tokfile, pepper_cli, session_minion_id):
     '''Test local execution with token file'''
     ret = pepper_cli('-x', tokfile, '--make-token', '--run-uri', '*', 'test.ping')
-    assert ret is False
+    assert ret['return'][0][session_minion_id]['ret'] is True
 
 def test_runner_token(tokfile, pepper_cli):
     '''Test runner execution with token file'''
     ret = pepper_cli('-x', tokfile, '--make-token', '--run-uri', '--client', 'runner', 'test.metasyntactic')
-    assert ret is False
+    exps = [
+        'foo', 'bar', 'baz', 'qux', 'quux', 'quuz', 'corge', 'grault',
+        'garply', 'waldo', 'fred', 'plugh', 'xyzzy', 'thud'
+    ]
+    assert all(exp in ret['return'][0] for exp in exps)
 
 def test_token_expire(tokfile, pepper_cli):
     '''Test token override param'''

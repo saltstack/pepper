@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 
-import pytest
+# Import python libraries
 import sys
 
+# Import pytest libraries
+import pytest
 from pytestsalt.utils import SaltDaemonScriptBase, start_daemon, get_unused_localhost_port
-from pytestsalt.fixtures.config import apply_master_config
 
+# Import Pepper libraries
 import pepper
 
 
@@ -166,17 +168,17 @@ def session_salt_api_after_start(session_salt_api):
 
 @pytest.fixture(scope='session')
 def session_salt_api(request,
-                        session_salt_master,
-                        session_salt_minion,
-                        session_master_id,
-                        session_master_config,
-                        session_salt_api_before_start,  # pylint: disable=unused-argument
-                        session_api_log_prefix,
-                        cli_api_script_name,
-                        log_server,
-                        _cli_bin_dir,
-                        session_conf_dir,
-                        _salt_fail_hard):
+                     session_salt_master,
+                     session_salt_minion,
+                     session_master_id,
+                     session_master_config,
+                     session_salt_api_before_start,  # pylint: disable=unused-argument
+                     session_api_log_prefix,
+                     cli_api_script_name,
+                     log_server,
+                     _cli_bin_dir,
+                     session_conf_dir,
+                     _salt_fail_hard):
     '''
     Returns a running salt-api
     '''
@@ -185,7 +187,7 @@ def session_salt_api(request,
                         daemon_id=session_master_id,
                         daemon_log_prefix=session_api_log_prefix,
                         daemon_cli_script_name=cli_api_script_name,
-                        daemon_config=session_api_config,
+                        daemon_config=session_master_config,
                         daemon_config_dir=session_conf_dir,
                         daemon_class=SaltApi,
                         bin_dir_path=_cli_bin_dir,

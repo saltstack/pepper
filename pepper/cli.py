@@ -468,7 +468,10 @@ class PepperCli(object):
             for arg in args:
                 if '=' in arg:
                     key, value = arg.split('=', 1)
-                    low[key] = value
+                    try:
+                        low[key] = json.loads(value)
+                    except json.decoder.JSONDecodeError:
+                        low[key] = value
                 else:
                     low.setdefault('args', []).append(arg)
         elif client.startswith('wheel'):

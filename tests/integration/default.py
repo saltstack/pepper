@@ -28,7 +28,7 @@ try:
     SALTAPI_EAUTH = os.environ['SALTAPI_EAUTH']
 except KeyError:
     raise SystemExit('The following environment variables must be set: '
-        'SALTAPI_URL, SALTAPI_USER, SALTAPI_PASS, SALTAPI_EAUTH.')
+                     'SALTAPI_URL, SALTAPI_USER, SALTAPI_PASS, SALTAPI_EAUTH.')
 
 
 def _pepper(*args):
@@ -90,22 +90,22 @@ class TestTokens(unittest.TestCase):
     def test_local_token(self):
         '''Test local execution with token file'''
         ret = self._pepper('-x', self.tokfile,
-                '--make-token', '--run-uri', '*', 'test.ping')
+                           '--make-token', '--run-uri', '*', 'test.ping')
         self.assertTrue(ret.values()[0])
 
     def test_runner_token(self):
         '''Test runner execution with token file'''
         ret = self._pepper('-x', self.tokfile,
-                '--make-token', '--run-uri',
-                '--client', 'runner', 'test.metasyntactic')
+                           '--make-token', '--run-uri',
+                           '--client', 'runner', 'test.metasyntactic')
         self.assertTrue(ret[0] == 'foo')
 
     def test_token_expire(self):
         '''Test token override param'''
         now = time.time()
         self._pepper('-x', self.tokfile, '--make-token', '--run-uri',
-                '--token-expire', '94670856',
-                '*', 'test.ping')
+                     '--token-expire', '94670856',
+                     '*', 'test.ping')
 
         with open(self.tokfile, 'r') as f:
             token = json.load(f)

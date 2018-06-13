@@ -9,7 +9,7 @@ import logging
 import ssl
 try:
     ssl._create_default_https_context = ssl._create_stdlib_context
-except:
+except Exception:
     pass
 
 try:
@@ -57,10 +57,7 @@ class Pepper(object):
               u'ms-4': True}]}
 
     '''
-    def __init__(self,
-            api_url='https://localhost:8000',
-            debug_http=False,
-            ignore_ssl_errors=False):
+    def __init__(self, api_url='https://localhost:8000', debug_http=False, ignore_ssl_errors=False):
         '''
         Initialize the class with the URL of the API
 
@@ -83,7 +80,7 @@ class Pepper(object):
         self.debug_http = int(debug_http)
         self._ssl_verify = not ignore_ssl_errors
         self.auth = {}
-    
+
     def req_stream(self, path):
         '''
         A thin wrapper to get a response from saltstack api.
@@ -111,11 +108,9 @@ class Pepper(object):
         else:
             raise PepperException('Authentication required')
             return
-        # Optionally toggle SSL verification
-        #self._ssl_verify = self.ignore_ssl_errors
         params = {'url': self._construct_url(path),
                   'headers': headers,
-                  'verify': self._ssl_verify == True,
+                  'verify': self._ssl_verify is True,
                   'stream': True
                   }
         try:
@@ -130,12 +125,12 @@ class Pepper(object):
                 return
 
             if resp.status_code == 404:
-                raise PepperException(str(resp.status_code) +' :This request returns nothing.')
+                raise PepperException(str(resp.status_code) + ' :This request returns nothing.')
                 return
         except PepperException as e:
             print(e)
             return
-        return resp      
+        return resp
 
     def req_get(self, path):
         '''
@@ -156,11 +151,9 @@ class Pepper(object):
         else:
             raise PepperException('Authentication required')
             return
-        # Optionally toggle SSL verification
-        #self._ssl_verify = self.ignore_ssl_errors
         params = {'url': self._construct_url(path),
                   'headers': headers,
-                  'verify': self._ssl_verify == True,
+                  'verify': self._ssl_verify is True,
                   }
         try:
             resp = requests.get(**params)
@@ -174,7 +167,7 @@ class Pepper(object):
                 return
 
             if resp.status_code == 404:
-                raise PepperException(str(resp.status_code) +' :This request returns nothing.')
+                raise PepperException(str(resp.status_code) + ' :This request returns nothing.')
                 return
         except PepperException as e:
             print(e)
@@ -228,8 +221,6 @@ class Pepper(object):
         try:
             if not (self._ssl_verify):
                 con = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-                #con.check_hostname = False
-                #con.verify_mode = ssl.CERT_NONE
                 f = urlopen(req, context=con)
             else:
                 f = urlopen(req)

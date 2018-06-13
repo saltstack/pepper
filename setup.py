@@ -6,6 +6,7 @@ A CLI front-end to a running salt-api system
 import json
 import os
 import re
+import six
 
 from distutils.core import setup
 from distutils.dist import Distribution
@@ -103,7 +104,7 @@ def write_version_file(base_dir):
     ver_path = os.path.join(base_dir, 'pepper', 'version.json')
     version, sha = get_version()
 
-    with open(ver_path, 'wb') as f:
+    with open(ver_path, 'wb' if six.PY2 else 'w') as f:
         json.dump({'version': version, 'sha': sha}, f)
 
 class PepperSdist(sdist.sdist):

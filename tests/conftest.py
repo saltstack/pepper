@@ -2,9 +2,11 @@
 from __future__ import absolute_import, unicode_literals
 
 # Import python libraries
+import itertools
 import json
 import os.path
 import shutil
+import subprocess
 import sys
 import tempfile
 
@@ -68,7 +70,7 @@ def pepper_cli(salt_api, salt_api_port):
         '--eauth={0}'.format('sharedsecret'),
         '--out=json',
     ]
-    def _run_pepper_cli(*args)
+    def _run_pepper_cli(*args):
         return json.loads(subprocess.check_output(itertools.chain(def_args, args)))
     return _run_pepper_cli
 

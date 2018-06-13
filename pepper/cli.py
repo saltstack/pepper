@@ -567,7 +567,7 @@ class PepperCli(object):
                 try:
                     oldumask = os.umask(0)
                     fdsc = os.open(token_file, os.O_WRONLY | os.O_CREAT, 0o600)
-                    with os.fdopen(fdsc, 'w+t') as f:
+                    with os.fdopen(fdsc, 'wt') as f:
                         json.dump(auth, f)
                 except Exception as e:
                     logger.error('Unable to save token to {0} {1}'.format(token_file, str(e)))

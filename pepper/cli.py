@@ -39,9 +39,11 @@ class PepperCli(object):
     def __init__(self, seconds_to_wait=3):
         self.seconds_to_wait = seconds_to_wait
         self.parser = self.get_parser()
-        self.parser.option_groups.extend([self.add_globalopts(),
+        self.parser.option_groups.extend([
+            self.add_globalopts(),
             self.add_tgtopts(),
-            self.add_authopts()])
+            self.add_authopts()
+        ])
         self.parse()
 
     def get_parser(self):
@@ -54,48 +56,67 @@ class PepperCli(object):
         '''
         Parse all args
         '''
-        self.parser.add_option('-c', dest='config',
-            default=os.environ.get('PEPPERRC',
-                os.path.join(os.path.expanduser('~'), '.pepperrc')),
-            help=textwrap.dedent('''\
+        self.parser.add_option(
+            '-c', dest='config',
+            default=os.environ.get(
+                'PEPPERRC',
+                os.path.join(os.path.expanduser('~'), '.pepperrc')
+            ),
+            help=textwrap.dedent('''
                 Configuration file location. Default is a file path in the
-                "PEPPERRC" environment variable or ~/.pepperrc.'''))
+                "PEPPERRC" environment variable or ~/.pepperrc.
+            '''),
+        )
 
-        self.parser.add_option('-p', dest='profile',
+        self.parser.add_option(
+            '-p', dest='profile',
             default=os.environ.get('PEPPERPROFILE', 'main'),
-            help=textwrap.dedent('''\
+            help=textwrap.dedent('''
                 Profile in config file to use. Default is "PEPPERPROFILE" environment
                 variable or 'main'
-                '''))
+            '''),
+        )
 
-        self.parser.add_option('-m', dest='master',
-            default=os.environ.get('MASTER_CONFIG',
-                os.path.join(os.path.expanduser('~'), '.config', 'pepper', 'master')),
-            help=textwrap.dedent('''\
+        self.parser.add_option(
+            '-m', dest='master',
+            default=os.environ.get(
+                'MASTER_CONFIG',
+                os.path.join(os.path.expanduser('~'), '.config', 'pepper', 'master')
+            ),
+            help=textwrap.dedent('''
                 Master Configuration file location for configuring outputters.
                 default: ~/.config/pepper/master
-            '''))
+            '''),
+        )
 
-        self.parser.add_option('-o', '--out', dest='output',
-            default=None,
-            help=textwrap.dedent('''\
+        self.parser.add_option(
+            '-o', '--out', dest='output', default=None,
+            help=textwrap.dedent('''
                 Salt outputter to use for printing out returns.
-            '''))
+            ''')
+        )
 
-        self.parser.add_option('-v', dest='verbose', default=0, action='count',
-            help=textwrap.dedent('''\
-                Increment output verbosity; may be specified multiple times'''))
+        self.parser.add_option(
+            '-v', dest='verbose', default=0, action='count',
+            help=textwrap.dedent('''
+                Increment output verbosity; may be specified multiple times
+            '''),
+        )
 
-        self.parser.add_option('-H', '--debug-http', dest='debug_http', default=False,
-            action='store_true', help=textwrap.dedent('''\
-            Output the HTTP request/response headers on stderr'''))
+        self.parser.add_option(
+            '-H', '--debug-http', dest='debug_http', default=False, action='store_true',
+            help=textwrap.dedent('''
+                Output the HTTP request/response headers on stderr
+            '''),
+        )
 
-        self.parser.add_option('--ignore-ssl-errors', action='store_true',
-                            dest='ignore_ssl_certificate_errors',
-                            default=False,
-                            help=textwrap.dedent('''\
-            Ignore any SSL certificate that may be encountered. Note that it is
-            recommended to resolve certificate errors for production.'''))
+        self.parser.add_option(
+            '--ignore-ssl-errors', action='store_true', dest='ignore_ssl_certificate_errors', default=False,
+            help=textwrap.dedent('''
+                Ignore any SSL certificate that may be encountered. Note that it is
+                recommended to resolve certificate errors for production.
+            '''),
+        )
 
         self.options, self.args = self.parser.parse_args()
 
@@ -103,42 +124,48 @@ class PepperCli(object):
         '''
         Misc global options
         '''
-        optgroup = optparse.OptionGroup(self.parser, "Pepper ``salt`` Options",
-                "Mimic the ``salt`` CLI")
+        optgroup = optparse.OptionGroup(self.parser, "Pepper ``salt`` Options", "Mimic the ``salt`` CLI")
 
-        optgroup.add_option('-t', '--timeout', dest='timeout', type='int',
-            default=60, help=textwrap.dedent('''\
-            Specify wait time (in seconds) before returning control to the
-            shell'''))
+        optgroup.add_option(
+            '-t', '--timeout', dest='timeout', type='int', default=60,
+            help=textwrap.dedent('''
+                Specify wait time (in seconds) before returning control to the shell
+            '''),
+        )
 
-        optgroup.add_option('--client', dest='client', default='local',
-            help=textwrap.dedent('''\
-            specify the salt-api client to use (local, local_async,
-            runner, etc)'''))
+        optgroup.add_option(
+            '--client', dest='client', default='local',
+            help=textwrap.dedent('''
+                specify the salt-api client to use (local, local_async,
+                runner, etc)
+            '''),
+        )
 
-        optgroup.add_option('--json', dest='json_input',
-            help=textwrap.dedent('''\
-            Enter JSON at the CLI instead of positional (text) arguments. This
-            is useful for arguments that need complex data structures.
-            Specifying this argument will cause positional arguments to be
-            ignored.'''))
+        optgroup.add_option(
+            '--json', dest='json_input',
+            help=textwrap.dedent('''
+                Enter JSON at the CLI instead of positional (text) arguments. This
+                is useful for arguments that need complex data structures.
+                Specifying this argument will cause positional arguments to be
+                ignored.
+            '''),
+        )
 
-        optgroup.add_option('--json-file', dest='json_file',
-            help=textwrap.dedent('''\
-            Specify file containing the JSON to be used by pepper'''))
+        optgroup.add_option(
+            '--json-file', dest='json_file',
+            help=textwrap.dedent('''
+                Specify file containing the JSON to be used by pepper
+            '''),
+        )
 
-        # optgroup.add_option('--out', '--output', dest='output',
-        #        help="Specify the output format for the command output")
-
-        # optgroup.add_option('--return', default='', metavar='RETURNER',
-        #    help="Redirect the output from a command to a persistent data store")
-
-        optgroup.add_option('--fail-if-incomplete', action='store_true',
-            dest='fail_if_minions_dont_respond', default=False,
-            help=textwrap.dedent('''\
-            Return a failure exit code if not all minions respond. This option
-            requires the authenticated user have access to run the
-            `jobs.list_jobs` runner function.'''))
+        optgroup.add_option(
+            '--fail-if-incomplete', action='store_true', dest='fail_if_minions_dont_respond', default=False,
+            help=textwrap.dedent('''
+                Return a failure exit code if not all minions respond. This option
+                requires the authenticated user have access to run the
+                `jobs.list_jobs` runner function.
+            '''),
+        )
 
         return optgroup
 
@@ -146,46 +173,54 @@ class PepperCli(object):
         '''
         Targeting
         '''
-        optgroup = optparse.OptionGroup(self.parser, "Targeting Options",
-                "Target which minions to run commands on")
+        optgroup = optparse.OptionGroup(self.parser, "Targeting Options", "Target which minions to run commands on")
 
         optgroup.defaults.update({'expr_form': 'glob'})
 
-        optgroup.add_option('-E', '--pcre', dest='expr_form',
-                action='store_const', const='pcre',
-            help="Target hostnames using PCRE regular expressions")
+        optgroup.add_option(
+            '-E', '--pcre', dest='expr_form', action='store_const', const='pcre',
+            help="Target hostnames using PCRE regular expressions",
+        )
 
-        optgroup.add_option('-L', '--list', dest='expr_form',
-                action='store_const', const='list',
-            help="Specify a comma delimited list of hostnames")
+        optgroup.add_option(
+            '-L', '--list', dest='expr_form', action='store_const', const='list',
+            help="Specify a comma delimited list of hostnames",
+        )
 
-        optgroup.add_option('-G', '--grain', dest='expr_form',
-                action='store_const', const='grain',
-            help="Target based on system properties")
+        optgroup.add_option(
+            '-G', '--grain', dest='expr_form', action='store_const', const='grain',
+            help="Target based on system properties",
+        )
 
-        optgroup.add_option('--grain-pcre', dest='expr_form',
-                action='store_const', const='grain_pcre',
-            help="Target based on PCRE matches on system properties")
+        optgroup.add_option(
+            '--grain-pcre', dest='expr_form', action='store_const', const='grain_pcre',
+            help="Target based on PCRE matches on system properties",
+        )
 
-        optgroup.add_option('-I', '--pillar', dest='expr_form',
-                action='store_const', const='pillar',
-            help="Target based on pillar values")
+        optgroup.add_option(
+            '-I', '--pillar', dest='expr_form', action='store_const', const='pillar',
+            help="Target based on pillar values",
+        )
 
-        optgroup.add_option('--pillar-pcre', dest='expr_form',
-                action='store_const', const='pillar_pcre',
-            help="Target based on PCRE matches on pillar values")
+        optgroup.add_option(
+            '--pillar-pcre', dest='expr_form', action='store_const', const='pillar_pcre',
+            help="Target based on PCRE matches on pillar values"
+        )
 
-        optgroup.add_option('-R', '--range', dest='expr_form',
-                action='store_const', const='range',
-            help="Target based on range expression")
+        optgroup.add_option(
+            '-R', '--range', dest='expr_form', action='store_const', const='range',
+            help="Target based on range expression",
+        )
 
-        optgroup.add_option('-C', '--compound', dest='expr_form',
-                action='store_const', const='compound',
-            help="Target based on compound expression")
+        optgroup.add_option(
+            '-C', '--compound', dest='expr_form', action='store_const', const='compound',
+            help="Target based on compound expression",
+        )
 
-        optgroup.add_option('-N', '--nodegroup', dest='expr_form',
-                action='store_const', const='nodegroup',
-            help="Target based on a named nodegroup")
+        optgroup.add_option(
+            '-N', '--nodegroup', dest='expr_form', action='store_const', const='nodegroup',
+            help="Target based on a named nodegroup",
+        )
 
         optgroup.add_option('--batch', dest='batch', default=None)
 
@@ -195,59 +230,87 @@ class PepperCli(object):
         '''
         Authentication options
         '''
-        optgroup = optparse.OptionGroup(self.parser, "Authentication Options",
-                textwrap.dedent("""\
+        optgroup = optparse.OptionGroup(
+            self.parser, "Authentication Options",
+            textwrap.dedent('''
                 Authentication credentials can optionally be supplied via the
                 environment variables:
                 SALTAPI_URL, SALTAPI_USER, SALTAPI_PASS, SALTAPI_EAUTH.
-                """))
+            '''),
+        )
 
-        optgroup.add_option('-u', '--saltapi-url', dest='saltapiurl',
-                help="Specify the host url.  Defaults to https://localhost:8080")
+        optgroup.add_option(
+            '-u', '--saltapi-url', dest='saltapiurl',
+            help="Specify the host url.  Defaults to https://localhost:8080"
+        )
 
-        optgroup.add_option('-a', '--auth', '--eauth', '--extended-auth',
-            dest='eauth', help=textwrap.dedent("""\
-                    Specify the external_auth backend to authenticate against and
-                    interactively prompt for credentials"""))
+        optgroup.add_option(
+            '-a', '--auth', '--eauth', '--extended-auth', dest='eauth',
+            help=textwrap.dedent('''
+                Specify the external_auth backend to authenticate against and
+                interactively prompt for credentials
+            '''),
+        )
 
-        optgroup.add_option('--username',
-            dest='username', help=textwrap.dedent("""\
-                    Optional, defaults to user name. will be prompt if empty unless --non-interactive"""))
+        optgroup.add_option(
+            '--username', dest='username',
+            help=textwrap.dedent('''
+                Optional, defaults to user name. will be prompt if empty unless --non-interactive
+            '''),
+        )
 
-        optgroup.add_option('--password',
-            dest='password', help=textwrap.dedent("""\
-                    Optional, but will be prompted unless --non-interactive"""))
+        optgroup.add_option(
+            '--password', dest='password',
+            help=textwrap.dedent('''
+                Optional, but will be prompted unless --non-interactive
+            '''),
+        )
 
-        optgroup.add_option('--token-expire',
-            dest='token_expire', help=textwrap.dedent("""\
-                    Set eauth token expiry in seconds. Must be allowed per
-                    user. See the `token_expire_user_override` Master setting
-                    for more info."""))
+        optgroup.add_option(
+            '--token-expire', dest='token_expire',
+            help=textwrap.dedent('''
+                Set eauth token expiry in seconds. Must be allowed per
+                user. See the `token_expire_user_override` Master setting
+                for more info.
+            '''),
+        )
 
-        optgroup.add_option('--non-interactive',
-            action='store_false', dest='interactive', help=textwrap.dedent("""\
-                    Optional, fail rather than waiting for input"""), default=True)
+        optgroup.add_option(
+            '--non-interactive', action='store_false', dest='interactive', default=True,
+            help=textwrap.dedent('''
+                Optional, fail rather than waiting for input
+            ''')
+        )
 
-        optgroup.add_option('-T', '--make-token', default=False,
-            dest='mktoken', action='store_true',
-            help=textwrap.dedent("""\
+        optgroup.add_option(
+            '-T', '--make-token', default=False, dest='mktoken', action='store_true',
+            help=textwrap.dedent('''
                 Generate and save an authentication token for re-use. The token is
                 generated and made available for the period defined in the Salt
-                Master."""))
+                Master.
+            '''),
+        )
 
-        optgroup.add_option('-r', '--run-uri', default=False,
-            dest='userun', action='store_true',
-            help=textwrap.dedent("""\
+        optgroup.add_option(
+            '-r', '--run-uri', default=False, dest='userun', action='store_true',
+            help=textwrap.dedent('''
                 Use an eauth token from /token and send commands through the
                 /run URL instead of the traditional session token
-                approach."""))
+                approach.
+            '''),
+        )
 
-        optgroup.add_option('-x', dest='cache',
-            default=os.environ.get('PEPPERCACHE',
-                os.path.join(os.path.expanduser('~'), '.peppercache')),
-            help=textwrap.dedent('''\
+        optgroup.add_option(
+            '-x', dest='cache',
+            default=os.environ.get(
+                'PEPPERCACHE',
+                os.path.join(os.path.expanduser('~'), '.peppercache')
+            ),
+            help=textwrap.dedent('''
                 Cache file location. Default is a file path in the
-                "PEPPERCACHE" environment variable or ~/.peppercache.'''))
+                "PEPPERCACHE" environment variable or ~/.peppercache.
+            '''),
+        )
 
         return optgroup
 
@@ -449,7 +512,6 @@ class PepperCli(object):
         # keep trying until all expected nodes return
         total_time = 0
         start_time = time.time()
-        ret = {}
         exit_code = 0
         while True:
             total_time = time.time() - start_time
@@ -495,8 +557,7 @@ class PepperCli(object):
                     raise Exception('Login token expired')
             except Exception as e:
                 if e.args[0] is not 2:
-                    logger.error('Unable to load login token from {0} {1}'
-                        .format(token_file, str(e)))
+                    logger.error('Unable to load login token from {0} {1}'.format(token_file, str(e)))
                     if os.path.isfile(token_file):
                         os.remove(token_file)
                 auth = login(**self.parse_login())
@@ -506,8 +567,7 @@ class PepperCli(object):
                     with os.fdopen(fdsc, 'w+t') as f:
                         json.dump(auth, f)
                 except Exception as e:
-                    logger.error('Unable to save token to {0} {1}'
-                        .format(token_file, str(e)))
+                    logger.error('Unable to save token to {0} {1}'.format(token_file, str(e)))
                 finally:
                     os.umask(oldumask)
         else:

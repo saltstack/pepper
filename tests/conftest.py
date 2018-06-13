@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 
-import logging
 import pytest
 import sys
 
 from pytestsalt.utils import SaltDaemonScriptBase, start_daemon, get_unused_localhost_port
 from pytestsalt.fixtures.config import apply_master_config
 
-log = logging.getLogger(__name__)
+import pepper
 
 
 class SaltApi(SaltDaemonScriptBase):
@@ -37,12 +36,30 @@ def salt_api_port():
 
 
 @pytest.fixture
+def pepper_client(salt_api, salt_api_port):
+    client = pepper.Pepper('http://localhost:{0}'.format(salt_api_port))
+    client.login('pepper', 'pepper', 'sharedsecret')
+    return client
+
+
+@pytest.fixture
 def master_config_overrides(salt_api_port):
     return {
         'rest_cherrypy': {
             'port': salt_api_port,
             'disable_ssl': True,
-        }
+        },
+        'external_auth': {
+            'sharedsecret': {
+                'pepper': [
+                    '.*',
+                    '@jobs',
+                    '@wheel',
+                    '@runner',
+                ],
+            },
+        },
+        'sharedsecret': 'pepper',
     }
 
 

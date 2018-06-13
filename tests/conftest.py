@@ -2,7 +2,11 @@
 from __future__ import absolute_import, unicode_literals
 
 # Import python libraries
+import json
+import os.path
+import shutil
 import sys
+import tempfile
 
 # Import pytest libraries
 import pytest
@@ -42,6 +46,31 @@ def pepper_client(salt_api, salt_api_port):
     client = pepper.Pepper('http://localhost:{0}'.format(salt_api_port))
     client.login('pepper', 'pepper', 'sharedsecret')
     return client
+
+
+@pytest.fixture
+def tokfile():
+    tokdir = tempfile.mkdtemp()
+    yield os.path.join(tokdir, 'peppertok.json')
+    shutil.rmtree(tokdir)
+
+
+@pytest.fixture
+def pepper_cli(salt_api, salt_api_port):
+    '''
+    Wrapper to invoke Pepper with common params and inside an empty env
+    '''
+    def_args = [
+        'pepper',
+        '--saltapi-url=http://localhost:{0}'.format(salt_api_port),
+        '--username={0}'.format('pepper'),
+        '--password={0}'.format('pepper'),
+        '--eauth={0}'.format('sharedsecret'),
+        '--out=json',
+    ]
+    def _run_pepper_cli(*args)
+        return json.loads(subprocess.check_output(itertools.chain(def_args, args)))
+    return _run_pepper_cli
 
 
 @pytest.fixture
@@ -193,3 +222,4 @@ def session_salt_api(request,
                         bin_dir_path=_cli_bin_dir,
                         fail_hard=_salt_fail_hard,
                         start_timeout=30)
+

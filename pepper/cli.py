@@ -434,7 +434,7 @@ class PepperCli(object):
         if self.options.json_input:
             try:
                 return json.loads(self.options.json_input)
-            except ValueError:
+            except JSONDecodeError:
                 logger.error("Invalid JSON given.")
                 raise SystemExit(1)
 
@@ -443,7 +443,7 @@ class PepperCli(object):
                 with open(self.options.json_file, 'r') as json_content:
                     try:
                         return json.load(json_content)
-                    except ValueError:
+                    except JSONDecodeError:
                         logger.error("Invalid JSON given.")
                         raise SystemExit(1)
             except Exception as e:

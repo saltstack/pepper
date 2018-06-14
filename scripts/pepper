@@ -18,4 +18,5 @@ logger.addHandler(NullHandler())
 
 
 if __name__ == '__main__':
-    pepper.script.main()
+    exit_code = pepper.script.Pepper()()
+    raise SystemExit(exit_code if exit_code is not None else 0)

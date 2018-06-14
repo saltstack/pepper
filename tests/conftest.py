@@ -2,7 +2,13 @@
 from __future__ import absolute_import, unicode_literals
 
 # Import python libraries
+import itertools
+import os.path
+import shutil
+import subprocess
 import sys
+import tempfile
+import yaml
 
 # Import pytest libraries
 import pytest
@@ -10,6 +16,9 @@ from pytestsalt.utils import SaltDaemonScriptBase, start_daemon, get_unused_loca
 
 # Import Pepper libraries
 import pepper
+
+DEFAULT_MASTER_ID = 'pytest-salt-master'
+DEFAULT_MINION_ID = 'pytest-salt-minion'
 
 
 class SaltApi(SaltDaemonScriptBase):
@@ -29,7 +38,7 @@ class SaltApi(SaltDaemonScriptBase):
         return [self.config['rest_cherrypy']['port']]
 
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def salt_api_port():
     '''
     Returns an unused localhost port for the api port
@@ -38,14 +47,44 @@ def salt_api_port():
 
 
 @pytest.fixture
-def pepper_client(salt_api, salt_api_port):
+def pepper_client(session_salt_api, salt_api_port):
     client = pepper.Pepper('http://localhost:{0}'.format(salt_api_port))
     client.login('pepper', 'pepper', 'sharedsecret')
     return client
 
 
 @pytest.fixture
-def master_config_overrides(salt_api_port):
+def tokfile():
+    tokdir = tempfile.mkdtemp()
+    yield os.path.join(tokdir, 'peppertok.json')
+    shutil.rmtree(tokdir)
+
+
+@pytest.fixture
+def pepper_cli(session_salt_api, salt_api_port):
+    '''
+    Wrapper to invoke Pepper with common params and inside an empty env
+    '''
+    def_args = [
+        'pepper',
+        '--saltapi-url=http://localhost:{0}'.format(salt_api_port),
+        '--username={0}'.format('pepper'),
+        '--password={0}'.format('pepper'),
+        '--eauth={0}'.format('sharedsecret'),
+        '--out=json',
+    ]
+
+    def _run_pepper_cli(*args):
+        result = subprocess.check_output(itertools.chain(def_args, args))
+        try:
+            return yaml.load(result)
+        except yaml.parser.ParserError:
+            return [yaml.load(ret.strip(b'"')) for ret in result.strip(b'\n').split(b'\n')]
+    return _run_pepper_cli
+
+
+@pytest.fixture(scope='session')
+def session_master_config_overrides(salt_api_port):
     return {
         'rest_cherrypy': {
             'port': salt_api_port,
@@ -65,8 +104,8 @@ def master_config_overrides(salt_api_port):
     }
 
 
-@pytest.fixture
-def api_log_prefix(master_id):
+@pytest.fixture(scope='session')
+def session_api_log_prefix(master_id):
     return 'salt-api/{0}'.format(master_id)
 
 
@@ -76,64 +115,6 @@ def cli_api_script_name():
     Return the CLI script basename
     '''
     return 'salt-api'
-
-
-@pytest.yield_fixture
-def salt_api_before_start():
-    '''
-    This fixture should be overridden if you need to do
-    some preparation and clean up work before starting
-    the salt-api and after ending it.
-    '''
-    # Prep routines go here
-
-    # Start the salt-api
-    yield
-
-    # Clean routines go here
-
-
-@pytest.yield_fixture
-def salt_api_after_start(salt_api):
-    '''
-    This fixture should be overridden if you need to do
-    some preparation and clean up work after starting
-    the salt-api and before ending it.
-    '''
-    # Prep routines go here
-
-    # Resume test execution
-    yield
-
-    # Clean routines go here
-
-
-@pytest.fixture
-def salt_api(request,
-             salt_minion,
-             master_id,
-             master_config,
-             salt_api_before_start,  # pylint: disable=unused-argument
-             api_log_prefix,
-             cli_api_script_name,
-             log_server,
-             _cli_bin_dir,
-             _salt_fail_hard,
-             conf_dir):  # pylint: disable=unused-argument
-    '''
-    Returns a running salt-api
-    '''
-    return start_daemon(request,
-                        daemon_name='salt-api',
-                        daemon_id=master_id,
-                        daemon_log_prefix=api_log_prefix,
-                        daemon_cli_script_name=cli_api_script_name,
-                        daemon_config=master_config,
-                        daemon_config_dir=conf_dir,
-                        daemon_class=SaltApi,
-                        bin_dir_path=_cli_bin_dir,
-                        fail_hard=_salt_fail_hard,
-                        start_timeout=30)
 
 
 @pytest.yield_fixture(scope='session')
@@ -167,8 +148,42 @@ def session_salt_api_after_start(session_salt_api):
 
 
 @pytest.fixture(scope='session')
+def _salt_fail_hard(request, salt_fail_hard):
+    '''
+    Return the salt fail hard value
+    '''
+    fail_hard = request.config.getoption('salt_fail_hard')
+    if fail_hard is not None:
+        # We were passed --salt-fail-hard as a CLI option
+        return fail_hard
+
+    # The salt fail hard was not passed as a CLI option
+    fail_hard = request.config.getini('salt_fail_hard')
+    if fail_hard != []:
+        # We were passed salt_fail_hard as a INI option
+        return fail_hard
+
+    return salt_fail_hard
+
+
+@pytest.fixture(scope='session')
+def master_id(salt_master_id_counter):
+    '''
+    Returns the master id
+    '''
+    return DEFAULT_MASTER_ID + '-{0}'.format(salt_master_id_counter())
+
+
+@pytest.fixture(scope='session')
+def minion_id(salt_minion_id_counter):
+    '''
+    Returns the minion id
+    '''
+    return DEFAULT_MINION_ID + '-{0}'.format(salt_minion_id_counter())
+
+
+@pytest.fixture(scope='session')
 def session_salt_api(request,
-                     session_salt_master,
                      session_salt_minion,
                      session_master_id,
                      session_master_config,
@@ -177,8 +192,7 @@ def session_salt_api(request,
                      cli_api_script_name,
                      log_server,
                      _cli_bin_dir,
-                     session_conf_dir,
-                     _salt_fail_hard):
+                     session_conf_dir):
     '''
     Returns a running salt-api
     '''
@@ -191,5 +205,4 @@ def session_salt_api(request,
                         daemon_config_dir=session_conf_dir,
                         daemon_class=SaltApi,
                         bin_dir_path=_cli_bin_dir,
-                        fail_hard=_salt_fail_hard,
                         start_timeout=30)

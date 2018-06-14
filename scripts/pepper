@@ -51,7 +51,7 @@ class Pepper(object):
     def __call__(self):
         try:
             for exit_code, result in self.cli.run():
-                if HAS_SALT and self.opts:
+                if HAS_SALT and not self.cli.options.userun and self.opts:
                     logger.info('Use Salt outputters')
                     for ret in json.loads(result)['return']:
                         if isinstance(ret, dict):

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import pytest
 
 
 def test_local(pepper_cli, session_minion_id):
@@ -13,6 +14,7 @@ def test_run(pepper_cli, session_minion_id):
     assert ret['return'][0][session_minion_id]['ret'] is True
 
 
+@pytest.mark.flaky(reruns=5)
 def test_long_local(pepper_cli, session_minion_id):
     '''Test a long call blocks until the return'''
     ret = pepper_cli('*', 'test.sleep', '30')

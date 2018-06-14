@@ -5,11 +5,13 @@ Pepper
 .. image:: https://img.shields.io/pypi/v/salt-pepper.svg
    :target: https://pypi.org/project/salt-pepper
 .. image:: https://travis-ci.org/saltstack/pepper.svg?branch=develop
-    :target: https://travis-ci.org/saltstack/pepper
+   :target: https://travis-ci.org/saltstack/pepper
 .. image:: https://img.shields.io/pypi/pyversions/salt-pepper.svg
    :target: https://pypi.org/project/salt-pepper
 .. image:: https://img.shields.io/badge/license-Apache2-blue.svg?maxAge=3600
    :target: https://pypi.org/project/salt-pepper
+.. image:: https://codecov.io/gh/saltstack/pepper/branch/develop/graph/badge.svg
+   :target: https://codecov.io/gh/saltstack/pepper/branch/develop
 
 Pepper contains a Python library and CLI scripts for accessing a remote
 `salt-api`__ instance.

@@ -3,9 +3,7 @@
 from __future__ import print_function, unicode_literals, absolute_import
 import imp
 import os
-import six
 import subprocess
-import sys
 
 # Import Pepper Libraries
 import pepper

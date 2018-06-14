@@ -1,4 +1,5 @@
 pytest>=3.5.0
+pytest-rerunfailures
 pytest-cov
 git+git://github.com/saltstack/pytest-salt@master#egg=pytest-salt
 tornado<5.0.0

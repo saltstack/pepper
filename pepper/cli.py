@@ -18,6 +18,13 @@ except ImportError:
     from ConfigParser import ConfigParser, RawConfigParser
 
 try:
+    # Python 3
+    JSONDecodeError = json.decode.JSONDecodeError
+except AttributeError:
+    # Python 2
+    JSONDecodeError = ValueError
+
+try:
     input = raw_input
 except NameError:
     pass
@@ -469,7 +476,7 @@ class PepperCli(object):
                     key, value = arg.split('=', 1)
                     try:
                         low[key] = json.loads(value)
-                    except json.decoder.JSONDecodeError:
+                    except JSONDecodeError:
                         low[key] = value
                 else:
                     low.setdefault('args', []).append(arg)

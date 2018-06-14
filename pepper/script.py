@@ -101,11 +101,3 @@ class Pepper(object):
             print('Uncaught Pepper error (increase verbosity for the full traceback).', file=sys.stderr)
             logger.debug('Uncaught traceback:', exc_info=True)
             return 1
-
-
-def main():
-    raise SystemExit(Pepper()())
-
-
-if __name__ == '__main__':
-    main()

@@ -24,15 +24,7 @@ except NameError:
 
 import pepper
 
-try:
-    from logging import NullHandler
-except ImportError:  # Python < 2.7
-    class NullHandler(logging.Handler):
-        def emit(self, record): pass
-
-logging.basicConfig(format='%(levelname)s %(asctime)s %(module)s: %(message)s')
 logger = logging.getLogger('pepper')
-logger.addHandler(NullHandler())
 
 
 class PepperCli(object):
@@ -93,6 +85,13 @@ class PepperCli(object):
             '-o', '--out', dest='output', default=None,
             help=textwrap.dedent('''
                 Salt outputter to use for printing out returns.
+            ''')
+        )
+
+        self.parser.add_option(
+            '--output-file', dest='output_file', default=None,
+            help=textwrap.dedent('''
+                File to put command output in
             ''')
         )
 

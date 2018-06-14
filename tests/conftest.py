@@ -73,6 +73,7 @@ def pepper_cli(session_salt_api, salt_api_port):
         '--eauth={0}'.format('sharedsecret'),
         '--out=json',
     ]
+
     def _run_pepper_cli(*args):
         result = subprocess.check_output(itertools.chain(def_args, args))
         try:
@@ -205,4 +206,3 @@ def session_salt_api(request,
                         daemon_class=SaltApi,
                         bin_dir_path=_cli_bin_dir,
                         start_timeout=30)
-

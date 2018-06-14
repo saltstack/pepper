@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+
+
 def test_local_poll(pepper_cli, session_minion_id):
     '''Test the returns poller for localclient'''
     ret = pepper_cli('--run-uri', '--fail-if-incomplete', '*', 'test.sleep', '30')

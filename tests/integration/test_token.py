@@ -1,10 +1,14 @@
+# -*- coding: utf-8 -*-
 import json
+import pytest
 import time
+
 
 def test_local_token(tokfile, pepper_cli, session_minion_id):
     '''Test local execution with token file'''
     ret = pepper_cli('-x', tokfile, '--make-token', '--run-uri', '*', 'test.ping')
     assert ret['return'][0][session_minion_id]['ret'] is True
+
 
 def test_runner_token(tokfile, pepper_cli):
     '''Test runner execution with token file'''
@@ -15,12 +19,14 @@ def test_runner_token(tokfile, pepper_cli):
     ]
     assert all(exp in ret['return'][0] for exp in exps)
 
+
+@pytest.mark.xfail
 def test_token_expire(tokfile, pepper_cli):
     '''Test token override param'''
     now = time.time()
-    ret = pepper_cli('-x', tokfile, '--make-token', '--run-uri',
-                     '--token-expire', '94670856',
-                     '*', 'test.ping')
+    pepper_cli('-x', tokfile, '--make-token', '--run-uri',
+               '--token-expire', '94670856',
+               '*', 'test.ping')
 
     with open(tokfile, 'r') as tfile:
         token = json.load(tfile)

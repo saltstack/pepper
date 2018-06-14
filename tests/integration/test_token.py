@@ -20,7 +20,7 @@ def test_runner_token(tokfile, pepper_cli):
     assert all(exp in ret['return'][0] for exp in exps)
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail(strict=False)
 def test_token_expire(tokfile, pepper_cli):
     '''Test token override param'''
     now = time.time()

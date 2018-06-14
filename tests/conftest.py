@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, unicode_literals
+from __future__ import absolute_import, unicode_literals, print_function
 
 # Import python libraries
-import itertools
 import os.path
 import shutil
-import subprocess
 import sys
 import tempfile
 import yaml
@@ -16,6 +14,7 @@ from pytestsalt.utils import SaltDaemonScriptBase, start_daemon, get_unused_loca
 
 # Import Pepper libraries
 import pepper
+import pepper.script
 
 DEFAULT_MASTER_ID = 'pytest-salt-master'
 DEFAULT_MINION_ID = 'pytest-salt-minion'
@@ -61,7 +60,17 @@ def tokfile():
 
 
 @pytest.fixture
-def pepper_cli(session_salt_api, salt_api_port):
+def output_file():
+    '''
+    Returns the path to the salt master configuration file
+    '''
+    out_dir = tempfile.mkdtemp()
+    yield os.path.join(out_dir, 'output')
+    shutil.rmtree(out_dir)
+
+
+@pytest.fixture
+def pepper_cli(session_salt_api, salt_api_port, output_file):
     '''
     Wrapper to invoke Pepper with common params and inside an empty env
     '''
@@ -72,14 +81,18 @@ def pepper_cli(session_salt_api, salt_api_port):
         '--password={0}'.format('pepper'),
         '--eauth={0}'.format('sharedsecret'),
         '--out=json',
+        '--output-file={0}'.format(output_file),
     ]
 
     def _run_pepper_cli(*args):
-        result = subprocess.check_output(itertools.chain(def_args, args))
-        try:
-            return yaml.load(result)
-        except yaml.parser.ParserError:
-            return [yaml.load(ret.strip(b'"')) for ret in result.strip(b'\n').split(b'\n')]
+        sys.argv = def_args + list(args)
+        pepper.script.Pepper()()
+        with open(output_file, 'r') as result:
+            try:
+                return yaml.load(result)
+            except yaml.parser.ParserError:
+                result.seek(0)
+                return [yaml.load('{0}}}'.format(ret).strip('"')) for ret in result.read().split('}"\n') if ret]
     return _run_pepper_cli
 
 

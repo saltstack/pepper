@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 
+import logging
+log = logging.getLogger(__name__)
+
 
 def test_local_poll(pepper_cli, session_minion_id):
     '''Test the returns poller for localclient'''

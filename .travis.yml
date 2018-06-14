@@ -12,7 +12,12 @@ matrix:
       env: TOXENV=py36
     - python: 3.6
       env: TOXENV=flake8
+
 install:
-  - pip install tox
+- pip install tox
+
 script:
-- tox -e $TOXENV
+- tox -e "$TOXENV"
+
+after_success:
+- [ "$TOXENV" -ne "flake8" ] && tox -e codecov

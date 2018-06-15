@@ -42,8 +42,7 @@ class PepperCli(object):
             self.add_globalopts(),
             self.add_tgtopts(),
             self.add_authopts(),
-            self.add_retcodeopts()])
-            self.add_authopts()
+            self.add_retcodeopts(),
         ])
         self.default_return = '{"return": []}'
         self.parse()

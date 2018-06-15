@@ -114,6 +114,7 @@ def session_master_config_overrides(salt_api_port):
             },
         },
         'sharedsecret': 'pepper',
+        'token_expire': 94670856,
     }
 
 

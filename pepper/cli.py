@@ -43,6 +43,9 @@ class PepperCli(object):
             self.add_tgtopts(),
             self.add_authopts(),
             self.add_retcodeopts()])
+            self.add_authopts()
+        ])
+        self.default_return = '{"return": []}'
         self.parse()
 
     def get_parser(self):
@@ -395,7 +398,7 @@ class PepperCli(object):
                 results['SALTAPI_USER'] = input('Username: ')
             else:
                 logger.error("SALTAPI_USER required")
-                raise SystemExit(1)
+                return 1, self.default_return
         else:
             if self.options.username is not None:
                 results['SALTAPI_USER'] = self.options.username
@@ -404,7 +407,7 @@ class PepperCli(object):
                 results['SALTAPI_PASS'] = getpass.getpass(prompt='Password: ')
             else:
                 logger.error("SALTAPI_PASS required")
-                raise SystemExit(1)
+                return 1, self.default_return
         else:
             if self.options.password is not None:
                 results['SALTAPI_PASS'] = self.options.password
@@ -467,7 +470,7 @@ class PepperCli(object):
                 return json.loads(self.options.json_input)
             except JSONDecodeError:
                 logger.error("Invalid JSON given.")
-                raise SystemExit(1)
+                return 1, self.default_return
 
         if self.options.json_file:
             try:
@@ -476,14 +479,14 @@ class PepperCli(object):
                         return json.load(json_content)
                     except JSONDecodeError:
                         logger.error("Invalid JSON given.")
-                        raise SystemExit(1)
+                        return 1, self.default_return
             except Exception as e:
                 logger.error(
                     'Cannot open file: {0}, {1}'.format(
                         self.options.json_file, repr(e)
                     )
                 )
-                raise SystemExit(1)
+                return 1, self.default_return
 
         args = list(self.args)
 

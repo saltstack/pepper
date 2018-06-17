@@ -10,7 +10,11 @@ import logging
 
 from pepper.cli import PepperCli
 from pepper.retcode import PepperRetcode
-from pepper import PepperException
+from pepper.exceptions import (
+    PepperException,
+    PepperAuthException,
+    PepperArgumentsException,
+)
 
 try:
     import salt.loader
@@ -20,7 +24,7 @@ try:
 except ImportError:
     HAS_SALT = False
 
-logger = logging.getLogger('pepper')
+logger = logging.getLogger(__name__)
 
 
 class Pepper(object):
@@ -93,7 +97,7 @@ class Pepper(object):
                     if exit_code == 0:
                         return PepperRetcode().validate(self.cli.options, json.loads(result)['return'])
                     return exit_code
-        except PepperException as exc:
+        except (PepperException, PepperAuthException, PepperArgumentsException) as exc:
             print('Pepper error: {0}'.format(exc), file=sys.stderr)
             return 1
         except KeyboardInterrupt:

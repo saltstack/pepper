@@ -88,7 +88,7 @@ class PepperRetcode(object):
                 retcodes = list(minion[name].get('retcode')
                                 for name in minion if isinstance(minion[name], dict) and
                                 minion[name].get('retcode') is not None)
-                if all(r for r in retcodes if r != 0):
+                if all(r != 0 for r in retcodes):
                     return next((r for r in retcodes if r != 0), 0)
         return 0
 
@@ -111,6 +111,8 @@ class PepperRetcode(object):
                                 minion[name].get('retcode') is not None)
                 if not retcodes:
                     return -1  # there are no retcodes
-                if all(r for r in retcodes if r != 0):
+                if all(r != 0 for r in retcodes):
                     return next((r for r in retcodes if r != 0), 0)
+                else:
+                    return 0
         return -1

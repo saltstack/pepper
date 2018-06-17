@@ -91,7 +91,7 @@ class Pepper(object):
                         print(result)
                 if exit_code is not None:
                     if exit_code == 0:
-                        return PepperRetcode().validate(result)
+                        return PepperRetcode().validate(self.cli.options, json.loads(result)['return'])
                     return exit_code
         except PepperException as exc:
             print('Pepper error: {0}'.format(exc), file=sys.stderr)

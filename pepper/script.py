@@ -90,7 +90,8 @@ class Pepper(object):
                     else:
                         print(result)
                 if exit_code is not None:
-                    exit_code = PepperRetcode().validate(result)
+                    if exit_code == 0:
+                        return PepperRetcode().validate(result)
                     return exit_code
         except PepperException as exc:
             print('Pepper error: {0}'.format(exc), file=sys.stderr)

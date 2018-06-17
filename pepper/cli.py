@@ -326,30 +326,30 @@ class PepperCli(object):
 
         return optgroup
 
-
     def add_retcodeopts(self):
         '''
         ret code validation options
         '''
-        optgroup = optparse.OptionGroup(self.parser, "retcode Field Validation Options",
-                textwrap.dedent("""\
-                Validate return.HOST.retcode fields
-                """))
+        optgroup = optparse.OptionGroup(
+            self.parser, "retcode Field Validation Options", "Validate return.HOST.retcode fields")
 
-        optgroup.add_option('--fail-any', dest='fail_any', action='store_true',
-                help="Fail if any of retcode field is non zero.")
+        optgroup.add_option(
+            '--fail-any', dest='fail_any', action='store_true',
+            help="Fail if any of retcode field is non zero.")
 
-        optgroup.add_option('--fail-any-none', dest='fail_any_none', action='store_true',
-                help="Fail if any of retcode field is non zero or there is no retcode at all.")
+        optgroup.add_option(
+            '--fail-any-none', dest='fail_any_none', action='store_true',
+            help="Fail if any of retcode field is non zero or there is no retcode at all.")
 
-        optgroup.add_option('--fail-all', dest='fail_all', action='store_true',
-                help="Fail if all retcode fields are non zero.")
+        optgroup.add_option(
+            '--fail-all', dest='fail_all', action='store_true',
+            help="Fail if all retcode fields are non zero.")
 
-        optgroup.add_option('--fail-all-none', dest='fail_all_none', action='store_true',
-                help="Fail if all retcode fields are non zero or there is no retcode at all.")
+        optgroup.add_option(
+            '--fail-all-none', dest='fail_all_none', action='store_true',
+            help="Fail if all retcode fields are non zero or there is no retcode at all.")
 
         return optgroup
-
 
     def get_login_details(self):
         '''

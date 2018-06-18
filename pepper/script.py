@@ -9,6 +9,7 @@ import json
 import logging
 
 from pepper.cli import PepperCli
+from pepper.retcode import PepperRetcode
 from pepper import PepperException
 
 try:
@@ -89,6 +90,8 @@ class Pepper(object):
                     else:
                         print(result)
                 if exit_code is not None:
+                    if exit_code == 0:
+                        return PepperRetcode().validate(self.cli.options, json.loads(result)['return'])
                     return exit_code
         except PepperException as exc:
             print('Pepper error: {0}'.format(exc), file=sys.stderr)

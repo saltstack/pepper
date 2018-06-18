@@ -1,3 +1,4 @@
+mock
 pytest>=3.5.0
 pytest-rerunfailures
 pytest-cov

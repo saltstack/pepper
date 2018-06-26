@@ -2,11 +2,15 @@
 from __future__ import absolute_import, unicode_literals, print_function
 
 # Import python libraries
+import logging
 import os.path
 import shutil
 import sys
 import tempfile
-import yaml
+import textwrap
+
+# Import Salt Libraries
+import salt.utils.yaml as yaml
 
 # Import pytest libraries
 import pytest
@@ -18,6 +22,8 @@ import pepper.script
 
 DEFAULT_MASTER_ID = 'pytest-salt-master'
 DEFAULT_MINION_ID = 'pytest-salt-minion'
+
+log = logging.getLogger(__name__)
 
 
 class SaltApi(SaltDaemonScriptBase):
@@ -45,6 +51,40 @@ def salt_api_port():
     return get_unused_localhost_port()
 
 
+@pytest.fixture(scope='session')
+def pepperconfig(salt_api_port):
+    config = textwrap.dedent('''
+        [main]
+        SALTAPI_URL=http://localhost:{0}/
+        SALTAPI_USER=pepper
+        SALTAPI_PASS=pepper
+        SALTAPI_EAUTH=sharedsecret
+        [pepper]
+        SALTAPI_URL=http://localhost:{0}/
+        SALTAPI_USER=pepper
+        SALTAPI_PASS=pepper
+        SALTAPI_EAUTH=sharedsecret
+        [baduser]
+        SALTAPI_URL=http://localhost:{0}/
+        SALTAPI_USER=saltdev
+        SALTAPI_PASS=saltdev
+        SALTAPI_EAUTH=pam
+        [badapi]
+        SALTAPI_URL=git://localhost:{0}/
+        [noapi]
+        SALTAPI_USER=pepper
+        SALTAPI_PASS=pepper
+        SALTAPI_EAUTH=sharedsecret
+        [noopts]
+        SALTAPI_URL=http://localhost:{0}/
+        SALTAPI_EAUTH=kerberos
+    '''.format(salt_api_port))
+    with open('tests/.pepperrc', 'w') as pepper_file:
+        print(config, file=pepper_file)
+    yield
+    os.remove('tests/.pepperrc')
+
+
 @pytest.fixture
 def pepper_client(session_salt_api, salt_api_port):
     client = pepper.Pepper('http://localhost:{0}'.format(salt_api_port))
@@ -70,29 +110,30 @@ def output_file():
 
 
 @pytest.fixture
-def pepper_cli(session_salt_api, salt_api_port, output_file):
+def pepper_cli(session_salt_api, salt_api_port, output_file, session_sshd_server):
     '''
     Wrapper to invoke Pepper with common params and inside an empty env
     '''
     def_args = [
-        'pepper',
-        '--saltapi-url=http://localhost:{0}'.format(salt_api_port),
-        '--username={0}'.format('pepper'),
-        '--password={0}'.format('pepper'),
-        '--eauth={0}'.format('sharedsecret'),
         '--out=json',
         '--output-file={0}'.format(output_file),
+        '-c', 'tests/.pepperrc',
     ]
 
-    def _run_pepper_cli(*args):
-        sys.argv = def_args + list(args)
-        pepper.script.Pepper()()
-        with open(output_file, 'r') as result:
-            try:
-                return yaml.load(result)
-            except yaml.parser.ParserError:
-                result.seek(0)
-                return [yaml.load('{0}}}'.format(ret).strip('"')) for ret in result.read().split('}"\n') if ret]
+    def _run_pepper_cli(*args, **kwargs):
+        sys.argv = ['pepper', '-p', kwargs.pop('profile', 'main')] + def_args + list(args)
+        exitcode = pepper.script.Pepper()()
+        try:
+            with open(output_file, 'r') as result:
+                try:
+                    return yaml.load(result)
+                except yaml.parser.ParserError:
+                    result.seek(0)
+                    return [yaml.load('{0}}}'.format(ret).strip('"')) for ret in result.read().split('}"\n') if ret]
+        except Exception as exc:
+            log.info('ExitCode %s: %s', exitcode, exc)
+            return exitcode
+
     return _run_pepper_cli
 
 
@@ -115,6 +156,8 @@ def session_master_config_overrides(salt_api_port):
         },
         'sharedsecret': 'pepper',
         'token_expire': 94670856,
+        'ignore_host_keys': True,
+        'ssh_wipe': True,
     }
 
 

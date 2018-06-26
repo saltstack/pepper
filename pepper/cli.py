@@ -3,13 +3,24 @@ A CLI interface to a remote salt-api instance
 
 '''
 from __future__ import print_function
+import getpass
 import json
 import logging
 import optparse
 import os
+import sys
 import textwrap
-import getpass
 import time
+
+# Import Pepper Libraries
+import pepper
+from pepper.exceptions import (
+    PepperAuthException,
+    PepperArgumentsException,
+    PepperException,
+)
+
+
 try:
     # Python 3
     from configparser import ConfigParser, RawConfigParser
@@ -29,9 +40,10 @@ try:
 except NameError:
     pass
 
-import pepper
+if sys.version_info[0] == 2:
+    FileNotFoundError = IOError
 
-logger = logging.getLogger('pepper')
+logger = logging.getLogger(__name__)
 
 
 class PepperCli(object):
@@ -42,7 +54,8 @@ class PepperCli(object):
             self.add_globalopts(),
             self.add_tgtopts(),
             self.add_authopts(),
-            self.add_retcodeopts()])
+            self.add_retcodeopts(),
+        ])
         self.parse()
 
     def get_parser(self):
@@ -394,8 +407,7 @@ class PepperCli(object):
             if self.options.interactive:
                 results['SALTAPI_USER'] = input('Username: ')
             else:
-                logger.error("SALTAPI_USER required")
-                raise SystemExit(1)
+                raise PepperAuthException("SALTAPI_USER required")
         else:
             if self.options.username is not None:
                 results['SALTAPI_USER'] = self.options.username
@@ -403,8 +415,7 @@ class PepperCli(object):
             if self.options.interactive:
                 results['SALTAPI_PASS'] = getpass.getpass(prompt='Password: ')
             else:
-                logger.error("SALTAPI_PASS required")
-                raise SystemExit(1)
+                raise PepperAuthException("SALTAPI_PASS required")
         else:
             if self.options.password is not None:
                 results['SALTAPI_PASS'] = self.options.password
@@ -466,8 +477,7 @@ class PepperCli(object):
             try:
                 return json.loads(self.options.json_input)
             except JSONDecodeError:
-                logger.error("Invalid JSON given.")
-                raise SystemExit(1)
+                raise PepperArgumentsException("Invalid JSON given.")
 
         if self.options.json_file:
             try:
@@ -475,15 +485,9 @@ class PepperCli(object):
                     try:
                         return json.load(json_content)
                     except JSONDecodeError:
-                        logger.error("Invalid JSON given.")
-                        raise SystemExit(1)
-            except Exception as e:
-                logger.error(
-                    'Cannot open file: {0}, {1}'.format(
-                        self.options.json_file, repr(e)
-                    )
-                )
-                raise SystemExit(1)
+                        raise PepperArgumentsException("Invalid JSON given.")
+            except FileNotFoundError:
+                raise PepperArgumentsException('Cannot open file: %s', self.options.json_file)
 
         args = list(self.args)
 
@@ -499,7 +503,6 @@ class PepperCli(object):
             low['fun'] = args.pop(0)
             low['batch'] = self.options.batch
             low['arg'] = args
-            low['full_return'] = True
         elif client.startswith('runner'):
             low['fun'] = args.pop(0)
             for arg in args:
@@ -516,7 +519,10 @@ class PepperCli(object):
             for arg in args:
                 if '=' in arg:
                     key, value = arg.split('=', 1)
-                    low[key] = value
+                    try:
+                        low[key] = json.loads(value)
+                    except JSONDecodeError:
+                        low[key] = value
                 else:
                     low.setdefault('args', []).append(arg)
         elif client.startswith('ssh'):
@@ -529,11 +535,7 @@ class PepperCli(object):
             low['batch'] = self.options.batch
             low['arg'] = args
         else:
-            if len(args) < 1:
-                self.parser.error("Command not specified")
-
-            low['fun'] = args.pop(0)
-            low['arg'] = args
+            raise PepperException('Client not implemented: {0}'.format(client))
 
         return [low]
 
@@ -636,6 +638,10 @@ class PepperCli(object):
 
         load = self.parse_cmd()
 
+        for entry in load:
+            if entry.get('client', '').startswith('local'):
+                entry['full_return'] = True
+
         api = pepper.Pepper(
             self.parse_url(),
             debug_http=self.options.debug_http,
@@ -644,7 +650,7 @@ class PepperCli(object):
         self.login(api)
 
         if self.options.fail_if_minions_dont_respond:
-            for exit_code, ret in self.poll_for_returns(api, load):
+            for exit_code, ret in self.poll_for_returns(api, load):  # pragma: no cover
                 yield exit_code, json.dumps(ret, sort_keys=True, indent=4)
         else:
             ret = self.low(api, load)

@@ -17,6 +17,7 @@ import pepper
 from pepper.exceptions import (
     PepperAuthException,
     PepperArgumentsException,
+    PepperException,
 )
 
 
@@ -518,7 +519,10 @@ class PepperCli(object):
             for arg in args:
                 if '=' in arg:
                     key, value = arg.split('=', 1)
-                    low[key] = value
+                    try:
+                        low[key] = json.loads(value)
+                    except JSONDecodeError:
+                        low[key] = value
                 else:
                     low.setdefault('args', []).append(arg)
         elif client.startswith('ssh'):
@@ -531,11 +535,7 @@ class PepperCli(object):
             low['batch'] = self.options.batch
             low['arg'] = args
         else:
-            if len(args) < 1:
-                self.parser.error("Command not specified")
-
-            low['fun'] = args.pop(0)
-            low['arg'] = args
+            raise PepperException('Client not implemented: {0}'.format(client))
 
         return [low]
 
@@ -650,7 +650,7 @@ class PepperCli(object):
         self.login(api)
 
         if self.options.fail_if_minions_dont_respond:
-            for exit_code, ret in self.poll_for_returns(api, load):
+            for exit_code, ret in self.poll_for_returns(api, load):  # pragma: no cover
                 yield exit_code, json.dumps(ret, sort_keys=True, indent=4)
         else:
             ret = self.low(api, load)

@@ -8,7 +8,9 @@ import shutil
 import sys
 import tempfile
 import textwrap
-import yaml
+
+# Import Salt Libraries
+import salt.utils.yaml as yaml
 
 # Import pytest libraries
 import pytest
@@ -75,6 +77,7 @@ def pepperconfig(salt_api_port):
         SALTAPI_EAUTH=sharedsecret
         [noopts]
         SALTAPI_URL=http://localhost:{0}/
+        SALTAPI_EAUTH=kerberos
     '''.format(salt_api_port))
     with open('tests/.pepperrc', 'w') as pepper_file:
         print(config, file=pepper_file)
@@ -107,7 +110,7 @@ def output_file():
 
 
 @pytest.fixture
-def pepper_cli(session_salt_api, salt_api_port, output_file):
+def pepper_cli(session_salt_api, salt_api_port, output_file, session_sshd_server):
     '''
     Wrapper to invoke Pepper with common params and inside an empty env
     '''
@@ -153,6 +156,8 @@ def session_master_config_overrides(salt_api_port):
         },
         'sharedsecret': 'pepper',
         'token_expire': 94670856,
+        'ignore_host_keys': True,
+        'ssh_wipe': True,
     }
 
 

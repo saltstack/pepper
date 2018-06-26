@@ -1,0 +1,41 @@
+pipeline:
+  python36:
+    image: python:3.6
+    group: build
+    commands:
+      - pip install tox
+      - tox -e py36
+  python35:
+    image: python:3.5
+    group: build
+    commands:
+      - pip install tox
+      - tox -e py35
+  python34:
+    image: python:3.4
+    group: build
+    commands:
+      - pip install tox
+      - tox -e py34
+  python27:
+    image: python:2.7
+    group: build
+    commands:
+      - pip install tox
+      - tox -e py27
+  flake8:
+    image: python:3.6
+    group: build
+    commands:
+      - pip install tox
+      - tox -e flake8
+  coverage:
+    image: python:3.6
+    commands:
+      - pip install tox
+      - tox -e coverage
+  codecov:
+    image: robertstettner/drone-codecov
+    secrets: [ codecov_token ]
+    files:
+      - .tox/coverage.xml

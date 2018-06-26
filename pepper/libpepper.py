@@ -7,6 +7,9 @@ A Python library for working with Salt's REST API
 import json
 import logging
 import ssl
+
+from pepper.exceptions import PepperException
+
 try:
     ssl._create_default_https_context = ssl._create_stdlib_context
 except Exception:
@@ -22,11 +25,7 @@ except ImportError:
         HTTPError, URLError
     import urlparse
 
-logger = logging.getLogger('pepper')
-
-
-class PepperException(Exception):
-    pass
+logger = logging.getLogger(__name__)
 
 
 class Pepper(object):

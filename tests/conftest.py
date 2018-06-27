@@ -52,7 +52,7 @@ def salt_api_port():
 
 
 @pytest.fixture(scope='session')
-def pepperconfig(salt_api_port):
+def pepperconfig(salt_api_port, pepperrc):
     config = textwrap.dedent('''
         [main]
         SALTAPI_URL=http://localhost:{0}/
@@ -79,10 +79,9 @@ def pepperconfig(salt_api_port):
         SALTAPI_URL=http://localhost:{0}/
         SALTAPI_EAUTH=kerberos
     '''.format(salt_api_port))
-    with open('tests/.pepperrc', 'w') as pepper_file:
+    with open(pepperrc, 'w') as pepper_file:
         print(config, file=pepper_file)
-    yield
-    os.remove('tests/.pepperrc')
+    return pepperrc
 
 
 @pytest.fixture
@@ -99,6 +98,13 @@ def tokfile():
     shutil.rmtree(tokdir)
 
 
+@pytest.fixture(scope='session')
+def pepperrc():
+    rcdir = tempfile.mkdtemp()
+    yield os.path.join(rcdir, 'pepperrc')
+    shutil.rmtree(rcdir)
+
+
 @pytest.fixture
 def output_file():
     '''
@@ -110,14 +116,14 @@ def output_file():
 
 
 @pytest.fixture
-def pepper_cli(session_salt_api, salt_api_port, output_file, session_sshd_server):
+def pepper_cli(session_salt_api, salt_api_port, output_file, pepperrc, session_sshd_server):
     '''
     Wrapper to invoke Pepper with common params and inside an empty env
     '''
     def_args = [
         '--out=json',
         '--output-file={0}'.format(output_file),
-        '-c', 'tests/.pepperrc',
+        '-c', pepperrc,
     ]
 
     def _run_pepper_cli(*args, **kwargs):

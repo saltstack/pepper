@@ -9,8 +9,8 @@ import pepper.cli
 from mock import MagicMock, patch
 
 
-def test_interactive_logins():
-    sys.argv = ['pepper', '-c', 'tests/.pepperrc', '-p', 'noopts']
+def test_interactive_logins(pepperrc):
+    sys.argv = ['pepper', '-c', pepperrc, '-p', 'noopts']
 
     with patch(
              'pepper.cli.input',

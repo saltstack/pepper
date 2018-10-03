@@ -21,7 +21,7 @@ def test_runner_client(pepper_cli):
         'one', 'two=what',
         'three={0}'.format(json.dumps({"hello": "world"})),
     )
-    assert ret == {"runner": {"args": [], "kwargs": {"args": ["one"], "three": {"hello": "world"}, "two": "what"}}}
+    assert ret == {"runner": {"args": ["one"], "kwargs": {"three": {"hello": "world"}, "two": "what"}}}
 
 
 def test_wheel_client_arg(pepper_cli, session_minion_id):

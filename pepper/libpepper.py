@@ -6,6 +6,7 @@ A Python library for working with Salt's REST API
 '''
 import json
 import logging
+import re
 import ssl
 
 from pepper.exceptions import PepperException
@@ -79,6 +80,7 @@ class Pepper(object):
         self.debug_http = int(debug_http)
         self._ssl_verify = not ignore_ssl_errors
         self.auth = {}
+        self.salt_version = None
 
     def req_stream(self, path):
         '''
@@ -231,6 +233,10 @@ class Pepper(object):
             if (self.debug_http):
                 logger.debug('Response: %s', content)
             ret = json.loads(content)
+
+            if not self.salt_version and 'x-salt-version' in f.headers:
+                self._parse_salt_version(f.headers['x-salt-version'])
+
         except (HTTPError, URLError) as exc:
             logger.debug('Error with request', exc_info=True)
             status = getattr(exc, 'code', None)
@@ -285,6 +291,10 @@ class Pepper(object):
         if resp.status_code == 500:
             # TODO should be resp.raise_from_status
             raise PepperException('Server error.')
+
+        if not self.salt_version and 'x-salt-version' in resp.headers:
+            self._parse_salt_version(resp.headers['x-salt-version'])
+
         return resp.json()
 
     def low(self, lowstate, path='/'):
@@ -479,3 +489,17 @@ class Pepper(object):
 
         relative_path = path.lstrip('/')
         return urlparse.urljoin(self.api_url, relative_path)
+
+    def _parse_salt_version(self, version):
+        # borrow from salt.version
+        git_describe_regex = re.compile(
+            r'(?:[^\d]+)?(?P<major>[\d]{1,4})'
+            r'\.(?P<minor>[\d]{1,2})'
+            r'(?:\.(?P<bugfix>[\d]{0,2}))?'
+            r'(?:\.(?P<mbugfix>[\d]{0,2}))?'
+            r'(?:(?P<pre_type>rc|a|b|alpha|beta|nb)(?P<pre_num>[\d]{1}))?'
+            r'(?:(?:.*)-(?P<noc>(?:[\d]+|n/a))-(?P<sha>[a-z0-9]{8}))?'
+        )
+        match = git_describe_regex.match(version)
+        if match:
+            self.salt_version = match.groups()

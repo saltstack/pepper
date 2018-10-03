@@ -468,7 +468,7 @@ class PepperCli(object):
 
         return ret
 
-    def parse_cmd(self):
+    def parse_cmd(self, api):
         '''
         Extract the low data for a command from the passed CLI params
         '''
@@ -505,26 +505,37 @@ class PepperCli(object):
             low['arg'] = args
         elif client.startswith('runner'):
             low['fun'] = args.pop(0)
-            for arg in args:
-                if '=' in arg:
-                    key, value = arg.split('=', 1)
-                    try:
-                        low[key] = json.loads(value)
-                    except JSONDecodeError:
-                        low[key] = value
-                else:
-                    low.setdefault('arg', []).append(arg)
+            # post https://github.com/saltstack/salt/pull/50124, kwargs can be
+            # passed as is in foo=bar form, splitting and deserializing will
+            # happen in salt-api. additionally, the presence of salt-version header
+            # means we are neon or newer, so don't need a finer grained check
+            if api.salt_version:
+                low['arg'] = args
+            else:
+                for arg in args:
+                    if '=' in arg:
+                        key, value = arg.split('=', 1)
+                        try:
+                            low[key] = json.loads(value)
+                        except JSONDecodeError:
+                            low[key] = value
+                    else:
+                        low.setdefault('arg', []).append(arg)
         elif client.startswith('wheel'):
             low['fun'] = args.pop(0)
-            for arg in args:
-                if '=' in arg:
-                    key, value = arg.split('=', 1)
-                    try:
-                        low[key] = json.loads(value)
-                    except JSONDecodeError:
-                        low[key] = value
-                else:
-                    low.setdefault('arg', []).append(arg)
+            # see above comment in runner arg handling
+            if api.salt_version:
+                low['arg'] = args
+            else:
+                for arg in args:
+                    if '=' in arg:
+                        key, value = arg.split('=', 1)
+                        try:
+                            low[key] = json.loads(value)
+                        except JSONDecodeError:
+                            low[key] = value
+                    else:
+                        low.setdefault('arg', []).append(arg)
         elif client.startswith('ssh'):
             if len(args) < 2:
                 self.parser.error("Command or target not specified")
@@ -636,18 +647,18 @@ class PepperCli(object):
         logger.addHandler(logging.StreamHandler())
         logger.setLevel(max(logging.ERROR - (self.options.verbose * 10), 1))
 
-        load = self.parse_cmd()
-
-        for entry in load:
-            if entry.get('client', '').startswith('local'):
-                entry['full_return'] = True
-
         api = pepper.Pepper(
             self.parse_url(),
             debug_http=self.options.debug_http,
             ignore_ssl_errors=self.options.ignore_ssl_certificate_errors)
 
         self.login(api)
+
+        load = self.parse_cmd(api)
+
+        for entry in load:
+            if entry.get('client', '').startswith('local'):
+                entry['full_return'] = True
 
         if self.options.fail_if_minions_dont_respond:
             for exit_code, ret in self.poll_for_returns(api, load):  # pragma: no cover

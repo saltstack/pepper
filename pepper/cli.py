@@ -513,7 +513,7 @@ class PepperCli(object):
                     except JSONDecodeError:
                         low[key] = value
                 else:
-                    low.setdefault('args', []).append(arg)
+                    low.setdefault('arg', []).append(arg)
         elif client.startswith('wheel'):
             low['fun'] = args.pop(0)
             for arg in args:
@@ -524,7 +524,7 @@ class PepperCli(object):
                     except JSONDecodeError:
                         low[key] = value
                 else:
-                    low.setdefault('args', []).append(arg)
+                    low.setdefault('arg', []).append(arg)
         elif client.startswith('ssh'):
             if len(args) < 2:
                 self.parser.error("Command or target not specified")

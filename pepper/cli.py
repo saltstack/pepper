@@ -505,15 +505,10 @@ class PepperCli(object):
             low['arg'] = args
         elif client.startswith('runner'):
             low['fun'] = args.pop(0)
-            for arg in args:
-                if '=' in arg:
-                    key, value = arg.split('=', 1)
-                    try:
-                        low[key] = json.loads(value)
-                    except JSONDecodeError:
-                        low[key] = value
-                else:
-                    low.setdefault('arg', []).append(arg)
+            # kwargs are passed as is in foo=bar form, splitting and deserializing
+            # will happen in RunnerClient in the api; see https://github.com/saltstack/pepper/issues/57
+            # for further details
+            low['arg'] = args
         elif client.startswith('wheel'):
             low['fun'] = args.pop(0)
             for arg in args:

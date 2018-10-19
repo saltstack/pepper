@@ -298,7 +298,7 @@ class Pepper(object):
         return self.req(path, lowstate)
 
     def local(self, tgt, fun, arg=None, kwarg=None, expr_form='glob',
-              timeout=None, ret=None):
+              timeout=None, ret=None, full_return=False):
         '''
         Run a single command using the ``local`` client
 
@@ -325,10 +325,13 @@ class Pepper(object):
         if ret:
             low['ret'] = ret
 
+        if full_return:
+            low['full_return'] = full_return
+
         return self.low([low])
 
     def local_async(self, tgt, fun, arg=None, kwarg=None, expr_form='glob',
-                    timeout=None, ret=None):
+                    timeout=None, ret=None, full_return=False):
         '''
         Run a single command using the ``local_async`` client
 
@@ -355,10 +358,13 @@ class Pepper(object):
         if ret:
             low['ret'] = ret
 
+        if full_return:
+            low['full_return'] = full_return
+
         return self.low([low])
 
     def local_batch(self, tgt, fun, arg=None, kwarg=None, expr_form='glob',
-                    batch='50%', ret=None):
+                    batch='50%', ret=None, full_return=False):
         '''
         Run a single command using the ``local_batch`` client
 
@@ -384,6 +390,9 @@ class Pepper(object):
 
         if ret:
             low['ret'] = ret
+
+        if full_return:
+            low['full_return'] = full_return
 
         return self.low([low])
 

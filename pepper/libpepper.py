@@ -396,14 +396,14 @@ class Pepper(object):
 
         return self.low([low])
 
-    def lookup_jid(self, jid):
+    def lookup_jid(self, jid, full_return=False):
         '''
         Get job results
 
         Wraps :meth:`runner`.
         '''
 
-        return self.runner('jobs.lookup_jid', jid='{0}'.format(jid))
+        return self.runner('jobs.lookup_jid', jid='{0}'.format(jid), full_return=full_return)
 
     def runner(self, fun, arg=None, **kwargs):
         '''

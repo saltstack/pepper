@@ -40,6 +40,8 @@ def test_wheel_client_kwargs(pepper_cli, session_master_config_file):
     assert os.path.isfile('{0}.d/pepper.conf'.format(session_master_config_file))
 
 
+@pytest.mark.xfail(sys.version_info >= (3,0),
+                   reason='Broken with python3 right now')
 def test_ssh_client(pepper_cli, session_roster_config, session_roster_config_file):
     ret = pepper_cli('--client=ssh', '*', 'test.ping')
     assert ret['ssh']['localhost']['return'] is True

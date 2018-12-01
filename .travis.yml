@@ -11,4 +11,4 @@ env:
   - TOXENV=flake8
 
 script:
-- docker run -v $PWD:/pepper -e "CODECOV=$CODECOV" -e "TOXENV=$TOXENV" -e "CODECOV_TOKEN=$CODECOVE_TOKEN" -ti --rm gtmanfred/pepper:latest /runtests.sh
+- docker run -v $PWD:/pepper -e "CODECOV=$CODECOV" -e "TOXENV=$TOXENV" -e "CODECOV_TOKEN=$CODECOV_TOKEN" -ti --rm gtmanfred/pepper:latest /runtests.sh

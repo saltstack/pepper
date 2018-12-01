@@ -18,7 +18,7 @@ install:
 - pip install tox
 
 script:
-- docker run -v $PWD:/pepper -ti --rm gtmanfred/pepper:latest tox --workdir /pepper -e "$TOXENV"
+- docker run -v $PWD:/pepper -ti --rm gtmanfred/pepper:latest tox --workdir /pepper -e "${CODECOV}${TOXENV}"
 
 after_success:
 - if [[ $CODECOV == "py" ]]; then tox -e coverage,codecov; fi

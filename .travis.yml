@@ -1,33 +1,24 @@
 sudo: false
+services:
+- docker
 language: python
 cache: pip
 python:
-  - 2.7
-  - 3.4
-  - 3.5
-  - 3.6
-  - 3.7-dev
+- 3.7
 env:
-  TOXENV=py
-addons:
-  apt:
-    packages:
-    - openssh-server
-
-matrix:
-  fast_finish: true
-  include:
-    - python: 3.6
-      env: TOXENV=flake8
-
-before_install:
-  - pyenv versions
+  matrix:
+  - TOXENV=27 CODECOV=py
+  - TOXENV=34 CODECOV=py
+  - TOXENV=35 CODECOV=py
+  - TOXENV=36 CODECOV=py
+  - TOXENV=37 CODECOV=py
+  - TOXENV=flake8
 
 install:
-  - pip install tox
+- pip install tox
 
 script:
-  - tox
+- docker run -v $PWD:/pepper -ti --rm gtmanfred/pepper:latest tox --workdir /pepper -e "$TOXENV"
 
 after_success:
-  - if [[ $TOXENV == "py" ]]; then tox -e coverage,codecov; fi
+- if [[ $CODECOV == "py" ]]; then tox -e coverage,codecov; fi

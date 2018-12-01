@@ -2,6 +2,7 @@
 import json
 import os
 import pytest
+import sys
 
 
 def test_local_bad_opts(pepper_cli):

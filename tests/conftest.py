@@ -263,3 +263,49 @@ def session_salt_api(request,
                         daemon_class=SaltApi,
                         bin_dir_path=_cli_bin_dir,
                         start_timeout=30)
+
+
+@pytest.fixture(scope='session')
+def session_sshd_config_lines(session_sshd_port):
+    '''
+    Return a list of lines which will make the sshd_config file
+    '''
+    return [
+        'Port {0}'.format(sshd_port),
+        'ListenAddress 127.0.0.1',
+        'Protocol 2',
+        'UsePrivilegeSeparation yes',
+        '# Turn strict modes off so that we can operate in /tmp',
+        'StrictModes no',
+        '# Logging',
+        'SyslogFacility AUTH',
+        'LogLevel INFO',
+        '# Authentication:',
+        'LoginGraceTime 120',
+        'PermitRootLogin without-password',
+        'StrictModes yes',
+        'PubkeyAuthentication yes',
+        '#AuthorizedKeysFile	%h/.ssh/authorized_keys',
+        '#AuthorizedKeysFile	key_test.pub',
+        '# Don\'t read the user\'s ~/.rhosts and ~/.shosts files',
+        'IgnoreRhosts yes',
+        '# similar for protocol version 2',
+        'HostbasedAuthentication no',
+        '#IgnoreUserKnownHosts yes',
+        '# To enable empty passwords, change to yes (NOT RECOMMENDED)',
+        'PermitEmptyPasswords no',
+        '# Change to yes to enable challenge-response passwords (beware issues with',
+        '# some PAM modules and threads)',
+        'ChallengeResponseAuthentication no',
+        '# Change to no to disable tunnelled clear text passwords',
+        'PasswordAuthentication no',
+        'X11Forwarding no',
+        'X11DisplayOffset 10',
+        'PrintMotd no',
+        'PrintLastLog yes',
+        'TCPKeepAlive yes',
+        '#UseLogin no',
+        'AcceptEnv LANG LC_*',
+        'Subsystem sftp /usr/lib/openssh/sftp-server',
+        '#UsePAM yes',
+    ]

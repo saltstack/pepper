@@ -1,10 +1,6 @@
 sudo: false
 services:
 - docker
-language: python
-cache: pip
-python:
-- 3.6
 env:
   matrix:
   - TOXENV=27 CODECOV=py
@@ -13,9 +9,6 @@ env:
   - TOXENV=36 CODECOV=py
   - TOXENV=37 CODECOV=py
   - TOXENV=flake8
-
-install:
-- pip install tox
 
 script:
 - docker run -v $PWD:/pepper -e "CODECOV=$CODECOV" -e "TOXENV=$TOXENV" -e "CODECOV_TOKEN=$CODECOVE_TOKEN" -ti --rm gtmanfred/pepper:latest /runtests.sh

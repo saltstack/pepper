@@ -28,8 +28,8 @@ matrix:
     python: 3.6
 
 script:
-- docker run -v $PWD:/pepper -ti --rm gtmanfred/pepper:latest tox -c /pepper/tox.ini -e "${CODECOV}${TOXENV}"
+- if [[ -n $CODECOV ]]; then docker run -v $PWD:/pepper -ti --rm gtmanfred/pepper:latest tox -c /pepper/tox.ini -e "${CODECOV}${TOXENV}",coverage; fi
+- if [[ -z $CODECOV ]]; then docker run -v $PWD:/pepper -ti --rm gtmanfred/pepper:latest tox -c /pepper/tox.ini -e "${CODECOV}${TOXENV}"; fi
 
 after_success:
-- sudo chown -R "$USER" .coverage
-- if [[ $TOXENV == "py" ]]; then tox -e coverage,codecov; fi
+- if [[ $CODECOV== "py" ]]; then tox -e codecov; fi

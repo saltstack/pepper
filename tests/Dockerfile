@@ -19,5 +19,3 @@ RUN pyenv install 2.7.15 && \
     pip install tox
 
 ADD runtests.sh /runtests.sh
-RUN useradd -m pepper
-USER pepper

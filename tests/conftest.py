@@ -271,7 +271,7 @@ def session_sshd_config_lines(session_sshd_port):
     Return a list of lines which will make the sshd_config file
     '''
     return [
-        'Port {0}'.format(sshd_port),
+        'Port {0}'.format(session_sshd_port),
         'ListenAddress 127.0.0.1',
         'Protocol 2',
         'UsePrivilegeSeparation yes',

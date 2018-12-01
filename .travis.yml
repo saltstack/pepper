@@ -31,4 +31,5 @@ script:
 - docker run -v $PWD:/pepper -ti --rm gtmanfred/pepper:latest tox -c /pepper/tox.ini -e "${CODECOV}${TOXENV}"
 
 after_success:
+- sudo chown $USER .tox/
 - if [[ $CODECOV == "py" ]]; then tox -e codecov; fi

@@ -11,12 +11,17 @@ import sys
 from distutils.core import setup
 from distutils.command import sdist, install_data
 
+with open("README.rst", "r") as fh:
+    long_description = fh.read()
+
 setup_kwargs = {
     'name': 'salt-pepper',
     'description': __doc__.strip(),
     'author': 'Seth House',
     'author_email': 'shouse@saltstack.com',
     'url': 'http://saltstack.com',
+    'long_description': long_description,
+    'long_description_content_type': "text/x-rst",
     'classifiers': [
         'Programming Language :: Python',
         'Programming Language :: Cython',

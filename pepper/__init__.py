@@ -12,3 +12,7 @@ try:
 except pkg_resources.DistributionNotFound:
     # package is not installed
     __version__ = None
+
+# For backwards compatibility
+version = __version__
+sha = None

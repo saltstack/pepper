@@ -6,3 +6,4 @@ git+git://github.com/saltstack/pytest-salt@master#egg=pytest-salt
 tornado<5.0.0
 salt
 CherryPy
+setuptools_scm

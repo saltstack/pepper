@@ -5,10 +5,10 @@ import pkg_resources
 
 from pepper.libpepper import Pepper, PepperException
 
-__all__ = ('__version__', 'Pepper', 'PepperException')
+__all__ = ('__version__', '__name__', 'Pepper', 'PepperException')
 
 try:
-    __version__ = pkg_resources.get_distribution(__name__).version
+    __version__ = pkg_resources.get_distribution('salt_pepper').version
 except pkg_resources.DistributionNotFound:
     # package is not installed
     pass

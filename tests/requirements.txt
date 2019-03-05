@@ -4,6 +4,6 @@ pytest-rerunfailures
 pytest-cov
 git+git://github.com/saltstack/pytest-salt@master#egg=pytest-salt
 tornado<5.0.0
-salt
+salt<2019.2.0
 CherryPy
 setuptools_scm

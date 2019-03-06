@@ -41,7 +41,7 @@ Installation
 Usage
 -----
 
-Basic usage is in heavy flux.
+Basic usage is in heavy flux. You can run pepper using the script in %PYTHONHOME%/scripts/pepper (a pepper.cmd wrapper is provided for convenience to Windows users).
 
 .. code-block:: bash
 

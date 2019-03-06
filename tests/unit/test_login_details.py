@@ -20,5 +20,5 @@ def test_interactive_logins():
              MagicMock(return_value='pepper')
          ):
         result = pepper.cli.PepperCli().get_login_details()
-    assert result['SALTAPI_USER'] is 'pepper'
-    assert result['SALTAPI_PASS'] is 'pepper'
+    assert result['SALTAPI_USER'] == 'pepper'
+    assert result['SALTAPI_PASS'] == 'pepper'

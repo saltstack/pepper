@@ -137,10 +137,10 @@ def pepper_cli(session_salt_api, salt_api_port, output_file, session_sshd_server
     return _run_pepper_cli
 
 
-@pytest.fixture(scope='session')
-def session_master_config_overrides(salt_api_port):
+@pytest.fixture(scope='session', params=['rest_cherrypy', 'rest_tornado'])
+def session_master_config_overrides(request, salt_api_port):
     return {
-        'rest_cherrypy': {
+        request.param: {
             'port': salt_api_port,
             'disable_ssl': True,
         },

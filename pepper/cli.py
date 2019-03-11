@@ -643,9 +643,10 @@ class PepperCli(object):
         '''
         Parse all arguments and call salt-api
         '''
-        # move logger instantiation to method?
-        logger.addHandler(logging.StreamHandler())
-        logger.setLevel(max(logging.ERROR - (self.options.verbose * 10), 1))
+        # set up logging
+        rootLogger = logging.getLogger(name=None)
+        rootLogger.addHandler(logging.StreamHandler())
+        rootLogger.setLevel(max(logging.ERROR - (self.options.verbose * 10), 1))
 
         api = pepper.Pepper(
             self.parse_url(),

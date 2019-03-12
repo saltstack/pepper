@@ -50,13 +50,29 @@ class Pepper(object):
     def __call__(self):
         try:
             for exit_code, result in self.cli.run():
-                if HAS_SALT and not self.cli.options.userun and self.opts:
-                    logger.info('Use Salt outputters')
-                    for ret in json.loads(result)['return']:
+                if HAS_SALT and self.opts:
+                    logger.debug('Use Salt outputters')
+                    result = json.loads(result)
+
+                    if 'return' in result:
+                        result = result['return']
+
+                    for ret in result:
                         if isinstance(ret, dict):
-                            if self.cli.options.client == 'local':
+                            if self.cli.options.client.startswith('local'):
                                 for minionid, minionret in ret.items():
-                                    if isinstance(minionret, dict) and 'ret' in minionret:
+                                    # rest_tornado doesnt return full_return directly
+                                    # it will always be from get_event, so the output differs slightly
+                                    logger.error(minionret)
+                                    if isinstance(minionret, dict) and 'return' in minionret:
+                                        # version >= 2017.7
+                                        salt.output.display_output(
+                                            {minionid: minionret['return']},
+                                            self.cli.options.output or minionret.get('out', None) or 'nested',
+                                            opts=self.opts
+                                        )
+                                    # cherrypy returns with ret via full_return
+                                    elif isinstance(minionret, dict) and 'ret' in minionret:
                                         # version >= 2017.7
                                         salt.output.display_output(
                                             {minionid: minionret['ret']},
@@ -95,7 +111,7 @@ class Pepper(object):
                         print(result)
                 if exit_code is not None:
                     if exit_code == 0:
-                        return PepperRetcode().validate(self.cli.options, json.loads(result)['return'])
+                        return PepperRetcode().validate(self.cli.options, result)
                     return exit_code
         except (PepperException, PepperAuthException, PepperArgumentsException) as exc:
             print('Pepper error: {0}'.format(exc), file=sys.stderr)

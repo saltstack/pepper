@@ -580,12 +580,16 @@ class PepperCli(object):
                 },
             }])
 
-            responded = set(jid_ret['return'][0].keys()) ^ set(ret_nodes)
+            inner_ret = jid_ret['return'][0]
+            # sometimes ret is nested in data
+            if 'data' in inner_ret:
+                inner_ret = inner_ret['data']
+
+            responded = set(inner_ret.keys()) ^ set(ret_nodes)
+
             for node in responded:
-                yield None, "{{{}: {}}}".format(
-                    node,
-                    jid_ret['return'][0][node])
-            ret_nodes = list(jid_ret['return'][0].keys())
+                yield None, [{node: inner_ret[node]}]
+            ret_nodes = list(inner_ret.keys())
 
             if set(ret_nodes) == set(nodes):
                 exit_code = 0
@@ -594,8 +598,9 @@ class PepperCli(object):
                 time.sleep(self.seconds_to_wait)
 
         exit_code = exit_code if self.options.fail_if_minions_dont_respond else 0
-        yield exit_code, "{{Failed: {}}}".format(
-            list(set(ret_nodes) ^ set(nodes)))
+        failed = list(set(ret_nodes) ^ set(nodes))
+        if failed:
+            yield exit_code, {'Failed': failed}
 
     def login(self, api):
         if self.options.mktoken:
@@ -627,6 +632,7 @@ class PepperCli(object):
         api.auth = auth
         self.auth = auth
         return auth
+
 
     def low(self, api, load):
         path = '/run' if self.options.userun else '/'

@@ -643,7 +643,9 @@ class PepperCli(object):
             for i in load:
                 i['token'] = self.auth['token']
 
-        if self.options.timeout:
+        # having a defined salt_version means changes from https://github.com/saltstack/salt/pull/51979
+        # are available if backend is tornado, so safe to supply timeout
+        if self.options.timeout and api.salt_version:
             for i in load:
                 if not i.get('client', '').startswith('wheel'):
                     i['timeout'] = self.options.timeout

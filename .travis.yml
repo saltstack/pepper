@@ -12,23 +12,29 @@ before_install:
 install:
 - pip install tox
 
-matrix:
-  include:
-  - env: TOXENV=27,coverage CODECOV=py
-    python: 2.7
-  - env: TOXENV=34,coverage CODECOV=py
-    python: 3.4
-  - env: TOXENV=35,coverage CODECOV=py
-    python: 3.5
-  - env: TOXENV=36,coverage CODECOV=py
-    python: 3.6
-  - env: TOXENV=37,coverage CODECOV=py
-    python: 3.7-dev
-  - env: TOXENV=flake8
-    python: 3.6
+env:
+  - PY=py27
+  - PY=py34
+  - PY=py35
+  - PY=py36
+  - PY=py37
+  - SALT=v2017.7.9
+  - SALT=v2018.8.4
+  - SALT=v2019.2.0
+  - BACKEND=cherrypy
+  - BACKEND=tornado
 
 script:
-- docker run -v $PWD:/pepper -ti --rm gtmanfred/pepper:latest tox -c /pepper/tox.ini -e "${CODECOV}${TOXENV}"
+  - docker run -v $PWD:/pepper -ti --rm gtmanfred/pepper:latest tox -c /pepper/tox.ini -e "${PY}-${BACKEND}-${SALT}"
+
+jobs:
+  include:
+    - stage: test
+      python: 2.7
+      script: docker run -v $PWD:/pepper -ti --rm gtmanfred/pepper:latest tox -c /pepper/tox.ini -e flake8
+    - stage: test
+      python: 2.7
+      script: docker run -v $PWD:/pepper -ti --rm gtmanfred/pepper:latest tox -c /pepper/tox.ini -e coverage
 
 after_success:
 - sudo chown $USER .tox/

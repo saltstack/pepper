@@ -136,7 +136,7 @@ def pepper_cli(request, session_salt_api, salt_api_port, output_file, session_ss
                     result.seek(0)
                     return [yaml.load('{0}}}'.format(ret).strip('"')) for ret in result.read().split('}"\n') if ret]
         except Exception as exc:
-            log.info('ExitCode %s: %s', exitcode, exc)
+            log.error('ExitCode %s: %s', exitcode, exc)
             return exitcode
 
     return _run_pepper_cli

@@ -219,7 +219,7 @@ class Pepper(object):
             req.add_header('Content-Length', clen)
 
         # Add auth header to request
-        if self.auth and 'token' in self.auth and self.auth['token']:
+        if path != '/run' and self.auth and 'token' in self.auth and self.auth['token']:
             req.add_header('X-Auth-Token', self.auth['token'])
 
         # Send request
@@ -465,14 +465,6 @@ class Pepper(object):
             )
         )
         self.auth = self._send_auth('/login', **kwargs).get('return', [{}])[0]
-        return self.auth
-
-    def token(self, **kwargs):
-        '''
-        Get an eauth token from Salt for use with the /run URL
-
-        '''
-        self.auth = self._send_auth('/token', **kwargs)[0]
         return self.auth
 
     def _construct_url(self, path):

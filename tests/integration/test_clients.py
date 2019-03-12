@@ -22,23 +22,35 @@ def test_runner_client(pepper_cli):
         'one', 'two=what',
         'three={0}'.format(json.dumps({"hello": "world"})),
     )
-    assert ret == {"runner": {"args": ["one"], "kwargs": {"three": {"hello": "world"}, "two": "what"}}}
+    assert ret == {"args": ["one"], "kwargs": {"three": {"hello": "world"}, "two": "what"}}
 
 
+@pytest.mark.xfail(
+    pytest.config.getoption("--salt-api-backend") == "rest_tornado",
+    reason="wheelClient unimplemented for now on tornado",
+)
 def test_wheel_client_arg(pepper_cli, session_minion_id):
     ret = pepper_cli('--client=wheel', 'minions.connected')
     assert ret['success'] is True
 
 
+@pytest.mark.xfail(
+    pytest.config.getoption("--salt-api-backend") == "rest_tornado",
+    reason="wheelClient unimplemented for now on tornado",
+)
 def test_wheel_client_kwargs(pepper_cli, session_master_config_file):
     ret = pepper_cli(
         '--client=wheel', 'config.update_config', 'file_name=pepper',
         'yaml_contents={0}'.format(json.dumps({"timeout": 5})),
     )
-    assert ret['return'] == 'Wrote pepper.conf'
+    assert ret == 'Wrote pepper.conf'
     assert os.path.isfile('{0}.d/pepper.conf'.format(session_master_config_file))
 
 
+@pytest.mark.xfail(
+    pytest.config.getoption("--salt-api-backend") == "rest_tornado",
+    reason="sshClient unimplemented for now on tornado",
+)
 @pytest.mark.xfail(sys.version_info >= (3, 0),
                    reason='Broken with python3 right now')
 def test_ssh_client(pepper_cli, session_roster_config, session_roster_config_file):

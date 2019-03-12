@@ -108,16 +108,22 @@ def output_file():
     shutil.rmtree(out_dir)
 
 
-@pytest.fixture
-def pepper_cli(session_salt_api, salt_api_port, output_file, session_sshd_server):
+@pytest.fixture(params=['/run', '/login'])
+def pepper_cli(request, session_salt_api, salt_api_port, output_file, session_sshd_server):
     '''
     Wrapper to invoke Pepper with common params and inside an empty env
     '''
+    if request.config.getoption('--salt-api-backend') == 'rest_tornado' and request.param == '/run':
+        pytest.xfail("rest_tornado does not support /run endpoint until next release")
+
     def_args = [
         '--out=json',
         '--output-file={0}'.format(output_file),
         '-c', 'tests/.pepperrc',
     ]
+
+    if request.param == '/run':
+        def_args = ['--run-uri'] + def_args
 
     def _run_pepper_cli(*args, **kwargs):
         sys.argv = ['pepper', '-p', kwargs.pop('profile', 'main')] + def_args + list(args)

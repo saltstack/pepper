@@ -219,7 +219,7 @@ class Pepper(object):
             req.add_header('Content-Length', clen)
 
         # Add auth header to request
-        if self.auth and 'token' in self.auth and self.auth['token']:
+        if path != '/run' and self.auth and 'token' in self.auth and self.auth['token']:
             req.add_header('X-Auth-Token', self.auth['token'])
 
         # Send request

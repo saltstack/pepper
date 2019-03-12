@@ -26,9 +26,7 @@ def test_runner_client(pepper_cli):
 
 
 def test_wheel_client_arg(pepper_cli, session_minion_id):
-    ret = pepper_cli(
-        '--client=wheel', 'minions.connected', session_minion_id
-    )
+    ret = pepper_cli('--client=wheel', 'minions.connected')
     assert ret['success'] is True
 
 

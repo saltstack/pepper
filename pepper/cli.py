@@ -603,6 +603,8 @@ class PepperCli(object):
             yield exit_code, {'Failed': failed}
 
     def login(self, api):
+        login = api.token if self.options.userun else api.login
+
         if self.options.mktoken:
             token_file = self.options.cache
             try:
@@ -616,7 +618,7 @@ class PepperCli(object):
                     logger.error('Unable to load login token from {0} {1}'.format(token_file, str(e)))
                     if os.path.isfile(token_file):
                         os.remove(token_file)
-                auth = api.login(**self.parse_login())
+                auth = login(**self.parse_login())
                 try:
                     oldumask = os.umask(0)
                     fdsc = os.open(token_file, os.O_WRONLY | os.O_CREAT, 0o600)
@@ -627,7 +629,7 @@ class PepperCli(object):
                 finally:
                     os.umask(oldumask)
         else:
-            auth = api.login(**self.parse_login())
+            auth = login(**self.parse_login())
 
         api.auth = auth
         self.auth = auth

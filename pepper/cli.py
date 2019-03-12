@@ -600,7 +600,7 @@ class PepperCli(object):
         exit_code = exit_code if self.options.fail_if_minions_dont_respond else 0
         failed = list(set(ret_nodes) ^ set(nodes))
         if failed:
-            yield exit_code, {'Failed': failed}
+            yield exit_code, [{'Failed': failed}]
 
     def login(self, api):
         login = api.token if self.options.userun else api.login
@@ -664,7 +664,7 @@ class PepperCli(object):
         load = self.parse_cmd(api)
 
         for entry in load:
-            if entry.get('client', '').startswith('local'):
+            if not entry.get('client', '').startswith('wheel'):
                 entry['full_return'] = True
 
         if self.options.fail_if_minions_dont_respond:

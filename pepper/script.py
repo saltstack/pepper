@@ -54,6 +54,7 @@ class Pepper(object):
                     logger.debug('Use Salt outputters')
                     result = json.loads(result)
 
+                    # unwrap ret in some cases
                     if 'return' in result:
                         result = result['return']
 
@@ -63,7 +64,6 @@ class Pepper(object):
                                 for minionid, minionret in ret.items():
                                     # rest_tornado doesnt return full_return directly
                                     # it will always be from get_event, so the output differs slightly
-                                    logger.error(minionret)
                                     if isinstance(minionret, dict) and 'return' in minionret:
                                         # version >= 2017.7
                                         salt.output.display_output(
@@ -86,9 +86,13 @@ class Pepper(object):
                                             opts=self.opts
                                         )
                             elif 'data' in ret:
+                                # unfold runners
+                                outputter = ret.get('outputter', 'nested')
+                                if isinstance(ret['data'], dict) and 'return' in ret['data']:
+                                    ret = ret['data']['return']
                                 salt.output.display_output(
-                                    ret['data'],
-                                    self.cli.options.output or ret.get('outputter', 'nested'),
+                                    ret,
+                                    self.cli.options.output or outputter,
                                     opts=self.opts
                                 )
                             else:
@@ -100,7 +104,7 @@ class Pepper(object):
                         else:
                             salt.output.display_output(
                                 {self.cli.options.client: ret},
-                                'nested',
+                                self.cli.options.output or 'nested',
                                 opts=self.opts,
                             )
                 else:

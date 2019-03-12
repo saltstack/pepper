@@ -643,6 +643,11 @@ class PepperCli(object):
             for i in load:
                 i['token'] = self.auth['token']
 
+        if self.options.timeout:
+            for i in load:
+                if not i.get('client', '').startswith('wheel'):
+                    i['timeout'] = self.options.timeout
+
         return api.low(load, path=path)
 
     def run(self):

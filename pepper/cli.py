@@ -614,7 +614,7 @@ class PepperCli(object):
                     logger.error('Login token expired')
                     raise Exception('Login token expired')
             except Exception as e:
-                if e.args[0] is not 2:
+                if e.args[0] != 2:
                     logger.error('Unable to load login token from {0} {1}'.format(token_file, str(e)))
                     if os.path.isfile(token_file):
                         os.remove(token_file)

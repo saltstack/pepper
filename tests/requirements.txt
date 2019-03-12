@@ -6,3 +6,5 @@ git+https://github.com/saltstack/pytest-salt@master#egg=pytest-salt
 tornado<5.0.0
 CherryPy
 setuptools_scm
+pyzmq>=2.2.0,<17.1.0; python_version == '3.4'  # pyzmq 17.1.0 stopped building wheels for python3.4
+pyzmq>=2.2.0; python_version != '3.4'

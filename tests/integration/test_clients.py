@@ -16,6 +16,10 @@ def test_local_bad_opts(pepper_cli):
         pepper_cli('--client=ssh', '*')
 
 
+@pytest.mark.xfail(
+    pytest.config.getoption("--salt-api-backend") == "rest_tornado",
+    reason="timeout kwarg isnt popped until next version of salt/tornado"
+)
 def test_runner_client(pepper_cli):
     ret = pepper_cli(
         '--timeout=123', '--client=runner', 'test.arg',

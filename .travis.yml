@@ -8,33 +8,30 @@ services:
 
 before_install:
 - pyenv versions
+- pyenv version-name
+- env
 
 install:
 - pip install tox
 
+python:
+- '2.7'
+- '3.4'
+- '3.5'
+- '3.6'
+- '3.7'
+
 env:
-  - PY=py27
-  - PY=py34
-  - PY=py35
-  - PY=py36
-  - PY=py37
-  - SALT=v2017.7.9
-  - SALT=v2018.8.4
-  - SALT=v2019.2.0
-  - BACKEND=cherrypy
-  - BACKEND=tornado
+- SALT=-v2017.7 BACKEND=-cherrypy CODECOV=py
+- SALT=-v2017.7 BACKEND=-tornado CODECOV=py
+- SALT=-v2018.3 BACKEND=-cherrypy CODECOV=py
+- SALT=-v2018.3 BACKEND=-tornado CODECOV=py
+- SALT=-v2019.2 BACKEND=-cherrypy CODECOV=py
+- SALT=-v2019.2 BACKEND=-tornado CODECOV=py
 
 script:
-  - docker run -v $PWD:/pepper -ti --rm gtmanfred/pepper:latest tox -c /pepper/tox.ini -e "${PY}-${BACKEND}-${SALT}"
-
-jobs:
-  include:
-    - stage: test
-      python: 2.7
-      script: docker run -v $PWD:/pepper -ti --rm gtmanfred/pepper:latest tox -c /pepper/tox.ini -e flake8
-    - stage: test
-      python: 2.7
-      script: docker run -v $PWD:/pepper -ti --rm gtmanfred/pepper:latest tox -c /pepper/tox.ini -e coverage
+- #docker run -v $PWD:/pepper -ti --rm gtmanfred/pepper:latest tox -c /pepper/tox.ini -e "flake8,${CODECOV}${BACKEND}${SALT}"
+- echo "flake8,${CODECOV}${BACKEND}${SALT}"
 
 after_success:
 - sudo chown $USER .tox/

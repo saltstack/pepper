@@ -30,8 +30,7 @@ env:
 - SALT=-v2019.2 BACKEND=-tornado CODECOV=py
 
 script:
-- #docker run -v $PWD:/pepper -ti --rm gtmanfred/pepper:latest tox -c /pepper/tox.ini -e "flake8,${CODECOV}${BACKEND}${SALT}"
-- echo "flake8,${CODECOV}${BACKEND}${SALT}"
+- docker run -v $PWD:/pepper -ti --rm gtmanfred/pepper:latest tox -c /pepper/tox.ini -e "flake8,${CODECOV}${TRAVIS_PYTHON_VERSION//./}${BACKEND}${SALT}"
 
 after_success:
 - sudo chown $USER .tox/

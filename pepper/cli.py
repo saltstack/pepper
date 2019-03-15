@@ -635,7 +635,6 @@ class PepperCli(object):
         self.auth = auth
         return auth
 
-
     def low(self, api, load):
         path = '/run' if self.options.userun else '/'
 

@@ -10,7 +10,8 @@ import tempfile
 import textwrap
 
 # Import Salt Libraries
-import salt.utils.yaml as yaml
+import yaml.parser
+import salt.utils.yamlloader as yaml
 
 # Import pytest libraries
 import pytest
@@ -140,6 +141,7 @@ def pepper_cli(request, session_salt_api, salt_api_port, output_file, session_ss
             return exitcode
 
     return _run_pepper_cli
+
 
 @pytest.fixture(scope='session')
 def session_master_config_overrides(request, salt_api_port, salt_api_backend):

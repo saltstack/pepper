@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import salt.utils.yaml as yaml
 
 
 def test_local_poll(pepper_cli, session_minion_id):

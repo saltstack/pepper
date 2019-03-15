@@ -19,7 +19,7 @@ python:
 - '3.4'
 - '3.5'
 - '3.6'
-- '3.7'
+- '3.7-dev'
 
 env:
 - SALT=-v2018.3 BACKEND=-cherrypy CODECOV=py
@@ -31,7 +31,8 @@ matrix:
   env:
 
 script:
-- docker run -v $PWD:/pepper -ti --rm gtmanfred/pepper:latest tox -c /pepper/tox.ini -e "${TRAVIS_PYTHON_VERSION%%.*}flake8,${CODECOV}${TRAVIS_PYTHON_VERSION//./}${BACKEND}${SALT}"
+- PYTHON="${TRAVIS_PYTHON_VERSION%-dev}"
+- docker run -v $PWD:/pepper -ti --rm gtmanfred/pepper:latest tox -c /pepper/tox.ini -e "${TRAVIS_PYTHON_VERSION%%.*}flake8,${CODECOV}${PYTHON//./}${BACKEND}${SALT}"
 
 after_success:
 - sudo chown $USER .tox/

@@ -22,12 +22,13 @@ python:
 - '3.7'
 
 env:
-- SALT=-v2017.7 BACKEND=-cherrypy CODECOV=py
-- SALT=-v2017.7 BACKEND=-tornado CODECOV=py
 - SALT=-v2018.3 BACKEND=-cherrypy CODECOV=py
 - SALT=-v2018.3 BACKEND=-tornado CODECOV=py
 - SALT=-v2019.2 BACKEND=-cherrypy CODECOV=py
 - SALT=-v2019.2 BACKEND=-tornado CODECOV=py
+
+matrix:
+  env:
 
 script:
 - docker run -v $PWD:/pepper -ti --rm gtmanfred/pepper:latest tox -c /pepper/tox.ini -e "${TRAVIS_PYTHON_VERSION%%.*}flake8,${CODECOV}${TRAVIS_PYTHON_VERSION//./}${BACKEND}${SALT}"

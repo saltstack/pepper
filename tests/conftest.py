@@ -10,8 +10,7 @@ import tempfile
 import textwrap
 
 # Import Salt Libraries
-import yaml.parser
-import salt.utils.yamlloader as yaml
+import salt.utils.yaml as yaml
 
 # Import pytest libraries
 import pytest

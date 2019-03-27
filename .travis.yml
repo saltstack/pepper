@@ -8,27 +8,31 @@ services:
 
 before_install:
 - pyenv versions
+- pyenv version-name
+- env
 
 install:
 - pip install tox
 
+python:
+- '2.7'
+- '3.4'
+- '3.5'
+- '3.6'
+- '3.7-dev'
+
+env:
+- SALT=-v2018.3 BACKEND=-cherrypy CODECOV=py
+- SALT=-v2018.3 BACKEND=-tornado CODECOV=py
+- SALT=-v2019.2 BACKEND=-cherrypy CODECOV=py
+- SALT=-v2019.2 BACKEND=-tornado CODECOV=py
+
 matrix:
-  include:
-  - env: TOXENV=27,coverage CODECOV=py
-    python: 2.7
-  - env: TOXENV=34,coverage CODECOV=py
-    python: 3.4
-  - env: TOXENV=35,coverage CODECOV=py
-    python: 3.5
-  - env: TOXENV=36,coverage CODECOV=py
-    python: 3.6
-  - env: TOXENV=37,coverage CODECOV=py
-    python: 3.7-dev
-  - env: TOXENV=flake8
-    python: 3.6
+  env:
 
 script:
-- docker run -v $PWD:/pepper -ti --rm gtmanfred/pepper:latest tox -c /pepper/tox.ini -e "${CODECOV}${TOXENV}"
+- PYTHON="${TRAVIS_PYTHON_VERSION%-dev}"
+- docker run -v $PWD:/pepper -ti --rm gtmanfred/pepper:latest tox -c /pepper/tox.ini -e "${TRAVIS_PYTHON_VERSION%%.*}flake8,${CODECOV}${PYTHON//./}${BACKEND}${SALT}"
 
 after_success:
 - sudo chown $USER .tox/

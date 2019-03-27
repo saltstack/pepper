@@ -468,7 +468,7 @@ class PepperCli(object):
 
         return ret
 
-    def parse_cmd(self):
+    def parse_cmd(self, api):
         '''
         Extract the low data for a command from the passed CLI params
         '''
@@ -505,26 +505,37 @@ class PepperCli(object):
             low['arg'] = args
         elif client.startswith('runner'):
             low['fun'] = args.pop(0)
-            for arg in args:
-                if '=' in arg:
-                    key, value = arg.split('=', 1)
-                    try:
-                        low[key] = json.loads(value)
-                    except JSONDecodeError:
-                        low[key] = value
-                else:
-                    low.setdefault('arg', []).append(arg)
+            # post https://github.com/saltstack/salt/pull/50124, kwargs can be
+            # passed as is in foo=bar form, splitting and deserializing will
+            # happen in salt-api. additionally, the presence of salt-version header
+            # means we are neon or newer, so don't need a finer grained check
+            if api.salt_version:
+                low['arg'] = args
+            else:
+                for arg in args:
+                    if '=' in arg:
+                        key, value = arg.split('=', 1)
+                        try:
+                            low[key] = json.loads(value)
+                        except JSONDecodeError:
+                            low[key] = value
+                    else:
+                        low.setdefault('arg', []).append(arg)
         elif client.startswith('wheel'):
             low['fun'] = args.pop(0)
-            for arg in args:
-                if '=' in arg:
-                    key, value = arg.split('=', 1)
-                    try:
-                        low[key] = json.loads(value)
-                    except JSONDecodeError:
-                        low[key] = value
-                else:
-                    low.setdefault('arg', []).append(arg)
+            # see above comment in runner arg handling
+            if api.salt_version:
+                low['arg'] = args
+            else:
+                for arg in args:
+                    if '=' in arg:
+                        key, value = arg.split('=', 1)
+                        try:
+                            low[key] = json.loads(value)
+                        except JSONDecodeError:
+                            low[key] = value
+                    else:
+                        low.setdefault('arg', []).append(arg)
         elif client.startswith('ssh'):
             if len(args) < 2:
                 self.parser.error("Command or target not specified")
@@ -569,12 +580,16 @@ class PepperCli(object):
                 },
             }])
 
-            responded = set(jid_ret['return'][0].keys()) ^ set(ret_nodes)
+            inner_ret = jid_ret['return'][0]
+            # sometimes ret is nested in data
+            if 'data' in inner_ret:
+                inner_ret = inner_ret['data']
+
+            responded = set(inner_ret.keys()) ^ set(ret_nodes)
+
             for node in responded:
-                yield None, "{{{}: {}}}".format(
-                    node,
-                    jid_ret['return'][0][node])
-            ret_nodes = list(jid_ret['return'][0].keys())
+                yield None, [{node: inner_ret[node]}]
+            ret_nodes = list(inner_ret.keys())
 
             if set(ret_nodes) == set(nodes):
                 exit_code = 0
@@ -583,8 +598,9 @@ class PepperCli(object):
                 time.sleep(self.seconds_to_wait)
 
         exit_code = exit_code if self.options.fail_if_minions_dont_respond else 0
-        yield exit_code, "{{Failed: {}}}".format(
-            list(set(ret_nodes) ^ set(nodes)))
+        failed = list(set(ret_nodes) ^ set(nodes))
+        if failed:
+            yield exit_code, [{'Failed': failed}]
 
     def login(self, api):
         login = api.token if self.options.userun else api.login
@@ -626,21 +642,23 @@ class PepperCli(object):
             for i in load:
                 i['token'] = self.auth['token']
 
+        # having a defined salt_version means changes from https://github.com/saltstack/salt/pull/51979
+        # are available if backend is tornado, so safe to supply timeout
+        if self.options.timeout and api.salt_version:
+            for i in load:
+                if not i.get('client', '').startswith('wheel'):
+                    i['timeout'] = self.options.timeout
+
         return api.low(load, path=path)
 
     def run(self):
         '''
         Parse all arguments and call salt-api
         '''
-        # move logger instantiation to method?
-        logger.addHandler(logging.StreamHandler())
-        logger.setLevel(max(logging.ERROR - (self.options.verbose * 10), 1))
-
-        load = self.parse_cmd()
-
-        for entry in load:
-            if entry.get('client', '').startswith('local'):
-                entry['full_return'] = True
+        # set up logging
+        rootLogger = logging.getLogger(name=None)
+        rootLogger.addHandler(logging.StreamHandler())
+        rootLogger.setLevel(max(logging.ERROR - (self.options.verbose * 10), 1))
 
         api = pepper.Pepper(
             self.parse_url(),
@@ -648,6 +666,12 @@ class PepperCli(object):
             ignore_ssl_errors=self.options.ignore_ssl_certificate_errors)
 
         self.login(api)
+
+        load = self.parse_cmd(api)
+
+        for entry in load:
+            if not entry.get('client', '').startswith('wheel'):
+                entry['full_return'] = True
 
         if self.options.fail_if_minions_dont_respond:
             for exit_code, ret in self.poll_for_returns(api, load):  # pragma: no cover

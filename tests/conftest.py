@@ -34,13 +34,12 @@ class SaltApi(SaltDaemonScriptBase):
     def get_script_args(self):
         return ['-l', 'quiet']
 
-    def get_check_events(self):
-        if sys.platform.startswith('win'):
-            return super(SaltApi, self).get_check_events()
-        return set(['salt/{0}/{1}/start'.format(self.config['__role'], self.config['id'])])
-
     def get_check_ports(self):
-        return [self.config['rest_cherrypy']['port']]
+        if 'rest_cherrypy' in self.config:
+            return [self.config['rest_cherrypy']['port']]
+
+        if 'rest_tornado' in self.config:
+            return [self.config['rest_tornado']['port']]
 
 
 @pytest.fixture(scope='session')
@@ -109,16 +108,22 @@ def output_file():
     shutil.rmtree(out_dir)
 
 
-@pytest.fixture
-def pepper_cli(session_salt_api, salt_api_port, output_file, session_sshd_server):
+@pytest.fixture(params=['/run', '/login'])
+def pepper_cli(request, session_salt_api, salt_api_port, output_file, session_sshd_server):
     '''
     Wrapper to invoke Pepper with common params and inside an empty env
     '''
+    if request.config.getoption('--salt-api-backend') == 'rest_tornado' and request.param == '/run':
+        pytest.xfail("rest_tornado does not support /run endpoint until next release")
+
     def_args = [
         '--out=json',
         '--output-file={0}'.format(output_file),
         '-c', 'tests/.pepperrc',
     ]
+
+    if request.param == '/run':
+        def_args = ['--run-uri'] + def_args
 
     def _run_pepper_cli(*args, **kwargs):
         sys.argv = ['pepper', '-p', kwargs.pop('profile', 'main')] + def_args + list(args)
@@ -131,16 +136,16 @@ def pepper_cli(session_salt_api, salt_api_port, output_file, session_sshd_server
                     result.seek(0)
                     return [yaml.load('{0}}}'.format(ret).strip('"')) for ret in result.read().split('}"\n') if ret]
         except Exception as exc:
-            log.info('ExitCode %s: %s', exitcode, exc)
+            log.error('ExitCode %s: %s', exitcode, exc)
             return exitcode
 
     return _run_pepper_cli
 
 
 @pytest.fixture(scope='session')
-def session_master_config_overrides(salt_api_port):
+def session_master_config_overrides(request, salt_api_port, salt_api_backend):
     return {
-        'rest_cherrypy': {
+        salt_api_backend: {
             'port': salt_api_port,
             'disable_ssl': True,
         },
@@ -221,6 +226,22 @@ def _salt_fail_hard(request, salt_fail_hard):
         return fail_hard
 
     return salt_fail_hard
+
+
+@pytest.fixture(scope='session')
+def salt_api_backend(request):
+    '''
+    Return the salt-api backend (cherrypy or tornado)
+    '''
+    backend = request.config.getoption('--salt-api-backend')
+    if backend is not None:
+        return backend
+
+    backend = request.config.getini('salt_api_backend')
+    if backend is not None:
+        return backend
+
+    return 'rest_cherrypy'
 
 
 @pytest.fixture(scope='session')
@@ -309,3 +330,12 @@ def session_sshd_config_lines(session_sshd_port):
         'Subsystem sftp /usr/lib/openssh/sftp-server',
         '#UsePAM yes',
     ]
+
+
+def pytest_addoption(parser):
+    parser.addoption(
+         '--salt-api-backend',
+         action='store',
+         default='rest_cherrypy',
+         help='which backend to use for salt-api, must be one of rest_cherrypy or rest_tornado',
+     )

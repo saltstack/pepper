@@ -6,11 +6,6 @@ cache: pip
 services:
 - docker
 
-before_install:
-- pyenv versions
-- pyenv version-name
-- env
-
 install:
 - pip install tox
 
@@ -19,21 +14,26 @@ python:
 - '3.4'
 - '3.5'
 - '3.6'
-- '3.7-dev'
+- '3.7'
+- '3.8-dev'
 
 env:
-- SALT=-v2018.3 BACKEND=-cherrypy CODECOV=py
-- SALT=-v2018.3 BACKEND=-tornado CODECOV=py
-- SALT=-v2019.2 BACKEND=-cherrypy CODECOV=py
-- SALT=-v2019.2 BACKEND=-tornado CODECOV=py
+- SALT=v2018.3 BACKEND=cherrypy
+- SALT=v2018.3 BACKEND=tornado
+- SALT=v2019.2 BACKEND=cherrypy
+- SALT=v2019.2 BACKEND=tornado
+- SALT=develop BACKEND=cherrypy
+- SALT=develop BACKEND=tornado
 
 matrix:
-  env:
+  allow_failures:
+  - python: '3.8-dev'
 
 script:
-- PYTHON="${TRAVIS_PYTHON_VERSION%-dev}"
-- docker run -v $PWD:/pepper -ti --rm gtmanfred/pepper:latest tox -c /pepper/tox.ini -e "${TRAVIS_PYTHON_VERSION%%.*}flake8,${CODECOV}${PYTHON//./}${BACKEND}${SALT}"
+- PYTHON="${TRAVIS_PYTHON_VERSION/-dev/-rc}"
+- TOX_VERSION="py${PYTHON//./}"
+- docker run -v $PWD:/pepper -ti --rm "python:$PYTHON" make -C /pepper test PYTHON_VERSION="${TOX_VERSION}" SALT="${SALT}" BACKEND="${BACKEND}"
 
 after_success:
 - sudo chown $USER .tox/
-- if [[ $CODECOV == "py" ]]; then tox -e codecov; fi
+- tox -e codecov

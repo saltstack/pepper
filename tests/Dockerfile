@@ -10,10 +10,11 @@ RUN mkdir /usr/local/pyenv && \
     git clone git://github.com/yyuu/pyenv-virtualenv.git /usr/local/pyenv/plugins/pyenv-virtualenv && \
     ln -vs /usr/local/pyenv/bin/* /usr/local/pyenv/plugins/*/bin/* /usr/local/bin
 
-RUN pyenv install 2.7.15 && \
-    pyenv install 3.4.9  && \
-    pyenv install 3.5.6  && \
-    pyenv install 3.6.7  && \
-    pyenv install 3.7.1  && \
-    pyenv global 3.7.1 3.6.7 3.5.6 3.4.9 2.7.15 && \
+RUN pyenv install 2.7.16 && \
+    pyenv install 3.4.10  && \
+    pyenv install 3.5.7  && \
+    pyenv install 3.6.8  && \
+    pyenv install 3.7.3  && \
+    pyenv install 3.8-dev  && \
+    pyenv global 3.7.3 3.8-dev 3.6.8 3.5.7 3.4.10 2.7.16 && \
     pip install tox

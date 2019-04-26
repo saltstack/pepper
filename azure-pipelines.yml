@@ -1,175 +1,179 @@
 trigger:
-- master
+- develop
 
 jobs:
 
-- job: 'Test_Linux'
+- job: test_pepper
   pool:
     vmImage: 'Ubuntu-16.04'
   strategy:
     matrix:
       py2.7-v2018.3-cherrypy:
         python.version: '2.7'
-        version: 'py27'
+        version: py27
         salt: v2018.3
-        type: cherrypy
+        backend: cherrypy
       py2.7-v2019.2-cherrypy:
         python.version: '2.7'
-        version: 'py27'
+        version: py27
         salt: v2019.2
-        type: cherrypy
+        backend: cherrypy
       py2.7-develop-cherrypy:
         python.version: '2.7'
-        version: 'py27'
+        version: py27
         salt: develop
-        type: cherrypy
+        backend: cherrypy
       py2.7-v2018.3-tornado:
         python.version: '2.7'
-        version: 'py27'
+        version: py27
         salt: v2018.3
-        type: tornado
+        backend: tornado
       py2.7-v2019.2-tornado:
         python.version: '2.7'
-        version: 'py27'
+        version: py27
         salt: v2019.2
-        type: tornado
+        backend: tornado
       py2.7-develop-tornado:
         python.version: '2.7'
-        version: 'py27'
+        version: py27
         salt: develop
-        type: tornado
+        backend: tornado
       py3.4-v2018.3-cherrypy:
         python.version: '3.4'
-        version: 'py34'
+        version: py34
         salt: v2018.3
-        type: cherrypy
+        backend: cherrypy
       py3.4-v2019.2-cherrypy:
         python.version: '3.4'
-        version: 'py34'
+        version: py34
         salt: v2019.2
-        type: cherrypy
+        backend: cherrypy
       py3.4-develop-cherrypy:
         python.version: '3.4'
-        version: 'py34'
+        version: py34
         salt: develop
-        type: cherrypy
+        backend: cherrypy
       py3.4-v2018.3-tornado:
         python.version: '3.4'
-        version: 'py34'
+        version: py34
         salt: v2018.3
-        type: tornado
+        backend: tornado
       py3.4-v2019.2-tornado:
         python.version: '3.4'
-        version: 'py34'
+        version: py34
         salt: v2019.2
-        type: tornado
+        backend: tornado
       py3.4-develop-tornado:
         python.version: '3.4'
-        version: 'py34'
+        version: py34
         salt: develop
-        type: tornado
+        backend: tornado
       py3.5-v2018.3-cherrypy:
         python.version: '3.5'
-        version: 'py35'
+        version: py35
         salt: v2018.3
-        type: cherrypy
+        backend: cherrypy
       py3.5-v2019.2-cherrypy:
         python.version: '3.5'
-        version: 'py35'
+        version: py35
         salt: v2019.2
-        type: cherrypy
+        backend: cherrypy
       py3.5-develop-cherrypy:
         python.version: '3.5'
-        version: 'py35'
+        version: py35
         salt: develop
-        type: cherrypy
+        backend: cherrypy
       py3.5-v2018.3-tornado:
         python.version: '3.5'
-        version: 'py35'
+        version: py35
         salt: v2018.3
-        type: tornado
+        backend: tornado
       py3.5-v2019.2-tornado:
         python.version: '3.5'
-        version: 'py35'
+        version: py35
         salt: v2019.2
-        type: tornado
+        backend: tornado
       py3.5-develop-tornado:
         python.version: '3.5'
-        version: 'py35'
+        version: py35
         salt: develop
-        type: tornado
+        backend: tornado
       py3.6-v2018.3-cherrypy:
         python.version: '3.6'
-        version: 'py36'
+        version: py36
         salt: v2018.3
-        type: cherrypy
+        backend: cherrypy
       py3.6-v2019.2-cherrypy:
         python.version: '3.6'
-        version: 'py36'
+        version: py36
         salt: v2019.2
-        type: cherrypy
+        backend: cherrypy
       py3.6-develop-cherrypy:
         python.version: '3.6'
-        version: 'py36'
+        version: py36
         salt: develop
-        type: cherrypy
+        backend: cherrypy
       py3.6-v2018.3-tornado:
         python.version: '3.6'
-        version: 'py36'
+        version: py36
         salt: v2018.3
-        type: tornado
+        backend: tornado
       py3.6-v2019.2-tornado:
         python.version: '3.6'
-        version: 'py36'
+        version: py36
         salt: v2019.2
-        type: tornado
+        backend: tornado
       py3.6-develop-tornado:
         python.version: '3.6'
-        version: 'py36'
+        version: py36
         salt: develop
-        type: tornado
+        backend: tornado
       py3.7-v2017.3-cherrypy:
         python.version: '3.7'
-        version: 'py37'
+        version: py37
         salt: v2017.3
-        type: cherrypy
+        backend: cherrypy
       py3.7-v2019.2-cherrypy:
         python.version: '3.7'
-        version: 'py37'
+        version: py37
         salt: v2019.2
-        type: cherrypy
+        backend: cherrypy
       py3.7-develop-cherrypy:
         python.version: '3.7'
-        version: 'py37'
+        version: py37
         salt: develop
-        type: cherrypy
+        backend: cherrypy
       py3.7-v2017.3-tornado:
         python.version: '3.7'
-        version: 'py37'
+        version: py37
         salt: v2017.3
-        type: tornado
+        backend: tornado
       py3.7-v2019.2-tornado:
         python.version: '3.7'
-        version: 'py37'
+        version: py37
         salt: v2019.2
-        type: tornado
+        backend: tornado
       py3.7-develop-tornado:
         python.version: '3.7'
-        version: 'py37'
+        version: py37
         salt: develop
-        type: tornado
+        backend: tornado
 
   steps:
   - task: UsePythonVersion@0
     inputs:
       versionSpec: '$(python.version)'
-      architecture: 'x64'
+      architecture: x64
 
   - script: |
       pip install tox
-    displayName: 'Install dependencies'
+    displayName: Install dependencies
   - script: |
-      tox -e flake8,$(version)-$(type)-$(salt),codecov
-    displayName: 'pytest'
+      docker run -v $PWD:/pepper -ti --rm "python:$(python.version)" make -C /pepper test PYTHON_VERSION=$(version) SALT=$(salt) BACKEND=$(backend)
+    displayName: pytest
+  - script: |
+      sudo chown $USER .tox/
+      tox -e codecov
+    displayName: codecov
     env:
       CODECOV_TOKEN: '16c2a232-4329-438c-b163-ccbfeeab47aa'

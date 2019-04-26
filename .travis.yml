@@ -1,39 +1,46 @@
-sudo: false
-services:
-- docker
+dist: xenial
 language: python
 cache: pip
-services:
+service:
 - docker
 
-before_install:
-- pyenv versions
-- pyenv version-name
-- env
-
 install:
-- pip install tox
+- env | sort
 
 python:
 - '2.7'
 - '3.4'
 - '3.5'
 - '3.6'
-- '3.7-dev'
+- '3.7'
+- '3.8-rc'
 
 env:
-- SALT=-v2018.3 BACKEND=-cherrypy CODECOV=py
-- SALT=-v2018.3 BACKEND=-tornado CODECOV=py
-- SALT=-v2019.2 BACKEND=-cherrypy CODECOV=py
-- SALT=-v2019.2 BACKEND=-tornado CODECOV=py
+- SALT=-v2018.3 BACKEND=-cherrypy
+- SALT=-v2018.3 BACKEND=-tornado
+- SALT=-v2019.2 BACKEND=-cherrypy
+- SALT=-v2019.2 BACKEND=-tornado
 
 matrix:
   env:
 
 script:
-- PYTHON="${TRAVIS_PYTHON_VERSION%-dev}"
-- docker run -v $PWD:/pepper -ti --rm gtmanfred/pepper:latest tox -c /pepper/tox.ini -e "${TRAVIS_PYTHON_VERSION%%.*}flake8,${CODECOV}${PYTHON//./}${BACKEND}${SALT}"
+- PYTHON="${TRAVIS_PYTHON_VERSION%-rc}"
+- TOXENV="${PYTHON%%.*}flake8,py${PYTHON//./}${BACKEND}${SALT}"
+- >
+  docker run
+  -t
+  --mount type=bind,source="$(pwd)",destination=/root/pepper
+  -w /root/pepper
+  -e TOXENV=${TOXENV}
+  python:${TRAVIS_PYTHON_VERSION}
+  /bin/bash -c '
+    apt-get update &&
+    apt-get -yq --no-install-suggests --no-install-recommends install openssh-server &&
+    pip install tox &&
+    tox
+  '
 
 after_success:
 - sudo chown $USER .tox/
-- if [[ $CODECOV == "py" ]]; then tox -e codecov; fi
+- tox -e codecov

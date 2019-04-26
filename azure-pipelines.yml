@@ -169,7 +169,7 @@ jobs:
       pip install tox
     displayName: Install dependencies
   - script: |
-      docker run -v $PWD:/pepper -ti --rm "python:$(python.version)" make -C /pepper test PYTHON_VERSION=$(version) SALT=$(salt) BACKEND=$(backend)
+      docker run -v $PWD:/pepper --rm "python:$(python.version)" make -C /pepper test PYTHON_VERSION=$(version) SALT=$(salt) BACKEND=$(backend)
     displayName: pytest
   - script: |
       sudo chown $USER .tox/

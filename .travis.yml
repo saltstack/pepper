@@ -28,6 +28,8 @@ env:
 matrix:
   allow_failures:
   - python: '3.8-dev'
+  - env: SALT=develop BACKEND=tornado
+  - env: SALT=develop BACKEND=cherrypy
 
 script:
 - PYTHON="${TRAVIS_PYTHON_VERSION/-dev/-rc}"

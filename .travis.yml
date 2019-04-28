@@ -1,39 +1,53 @@
-sudo: false
-services:
-- docker
+dist: xenial
 language: python
-cache: pip
 services:
 - docker
-
-before_install:
-- pyenv versions
-- pyenv version-name
-- env
+git:
+  depth: 1
 
 install:
-- pip install tox
+- env | sort
 
 python:
 - '2.7'
 - '3.4'
 - '3.5'
 - '3.6'
-- '3.7-dev'
+- '3.7'
+- '3.8-dev'
 
 env:
-- SALT=-v2018.3 BACKEND=-cherrypy CODECOV=py
-- SALT=-v2018.3 BACKEND=-tornado CODECOV=py
-- SALT=-v2019.2 BACKEND=-cherrypy CODECOV=py
-- SALT=-v2019.2 BACKEND=-tornado CODECOV=py
+- SALT=v2018.3 BACKEND=cherrypy
+- SALT=v2018.3 BACKEND=tornado
+- SALT=v2019.2 BACKEND=cherrypy
+- SALT=v2019.2 BACKEND=tornado
+- SALT=develop BACKEND=cherrypy
+- SALT=develop BACKEND=tornado
 
 matrix:
-  env:
+  include:
+  - python: 3.7
+    env: TOXENV=flake8
+  allow_failures:
+  - python: '3.8-dev'
+  - env: SALT=develop BACKEND=tornado
+  - env: SALT=develop BACKEND=cherrypy
+
+before_script:
+- TOX_PY="$(sed -e 's/-dev$//' -e 's/\.//' <<< "${TRAVIS_PYTHON_VERSION}")"
+- export PY_VER="${TRAVIS_PYTHON_VERSION/dev/rc}" IMG_VARIANT="${IMG_VARIANT:--slim}"  # for docker image tag
 
 script:
-- PYTHON="${TRAVIS_PYTHON_VERSION%-dev}"
-- docker run -v $PWD:/pepper -ti --rm gtmanfred/pepper:latest tox -c /pepper/tox.ini -e "${TRAVIS_PYTHON_VERSION%%.*}flake8,${CODECOV}${PYTHON//./}${BACKEND}${SALT}"
+- |  # no need to spin up download and run in docker image
+  if [ ! "${TOXENV}" = 'flake8' ]; then
+    export TOXENV="py${TOX_PY}-${BACKEND}-${SALT},coverage"
+    docker-compose --file tests/docker-compose.yml run tox
+  else
+    pip install tox
+    tox
+  fi
 
 after_success:
 - sudo chown $USER .tox/
-- if [[ $CODECOV == "py" ]]; then tox -e codecov; fi
+- |
+  [ ! "${TOXENV}" = 'flake8' ] && pip install tox && tox -e 'codecov'

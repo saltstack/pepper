@@ -2,6 +2,7 @@
 from __future__ import absolute_import, unicode_literals, print_function
 
 # Import python libraries
+import distutils.spawn
 import logging
 import os.path
 import shutil
@@ -10,6 +11,8 @@ import tempfile
 import textwrap
 
 # Import Salt Libraries
+import salt.client
+import salt.config
 import salt.utils.yaml as yaml
 
 # Import pytest libraries
@@ -24,6 +27,16 @@ DEFAULT_MASTER_ID = 'pytest-salt-master'
 DEFAULT_MINION_ID = 'pytest-salt-minion'
 
 log = logging.getLogger(__name__)
+
+
+@pytest.fixture(scope='session')
+def install_sshd_server():
+    if distutils.spawn.find_executable('sshd'):
+        return
+    __opts__ = salt.config.minion_config('tests/minion.conf')
+    __opts__['file_client'] = 'local'
+    caller = salt.client.Caller(mopts=__opts__)
+    caller.cmd('pkg.install', 'openssh-server')
 
 
 class SaltApi(SaltDaemonScriptBase):
@@ -109,7 +122,7 @@ def output_file():
 
 
 @pytest.fixture(params=['/run', '/login'])
-def pepper_cli(request, session_salt_api, salt_api_port, output_file, session_sshd_server):
+def pepper_cli(request, session_salt_api, salt_api_port, output_file, install_sshd_server, session_sshd_server):
     '''
     Wrapper to invoke Pepper with common params and inside an empty env
     '''

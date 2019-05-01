@@ -35,10 +35,7 @@ def test_runner_client(pepper_cli):
 )
 def test_wheel_client_arg(pepper_cli, session_minion_id):
     ret = pepper_cli('--client=wheel', 'minions.connected')
-    # note - this seems not to work in returning session_minion_id with current runner, returning []
-    # the test originally was asserting the success atr but that isn't returned anymore
-    # further debugging needed with pytest-salt
-    assert ret == []
+    assert ret == ['pytest-session-salt-minion-0']
 
 
 @pytest.mark.xfail(

@@ -34,7 +34,7 @@ matrix:
 script:
 - PYTHON="${TRAVIS_PYTHON_VERSION/-dev/-rc}"
 - TOX_VERSION="py${PYTHON//./}"
-- docker run -v $PWD:/pepper -ti --rm "python:$PYTHON" make -C /pepper test PYVERSION="${TOX_VERSION}" SALT="${SALT}" BACKEND="${BACKEND}"
+- docker run -v $PWD:/pepper -ti --rm "python:$PYTHON" make -C /pepper test PYVERSION="${TOX_VERSION%-rc}" SALT="${SALT}" BACKEND="${BACKEND}"
 
 after_success:
 - sudo chown $USER .tox/

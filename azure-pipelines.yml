@@ -40,10 +40,7 @@ jobs:
     vmImage: 'Ubuntu-16.04'
   strategy:
     matrix: $[ dependencies.build_matrix.outputs['matrix.matrix'] ]
-  variables:
-    myVar: $[ dependencies.build_matrix.outputs['matrix.matrix'] ]
   steps:
-  - script: echo $(myVar)
   - task: UsePythonVersion@0
     inputs:
       versionSpec: '$(python.version)'

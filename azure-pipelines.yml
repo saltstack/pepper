@@ -1,165 +1,49 @@
 trigger:
 - develop
 
+variables:
+  python: '["py2.7", "py3.4", "py3.5", "py3.6", "py3.7", "py3.8"]'
+  salt: '["v2018.3", "v2019.2", "develop"]'
+  backends: '["cherrypy", "tornado"]'
+
 jobs:
+- job: build_matrix
+  pool:
+    vmImage: 'Ubuntu-16.04'
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.7'
+      architecture: x64
+
+  - task: PythonScript@0
+    name: matrix
+    inputs:
+      scriptSource: Inline
+      script: |
+        import json
+        matrix = {}
+        for pyver in $(python):
+            for saltver in $(salt):
+                for backend in $(backends):
+                    matrix['{0}-{1}-{2}'.format(pyver, backend, saltver)] = {
+                        'python.version': pyver[2:],
+                        'version': pyver.replace('.', ''),
+                        'salt': saltver,
+                        'backend': backend,
+                    }
+        print('##vso[task.setvariable variable=matrix;isOutput=true]{0}'.format(json.dumps(matrix)))
 
 - job: test_pepper
+  dependsOn: build_matrix
   pool:
     vmImage: 'Ubuntu-16.04'
   strategy:
-    matrix:
-      py2.7-v2018.3-cherrypy:
-        python.version: '2.7'
-        version: py27
-        salt: v2018.3
-        backend: cherrypy
-      py2.7-v2019.2-cherrypy:
-        python.version: '2.7'
-        version: py27
-        salt: v2019.2
-        backend: cherrypy
-      py2.7-develop-cherrypy:
-        python.version: '2.7'
-        version: py27
-        salt: develop
-        backend: cherrypy
-      py2.7-v2018.3-tornado:
-        python.version: '2.7'
-        version: py27
-        salt: v2018.3
-        backend: tornado
-      py2.7-v2019.2-tornado:
-        python.version: '2.7'
-        version: py27
-        salt: v2019.2
-        backend: tornado
-      py2.7-develop-tornado:
-        python.version: '2.7'
-        version: py27
-        salt: develop
-        backend: tornado
-      py3.4-v2018.3-cherrypy:
-        python.version: '3.4'
-        version: py34
-        salt: v2018.3
-        backend: cherrypy
-      py3.4-v2019.2-cherrypy:
-        python.version: '3.4'
-        version: py34
-        salt: v2019.2
-        backend: cherrypy
-      py3.4-develop-cherrypy:
-        python.version: '3.4'
-        version: py34
-        salt: develop
-        backend: cherrypy
-      py3.4-v2018.3-tornado:
-        python.version: '3.4'
-        version: py34
-        salt: v2018.3
-        backend: tornado
-      py3.4-v2019.2-tornado:
-        python.version: '3.4'
-        version: py34
-        salt: v2019.2
-        backend: tornado
-      py3.4-develop-tornado:
-        python.version: '3.4'
-        version: py34
-        salt: develop
-        backend: tornado
-      py3.5-v2018.3-cherrypy:
-        python.version: '3.5'
-        version: py35
-        salt: v2018.3
-        backend: cherrypy
-      py3.5-v2019.2-cherrypy:
-        python.version: '3.5'
-        version: py35
-        salt: v2019.2
-        backend: cherrypy
-      py3.5-develop-cherrypy:
-        python.version: '3.5'
-        version: py35
-        salt: develop
-        backend: cherrypy
-      py3.5-v2018.3-tornado:
-        python.version: '3.5'
-        version: py35
-        salt: v2018.3
-        backend: tornado
-      py3.5-v2019.2-tornado:
-        python.version: '3.5'
-        version: py35
-        salt: v2019.2
-        backend: tornado
-      py3.5-develop-tornado:
-        python.version: '3.5'
-        version: py35
-        salt: develop
-        backend: tornado
-      py3.6-v2018.3-cherrypy:
-        python.version: '3.6'
-        version: py36
-        salt: v2018.3
-        backend: cherrypy
-      py3.6-v2019.2-cherrypy:
-        python.version: '3.6'
-        version: py36
-        salt: v2019.2
-        backend: cherrypy
-      py3.6-develop-cherrypy:
-        python.version: '3.6'
-        version: py36
-        salt: develop
-        backend: cherrypy
-      py3.6-v2018.3-tornado:
-        python.version: '3.6'
-        version: py36
-        salt: v2018.3
-        backend: tornado
-      py3.6-v2019.2-tornado:
-        python.version: '3.6'
-        version: py36
-        salt: v2019.2
-        backend: tornado
-      py3.6-develop-tornado:
-        python.version: '3.6'
-        version: py36
-        salt: develop
-        backend: tornado
-      py3.7-v2017.3-cherrypy:
-        python.version: '3.7'
-        version: py37
-        salt: v2017.3
-        backend: cherrypy
-      py3.7-v2019.2-cherrypy:
-        python.version: '3.7'
-        version: py37
-        salt: v2019.2
-        backend: cherrypy
-      py3.7-develop-cherrypy:
-        python.version: '3.7'
-        version: py37
-        salt: develop
-        backend: cherrypy
-      py3.7-v2017.3-tornado:
-        python.version: '3.7'
-        version: py37
-        salt: v2017.3
-        backend: tornado
-      py3.7-v2019.2-tornado:
-        python.version: '3.7'
-        version: py37
-        salt: v2019.2
-        backend: tornado
-      py3.7-develop-tornado:
-        python.version: '3.7'
-        version: py37
-        salt: develop
-        backend: tornado
-
+    matrix: $[ dependencies.build_matrix.outputs['matrix.matrix'] ]
+  variables:
+    myVar: $[ dependencies.build_matrix.outputs['matrix.matrix'] ]
   steps:
+  - script: echo $(myVar)
   - task: UsePythonVersion@0
     inputs:
       versionSpec: '$(python.version)'

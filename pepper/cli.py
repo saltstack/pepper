@@ -663,7 +663,8 @@ class PepperCli(object):
         api = pepper.Pepper(
             self.parse_url(),
             debug_http=self.options.debug_http,
-            ignore_ssl_errors=self.options.ignore_ssl_certificate_errors)
+            ignore_ssl_errors=self.options.ignore_ssl_certificate_errors,
+            timeout=self.options.timeout)
 
         self.login(api)
 

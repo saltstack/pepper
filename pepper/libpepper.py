@@ -57,7 +57,7 @@ class Pepper(object):
               u'ms-4': True}]}
 
     '''
-    def __init__(self, api_url='https://localhost:8000', debug_http=False, ignore_ssl_errors=False):
+    def __init__(self, api_url='https://localhost:8000', debug_http=False, ignore_ssl_errors=False, timeout=None):
         '''
         Initialize the class with the URL of the API
 
@@ -81,6 +81,7 @@ class Pepper(object):
         self._ssl_verify = not ignore_ssl_errors
         self.auth = {}
         self.salt_version = None
+        self.timeout = timeout
 
     def req_stream(self, path):
         '''
@@ -224,11 +225,13 @@ class Pepper(object):
 
         # Send request
         try:
+            con_kwargs = {}
             if not (self._ssl_verify):
                 con = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-                f = urlopen(req, context=con)
-            else:
-                f = urlopen(req)
+                con_kwargs['context'] = con
+            if self.timeout:
+                con_kwargs['timeout'] = self.timeout
+            f = urlopen(req, **con_kwargs)
             content = f.read().decode('utf-8')
             if (self.debug_http):
                 logger.debug('Response: %s', content)
@@ -283,6 +286,8 @@ class Pepper(object):
                   'auth': auth,
                   'data': json.dumps(data),
                   }
+        if self.timeout:
+            params['timeout'] = self.timeout
         logger.debug('postdata {0}'.format(params))
         resp = requests.post(**params)
         if resp.status_code == 401:

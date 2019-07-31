@@ -8,4 +8,4 @@ install:
 	pip install tox
 
 test: install
-	tox -e flake8,$(PYVERSION)-$(BACKEND)-$(SALT) || cat /tmp/pepper-runtests.log
+	tox -e flake8,$(PYVERSION)-$(BACKEND)-$(SALT)

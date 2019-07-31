@@ -229,8 +229,8 @@ class Pepper(object):
             if not (self._ssl_verify):
                 con = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
                 con_kwargs['context'] = con
-            if self.timeout:
-                con_kwargs['timeout'] = self.timeout + 5 # throw a bit of buffer for upstream lag
+            #if self.timeout:
+            #    con_kwargs['timeout'] = self.timeout + 5 # throw a bit of buffer for upstream lag
             f = urlopen(req, **con_kwargs)
             content = f.read().decode('utf-8')
             if (self.debug_http):
@@ -286,8 +286,8 @@ class Pepper(object):
                   'auth': auth,
                   'data': json.dumps(data),
                   }
-        if self.timeout:
-            params['timeout'] = self.timeout + 5
+        #if self.timeout:
+        #    params['timeout'] = self.timeout + 5
         logger.debug('postdata {0}'.format(params))
         resp = requests.post(**params)
         if resp.status_code == 401:

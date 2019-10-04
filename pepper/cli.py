@@ -506,6 +506,7 @@ class PepperCli(object):
             if len(args) < 2:
                 self.parser.error("Command or target not specified")
 
+            low['full_return'] = True
             low['tgt_type'] = self.options.expr_form
             low['tgt'] = args.pop(0)
             low['fun'] = args.pop(0)
@@ -513,6 +514,7 @@ class PepperCli(object):
             low['arg'] = args
         elif client.startswith('runner'):
             low['fun'] = args.pop(0)
+            low['full_return'] = True
             # post https://github.com/saltstack/salt/pull/50124, kwargs can be
             # passed as is in foo=bar form, splitting and deserializing will
             # happen in salt-api. additionally, the presence of salt-version header
@@ -672,10 +674,6 @@ class PepperCli(object):
         self.login(api)
 
         load = self.parse_cmd(api)
-
-        for entry in load:
-            if not entry.get('client', '').startswith('wheel'):
-                entry['full_return'] = True
 
         if self.options.fail_if_minions_dont_respond:
             for exit_code, ret in self.poll_for_returns(api, load):  # pragma: no cover

@@ -539,11 +539,12 @@ class PepperCli(object):
             else:
                 for arg in args:
                     if '=' in arg:
+                        low.setdefault('kwarg', {})
                         key, value = arg.split('=', 1)
                         try:
-                            low[key] = json.loads(value)
+                            low['kwarg'][key] = json.loads(value)
                         except JSONDecodeError:
-                            low[key] = value
+                            low['kwarg'][key] = value
                     else:
                         low.setdefault('arg', []).append(arg)
         elif client.startswith('ssh'):

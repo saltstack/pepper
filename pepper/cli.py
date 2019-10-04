@@ -139,6 +139,14 @@ class PepperCli(object):
 
         self.options, self.args = self.parser.parse_args()
 
+        # set up logging
+        rootLogger = logging.getLogger(name=None)
+        rootLogger.setLevel(max(logging.ERROR - (self.options.verbose * 10), 1))
+        formatter = logging.Formatter('%(levelname)s %(asctime)s %(module)s: %(message)s')
+        console = logging.StreamHandler()
+        console.setFormatter(formatter)
+        rootLogger.addHandler(console)
+
         option_names = ["fail_any", "fail_any_none", "fail_all", "fail_all_none"]
         toggled_options = [name for name in option_names if getattr(self.options, name)]
         if len(toggled_options) > 1:
@@ -655,11 +663,6 @@ class PepperCli(object):
         '''
         Parse all arguments and call salt-api
         '''
-        # set up logging
-        rootLogger = logging.getLogger(name=None)
-        rootLogger.addHandler(logging.StreamHandler())
-        rootLogger.setLevel(max(logging.ERROR - (self.options.verbose * 10), 1))
-
         api = pepper.Pepper(
             self.parse_url(),
             debug_http=self.options.debug_http,

@@ -38,6 +38,9 @@ setup_kwargs = {
     'packages': [
         'pepper',
     ],
+    'extras_require': {
+        'kerberos': ["requests-gssapi>=1.1.0"],
+    },
     'scripts': [
         'scripts/pepper',
     ]

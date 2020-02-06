@@ -411,7 +411,9 @@ class PepperCli(object):
         else:
             if self.options.username is not None:
                 results['SALTAPI_USER'] = self.options.username
-        if self.options.password is None and results['SALTAPI_PASS'] is None:
+        if self.options.password is None and \
+                results['SALTAPI_PASS'] is None and \
+                results['SALTAPI_EAUTH'] != 'kerberos':
             if self.options.interactive:
                 results['SALTAPI_PASS'] = getpass.getpass(prompt='Password: ')
             else:

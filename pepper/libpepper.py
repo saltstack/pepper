@@ -308,7 +308,7 @@ class Pepper(object):
         return self.req(path, lowstate)
 
     def local(self, tgt, fun, arg=None, kwarg=None, tgt_type='glob',
-              timeout=None, ret=None):
+              timeout=None, ret=None, expr_form='glob'):
         '''
         Run a single command using the ``local`` client
 
@@ -328,6 +328,8 @@ class Pepper(object):
 
         if tgt_type:
             low['tgt_type'] = tgt_type
+        elif expr_form:
+            low['tgt_type'] = expr_form
 
         if timeout:
             low['timeout'] = timeout
@@ -338,7 +340,7 @@ class Pepper(object):
         return self.low([low])
 
     def local_async(self, tgt, fun, arg=None, kwarg=None, tgt_type='glob',
-                    timeout=None, ret=None):
+                    timeout=None, ret=None, expr_form='glob'):
         '''
         Run a single command using the ``local_async`` client
 
@@ -358,6 +360,8 @@ class Pepper(object):
 
         if tgt_type:
             low['tgt_type'] = tgt_type
+        elif expr_form:
+            low['tgt_type'] = expr_form
 
         if timeout:
             low['timeout'] = timeout
@@ -368,7 +372,7 @@ class Pepper(object):
         return self.low([low])
 
     def local_batch(self, tgt, fun, arg=None, kwarg=None, tgt_type='glob',
-                    batch='50%', ret=None):
+                    batch='50%', ret=None, expr_form='glob'):
         '''
         Run a single command using the ``local_batch`` client
 
@@ -388,6 +392,8 @@ class Pepper(object):
 
         if tgt_type:
             low['tgt_type'] = tgt_type
+        elif expr_form:
+            low['tgt_type'] = expr_form
 
         if batch:
             low['batch'] = batch

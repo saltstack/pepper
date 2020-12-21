@@ -327,7 +327,7 @@ class Pepper(object):
             low['kwarg'] = kwarg
 
         if expr_form:
-            low['expr_form'] = expr_form
+            low['tgt_type'] = expr_form
 
         if timeout:
             low['timeout'] = timeout

@@ -17,7 +17,7 @@ setup_kwargs = {
     'long_description': long_description,
     'long_description_content_type': "text/x-rst",
     'use_scm_version': True,
-    'setup_requires': ['setuptools_scm'],
+    'setup_requires': ['setuptools_scm<=5.0.2'],
     'classifiers': [
         'Programming Language :: Python',
         'Programming Language :: Cython',

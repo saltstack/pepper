@@ -89,7 +89,6 @@ def pepperconfig(salt_api_port):
         SALTAPI_EAUTH=sharedsecret
         [noopts]
         SALTAPI_URL=http://localhost:{0}/
-        SALTAPI_EAUTH=kerberos
     '''.format(salt_api_port))
     with open('tests/.pepperrc', 'w') as pepper_file:
         print(config, file=pepper_file)

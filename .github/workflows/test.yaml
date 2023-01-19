@@ -44,6 +44,6 @@ jobs:
         env:
           DEBIAN_FRONTEND: noninteractive
       - name: Setup tests
-        run: tox -vv --notest -e py${{ matrix.py }}-${{ matrix.netapi }}-${{ matrix.salt }}
+        run: tox --notest -e py${{ matrix.py }}-${{ matrix.netapi }}-${{ matrix.salt }}
       - name: Run tests
-        run: tox -vv -e py${{ matrix.py }}-${{ matrix.netapi }}-${{ matrix.salt }}
+        run: tox -e py${{ matrix.py }}-${{ matrix.netapi }}-${{ matrix.salt }}

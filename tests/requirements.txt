@@ -1,9 +1,8 @@
 mock
-pytest>=3.5.0,<4.0.0
+pytest>=6.0.0
 pytest-rerunfailures
 pytest-cov
-git+https://github.com/vmware-archive/pytest-salt@master#egg=pytest-salt
-tornado==6.1
+pytest-salt-factories==0.912.2
 CherryPy
 setuptools_scm
 pyzmq<=20.0.0 ; python_version < "3.6"

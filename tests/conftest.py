@@ -226,6 +226,17 @@ def session_master_config_overrides(request, salt_api_port, salt_api_backend):
         'token_expire': 94670856,
         'ignore_host_keys': True,
         'ssh_wipe': True,
+        'netapi_enable_clients': [
+            'local',
+            'local_async',
+            'local_subset',
+            'ssh',
+            'runner',
+            'runner_async',
+            'wheel',
+            'wheel_async',
+            'run'
+        ]
     }
 
 

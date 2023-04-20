@@ -110,7 +110,7 @@ class PepperCli(object):
 
         self.parser.add_option(
             '--state-output', dest='state_output', default="full", type="choice",
-            choices = [ "full", "terse", "mixed", "changes", "filter" ],
+            choices = [ "full", "full_id", "terse", "terse_id", "mixed", "mixed_id", "changes", "changes_id", "filter", "filter_id" ],
             help=textwrap.dedent('''
                 Output mode for highstate formatter
             ''')

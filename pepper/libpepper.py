@@ -308,7 +308,7 @@ class Pepper(object):
         return self.req(path, lowstate)
 
     def local(self, tgt, fun, arg=None, kwarg=None, tgt_type='glob',
-              timeout=None, ret=None):
+              timeout=None, ret=None, expr_form=None):
         '''
         Run a single command using the ``local`` client
 
@@ -328,6 +328,13 @@ class Pepper(object):
 
         if tgt_type:
             low['tgt_type'] = tgt_type
+
+        if expr_form:
+
+            logger.warning('expr_form argument is deprecated in local function, please use tgt_type instead')
+
+            if not tgt_type:
+                low['tgt_type'] = expr_form
 
         if timeout:
             low['timeout'] = timeout

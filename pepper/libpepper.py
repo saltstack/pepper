@@ -267,8 +267,8 @@ class Pepper(object):
 
         '''
         import requests
-        from requests_kerberos import HTTPKerberosAuth, OPTIONAL
-        auth = HTTPKerberosAuth(mutual_authentication=OPTIONAL)
+        from requests_gssapi import HTTPSPNEGOAuth, OPTIONAL
+        auth = HTTPSPNEGOAuth(mutual_authentication=OPTIONAL)
         headers = {
             'Accept': 'application/json',
             'Content-Type': 'application/json',

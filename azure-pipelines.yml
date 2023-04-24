@@ -1,0 +1,60 @@
+trigger:
+- develop
+
+variables:
+  python: '["py2.7", "py3.4", "py3.5", "py3.6", "py3.7", "py3.8"]'
+  salt: '["v2018.3", "v2019.2", "develop"]'
+  backends: '["cherrypy", "tornado"]'
+
+jobs:
+- job: build_matrix
+  pool:
+    vmImage: 'Ubuntu-16.04'
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.7'
+      architecture: x64
+
+  - task: PythonScript@0
+    name: matrix
+    inputs:
+      scriptSource: Inline
+      script: |
+        import json
+        matrix = {}
+        for pyver in $(python):
+            for saltver in $(salt):
+                for backend in $(backends):
+                    matrix['{0}-{1}-{2}'.format(pyver, backend, saltver)] = {
+                        'python.version': pyver[2:],
+                        'version': pyver.replace('.', ''),
+                        'salt': saltver,
+                        'backend': backend,
+                    }
+        print('##vso[task.setvariable variable=matrix;isOutput=true]{0}'.format(json.dumps(matrix)))
+
+- job: test_pepper
+  dependsOn: build_matrix
+  pool:
+    vmImage: 'Ubuntu-16.04'
+  strategy:
+    matrix: $[ dependencies.build_matrix.outputs['matrix.matrix'] ]
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '$(python.version)'
+      architecture: x64
+
+  - script: |
+      pip install tox
+    displayName: Install dependencies
+  - script: |
+      docker run -v $PWD:/pepper --rm "python:$(python.version)" make -C /pepper test PYTHON_VERSION=$(version) SALT=$(salt) BACKEND=$(backend)
+    displayName: pytest
+  - script: |
+      sudo chown $USER .tox/
+      tox -e codecov
+    displayName: codecov
+    env:
+      CODECOV_TOKEN: '16c2a232-4329-438c-b163-ccbfeeab47aa'

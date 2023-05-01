@@ -15,12 +15,15 @@ jobs:
         py:
           - "3.7"
           - "3.8"
+          - "3.9"
+          - "3.10"
         netapi:
           - "cherrypy"
           - "tornado"
         salt:
           - "v3004.2"
           - "v3005.1"
+          - "v3006.0"
           - "master"
     steps:
       - name: Setup python for test ${{ matrix.py }}

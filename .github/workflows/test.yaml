@@ -25,6 +25,11 @@ jobs:
           - "v3005.1"
           - "v3006.0"
           - "master"
+        exclude:
+          - py: "3.10"
+            salt: "v3004.2"
+          - py: "3.10"
+            salt: "v3005.1"
     steps:
       - name: Setup python for test ${{ matrix.py }}
         uses: actions/setup-python@v4

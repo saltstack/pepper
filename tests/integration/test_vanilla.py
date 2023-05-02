@@ -9,7 +9,7 @@ def test_local(pepper_cli, session_minion_id):
 
 
 @pytest.mark.xfail(
-    pytest.config.getoption("--salt-api-backend") == "rest_tornado",
+    'config.getoption("--salt-api-backend") == "rest_tornado"',
     reason="this is broken in rest_tornado until future release",
 )
 def test_long_local(pepper_cli, session_minion_id):

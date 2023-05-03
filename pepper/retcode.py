@@ -30,6 +30,29 @@ class PepperRetcode(object):
         return 0
 
     @staticmethod
+    def gen_dict_extract(var, key):
+        '''
+        Generator function that yields all values for key in dictionary
+
+        :param var: dictionary or list of dictionaries
+
+        :param key: key name
+
+        :return: generator object containing values of key
+        '''
+        if isinstance(var, dict):
+            for k, v in var.items():
+                if k == key:
+                    yield v
+                if isinstance(v, (dict, list)):
+                    for result in PepperRetcode.gen_dict_extract(v, key):
+                        yield result
+        elif isinstance(var, list):
+            for d in var:
+                for result in PepperRetcode.gen_dict_extract(d, key):
+                    yield result
+
+    @staticmethod
     def validate_fail_any(result):
         '''
         Validate result dictionary retcode values.
@@ -40,14 +63,8 @@ class PepperRetcode(object):
 
         :return: exit code
         '''
-        if isinstance(result, list):
-            if isinstance(result[0], dict):
-                minion = result[0]
-                retcodes = list(minion[name].get('retcode')
-                                for name in minion if isinstance(minion[name], dict) and
-                                minion[name].get('retcode') is not None)
-                return next((r for r in retcodes if r != 0), 0)
-        return 0
+        retcodes = list(PepperRetcode.gen_dict_extract(result, 'retcode'))
+        return next((r for r in retcodes if r != 0), 0)
 
     @staticmethod
     def validate_fail_any_none(result):
@@ -60,16 +77,10 @@ class PepperRetcode(object):
 
         :return: exit code
         '''
-        if isinstance(result, list):
-            if isinstance(result[0], dict):
-                minion = result[0]
-                retcodes = list(minion[name].get('retcode')
-                                for name in minion if isinstance(minion[name], dict) and
-                                minion[name].get('retcode') is not None)
-                if not retcodes:
-                    return -1  # there are no retcodes
-                return next((r for r in retcodes if r != 0), 0)
-        return -1
+        retcodes = list(PepperRetcode.gen_dict_extract(result, 'retcode'))
+        if not retcodes:
+            return -1  # there are no retcodes
+        return next((r for r in retcodes if r != 0), 0)
 
     @staticmethod
     def validate_fail_all(result):
@@ -82,14 +93,9 @@ class PepperRetcode(object):
 
         :return: exit code
         '''
-        if isinstance(result, list):
-            if isinstance(result[0], dict):
-                minion = result[0]
-                retcodes = list(minion[name].get('retcode')
-                                for name in minion if isinstance(minion[name], dict) and
-                                minion[name].get('retcode') is not None)
-                if all(r != 0 for r in retcodes):
-                    return next((r for r in retcodes if r != 0), 0)
+        retcodes = list(PepperRetcode.gen_dict_extract(result, 'retcode'))
+        if all(r != 0 for r in retcodes):
+            return next((r for r in retcodes if r != 0), 0)
         return 0
 
     @staticmethod
@@ -103,16 +109,9 @@ class PepperRetcode(object):
 
         :return: exit code
         '''
-        if isinstance(result, list):
-            if isinstance(result[0], dict):
-                minion = result[0]
-                retcodes = list(minion[name].get('retcode')
-                                for name in minion if isinstance(minion[name], dict) and
-                                minion[name].get('retcode') is not None)
-                if not retcodes:
-                    return -1  # there are no retcodes
-                if all(r != 0 for r in retcodes):
-                    return next((r for r in retcodes if r != 0), 0)
-                else:
-                    return 0
-        return -1
+        retcodes = list(PepperRetcode.gen_dict_extract(result, 'retcode'))
+        if not retcodes:
+            return -1  # there are no retcodes
+        if all(r != 0 for r in retcodes):
+            return next((r for r in retcodes if r != 0), 0)
+        return 0

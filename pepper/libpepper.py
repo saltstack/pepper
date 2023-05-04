@@ -448,6 +448,13 @@ class Pepper(object):
     def _send_auth(self, path, **kwargs):
         return self.req(path, kwargs)
 
+    def logout(self):
+        '''
+        Deauthenticate the session with salt-api
+        '''
+        self.req('/logout', {})
+        self.auth = None
+
     def login(self, username=None, password=None, eauth=None, **kwargs):
         '''
         Authenticate with salt-api and return the user permissions and

@@ -113,6 +113,12 @@ class Pepper(object):
                             print(result, file=ofile)
                     else:
                         print(result)
+                    # prepare for validate now
+                    result = json.loads(result)
+
+                    # unwrap ret in some cases
+                    if 'return' in result:
+                        result = result['return']
                 if exit_code is not None:
                     if exit_code == 0:
                         return PepperRetcode().validate(self.cli.options, result)

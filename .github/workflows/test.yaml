@@ -1,0 +1,50 @@
+name: test
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "0 8 * * *"
+
+jobs:
+  test:
+    name: test ${{ matrix.py }} - ${{ matrix.netapi }} - ${{ matrix.salt }}
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        py:
+          - "3.7"
+          - "3.8"
+          - "3.9"
+          - "3.10"
+        netapi:
+          - "cherrypy"
+          - "tornado"
+        salt:
+          - "v3004.2"
+          - "v3005.1"
+          - "v3006.0"
+          - "master"
+        exclude:
+          - py: "3.10"
+            salt: "v3004.2"
+          - py: "3.10"
+            salt: "v3005.1"
+    steps:
+      - name: Setup python for test ${{ matrix.py }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.py }}
+      - uses: actions/checkout@v3
+      - name: Install setuptools_scm
+        run: python -m pip install setuptools_scm
+      - name: Install tox
+        run: python -m pip install tox
+      - name: Install dependencies
+        run: sudo apt update && sudo apt install -y libc6-dev libffi-dev gcc git openssh-server libzmq3-dev
+        env:
+          DEBIAN_FRONTEND: noninteractive
+      - name: Setup tests
+        run: tox --notest -e py${{ matrix.py }}-${{ matrix.netapi }}-${{ matrix.salt }}
+      - name: Run tests
+        run: tox -e py${{ matrix.py }}-${{ matrix.netapi }}-${{ matrix.salt }}

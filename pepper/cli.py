@@ -139,6 +139,14 @@ class PepperCli(object):
 
         self.options, self.args = self.parser.parse_args()
 
+        # set up logging
+        rootLogger = logging.getLogger(name=None)
+        rootLogger.setLevel(max(logging.ERROR - (self.options.verbose * 10), 1))
+        formatter = logging.Formatter('%(levelname)s %(asctime)s %(module)s: %(message)s')
+        console = logging.StreamHandler()
+        console.setFormatter(formatter)
+        rootLogger.addHandler(console)
+
         option_names = ["fail_any", "fail_any_none", "fail_all", "fail_all_none"]
         toggled_options = [name for name in option_names if getattr(self.options, name)]
         if len(toggled_options) > 1:
@@ -500,6 +508,7 @@ class PepperCli(object):
             if len(args) < 2:
                 self.parser.error("Command or target not specified")
 
+            low['full_return'] = True
             low['tgt_type'] = self.options.expr_form
             low['tgt'] = args.pop(0)
             low['fun'] = args.pop(0)
@@ -507,6 +516,7 @@ class PepperCli(object):
             low['arg'] = args
         elif client.startswith('runner'):
             low['fun'] = args.pop(0)
+            low['full_return'] = True
             # post https://github.com/saltstack/salt/pull/50124, kwargs can be
             # passed as is in foo=bar form, splitting and deserializing will
             # happen in salt-api. additionally, the presence of salt-version header
@@ -531,11 +541,12 @@ class PepperCli(object):
             else:
                 for arg in args:
                     if '=' in arg:
+                        low.setdefault('kwarg', {})
                         key, value = arg.split('=', 1)
                         try:
-                            low[key] = json.loads(value)
+                            low['kwarg'][key] = json.loads(value)
                         except JSONDecodeError:
-                            low[key] = value
+                            low['kwarg'][key] = value
                     else:
                         low.setdefault('arg', []).append(arg)
         elif client.startswith('ssh'):
@@ -657,23 +668,15 @@ class PepperCli(object):
         '''
         Parse all arguments and call salt-api
         '''
-        # set up logging
-        rootLogger = logging.getLogger(name=None)
-        rootLogger.addHandler(logging.StreamHandler())
-        rootLogger.setLevel(max(logging.ERROR - (self.options.verbose * 10), 1))
-
         api = pepper.Pepper(
             self.parse_url(),
             debug_http=self.options.debug_http,
-            ignore_ssl_errors=self.options.ignore_ssl_certificate_errors)
+            ignore_ssl_errors=self.options.ignore_ssl_certificate_errors,
+            timeout=self.options.timeout)
 
         self.login(api)
 
         load = self.parse_cmd(api)
-
-        for entry in load:
-            if not entry.get('client', '').startswith('wheel'):
-                entry['full_return'] = True
 
         if self.options.fail_if_minions_dont_respond:
             for exit_code, ret in self.poll_for_returns(api, load):  # pragma: no cover

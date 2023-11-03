@@ -15,13 +15,21 @@ jobs:
         py:
           - "3.7"
           - "3.8"
+          - "3.9"
+          - "3.10"
         netapi:
           - "cherrypy"
           - "tornado"
         salt:
           - "v3004.2"
           - "v3005.1"
+          - "v3006.0"
           - "master"
+        exclude:
+          - py: "3.10"
+            salt: "v3004.2"
+          - py: "3.10"
+            salt: "v3005.1"
     steps:
       - name: Setup python for test ${{ matrix.py }}
         uses: actions/setup-python@v4

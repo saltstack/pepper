@@ -6,22 +6,20 @@ A Python library for working with Salt's REST API
 '''
 import json
 import logging
+import os
 import re
 import ssl
+import sys
 
 from pepper.exceptions import PepperException
 
-try:
-    ssl._create_default_https_context = ssl._create_stdlib_context
-except Exception:
-    pass
-
-try:
+if sys.version_info[0] == 3:
     from urllib.request import HTTPHandler, HTTPSHandler, Request, urlopen, \
         install_opener, build_opener
     from urllib.error import HTTPError, URLError
     import urllib.parse as urlparse
-except ImportError:
+elif sys.version_info[0] == 2:
+    ssl._create_default_https_context = ssl._create_stdlib_context  # type: ignore[attr-defined]
     from urllib2 import HTTPHandler, HTTPSHandler, Request, urlopen, install_opener, build_opener, \
         HTTPError, URLError
     import urlparse
@@ -57,7 +55,16 @@ class Pepper(object):
               u'ms-4': True}]}
 
     '''
-    def __init__(self, api_url='https://localhost:8000', debug_http=False, ignore_ssl_errors=False):
+
+    def __init__(
+        self,
+        api_url="https://localhost:8000",
+        debug_http=False,
+        ignore_ssl_errors=False,
+        ca_bundle=None,
+        client_cert=None,
+        client_cert_key=None,
+    ):
         '''
         Initialize the class with the URL of the API
 
@@ -81,6 +88,28 @@ class Pepper(object):
         self._ssl_verify = not ignore_ssl_errors
         self.auth = {}
         self.salt_version = None
+
+        self._ca_bundle = ca_bundle
+        self._client_cert = client_cert
+        self._client_cert_key = client_cert_key
+
+    def _get_requests_verify(self):
+        if not self._ssl_verify:
+            verify = False
+        elif self._ca_bundle:
+            verify = self._ca_bundle
+
+        return verify
+
+    def _get_requests_client_cert(self):
+        if self._client_cert and self._client_cert_key:
+            cert = (self._client_cert, self._client_cert_key)
+        elif self._client_cert:
+            cert = self._client_cert
+        else:
+            cert = None
+
+        return cert
 
     def req_stream(self, path):
         '''
@@ -109,9 +138,13 @@ class Pepper(object):
         else:
             raise PepperException('Authentication required')
             return
+
+        (verify, cert) = (self._get_requests_verify(), self._get_requests_client_cert())
+
         params = {'url': self._construct_url(path),
                   'headers': headers,
-                  'verify': self._ssl_verify is True,
+                  'verify': verify,
+                  'cert': cert,
                   'stream': True
                   }
         try:
@@ -152,9 +185,13 @@ class Pepper(object):
         else:
             raise PepperException('Authentication required')
             return
+
+        (verify, cert) = (self._get_requests_verify(), self._get_requests_client_cert())
+
         params = {'url': self._construct_url(path),
                   'headers': headers,
-                  'verify': self._ssl_verify is True,
+                  'verify': verify,
+                  'cert': cert,
                   }
         try:
             resp = requests.get(**params)
@@ -228,7 +265,23 @@ class Pepper(object):
                 con = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
                 f = urlopen(req, context=con)
             else:
-                f = urlopen(req)
+                con = ssl.create_default_context()
+
+                if self._ca_bundle:
+                    if os.path.isdir(self._ca_bundle):
+                        ca_file = None
+                        ca_path = self._ca_bundle
+                    else:
+                        ca_file = self._ca_bundle
+                        ca_path = None
+
+                    con.load_verify_locations(ca_file, ca_path)
+
+                if self._client_cert:
+                    con.load_cert_chain(self._client_cert, self._client_cert_key)
+
+                f = urlopen(req, context=con)
+
             content = f.read().decode('utf-8')
             if (self.debug_http):
                 logger.debug('Response: %s', content)
@@ -279,7 +332,8 @@ class Pepper(object):
         # Optionally toggle SSL verification
         params = {'url': self._construct_url(path),
                   'headers': headers,
-                  'verify': self._ssl_verify is True,
+                  'verify': self._ssl_verify,
+                  'cert': self._client_cert,
                   'auth': auth,
                   'data': json.dumps(data),
                   }

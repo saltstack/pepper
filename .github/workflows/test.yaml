@@ -25,6 +25,10 @@ jobs:
           - "v3006.5"
           - "master"
         exclude:
+          - py: "3.8"
+            salt: "master"
+          - py: "3.9"
+            salt: "master"
           - py: "3.10"
             salt: "v3005.4"
           - py: "3.11"

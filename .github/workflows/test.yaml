@@ -22,7 +22,7 @@ jobs:
           - "tornado"
         salt:
           - "v3005.4"
-          - "v3006.4"
+          - "v3006.5"
           - "master"
         exclude:
           - py: "3.10"

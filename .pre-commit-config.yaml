@@ -1,0 +1,64 @@
+---
+minimum_pre_commit_version: 3.5.0
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: check-merge-conflict  # Check for files that contain merge conflict strings.
+      - id: trailing-whitespace   # Trims trailing whitespace.
+        args: [--markdown-linebreak-ext=md]
+      - id: mixed-line-ending     # Replaces or checks mixed line ending.
+        args: [--fix=lf]
+      - id: end-of-file-fixer     # Makes sure files end in a newline and only a newline.
+      - id: check-merge-conflict  # Check for files that contain merge conflict strings.
+      - id: check-ast             # Simply check whether files parse as valid python.
+
+  # ----- Formatting ---------------------------------------------------------------------------->
+  - repo: https://github.com/myint/autoflake
+    rev: v2.2.1
+    hooks:
+      - id: autoflake
+        name: Remove unused variables and imports
+        language: python
+        args: ["--in-place", "--remove-all-unused-imports", "--remove-unused-variables", "--expand-star-imports"]
+        files: \.py$
+
+  - repo: https://github.com/saltstack/pre-commit-remove-import-headers
+    rev: 1.1.0
+    hooks:
+      - id: remove-import-headers
+
+  - repo: https://github.com/s0undt3ch/salt-rewrite
+    # Automatically rewrite code with known rules
+    rev: 2.4.2
+    hooks:
+      - id: salt-rewrite
+        alias: rewrite-tests
+        name: Rewrite the test suite
+        files: ^tests/.*\.py$
+        args: [--silent, -E, fix_docstrings]
+
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.15.0
+    hooks:
+      - id: pyupgrade
+        name: Rewrite Code to be Py3+
+        args: [
+          --py3-plus
+        ]
+
+  - repo: https://github.com/asottile/reorder_python_imports
+    rev: v3.12.0
+    hooks:
+      - id: reorder-python-imports
+        args: [
+          --py3-plus,
+        ]
+
+  - repo: https://github.com/psf/black
+    rev: 23.12.1
+    hooks:
+      - id: black
+        args: [-l 100]
+
+  # <---- Formatting -----------------------------------------------------------------------------

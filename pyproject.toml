@@ -1,0 +1,8 @@
+[tool.pytest.ini_options]
+addopts = "--showlocals --log-file /tmp/pepper-runtests.log --show-capture=no -ra"
+testpaths = ["tests"]
+norecursedirs = [".git", ".nox"]
+usefixtures = ["pepperconfig"]
+
+[tool.flake8]
+max-line-length = 119

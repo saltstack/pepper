@@ -1,5 +1,6 @@
 mock
 pytest>=6.0.0
+flake8-pyproject
 pytest-rerunfailures
 pytest-cov
 pytest-salt-factories==0.912.2

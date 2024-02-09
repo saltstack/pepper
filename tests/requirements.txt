@@ -1,10 +1,11 @@
 mock
 pytest>=6.0.0
+flake8-pyproject
 pytest-rerunfailures
 pytest-cov
 pytest-salt-factories==0.912.2
 CherryPy
-setuptools_scm
+setuptools_scm==7.1.0
 importlib-metadata<5.0.0
 pyzmq<=20.0.0 ; python_version < "3.6"
 pyzmq>=17.0.0 ; python_version < "3.9"

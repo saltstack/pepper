@@ -6,4 +6,5 @@
 MANIFEST
 dist/
 salt_pepper.egg-info/
-.tox/
+.nox/
+artifacts/

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, unicode_literals, print_function
+from __future__ import absolute_import, print_function, unicode_literals
 
 # Import python libraries
 import logging
@@ -9,18 +9,17 @@ import sys
 import tempfile
 import textwrap
 
-# Import Salt Libraries
-import salt.utils.yaml as yaml
-
 # Import pytest libraries
 import pytest
+
+# Import Salt Libraries
+import salt.utils.yaml as yaml
 from pytestskipmarkers.utils import ports
 from saltfactories.utils import random_string, running_username
 
 # Import Pepper libraries
 import pepper
 import pepper.script
-
 
 log = logging.getLogger(__name__)
 
@@ -238,6 +237,16 @@ def session_master_config_overrides(request, salt_api_port, salt_api_backend):
             'run'
         ]
     }
+
+
+@pytest.helpers.register
+def remove_stale_minion_key(master, minion_id):
+    """Helper to remove a stale minion key."""
+    key_path = os.path.join(master.config["pki_dir"], "minions", minion_id)
+    if os.path.exists(key_path):
+        os.unlink(key_path)
+    else:
+        log.debug("The minion(id=%r) key was not found at %s", minion_id, key_path)
 
 
 @pytest.fixture(scope='session')

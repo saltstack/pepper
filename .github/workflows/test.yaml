@@ -21,14 +21,18 @@ jobs:
           - "cherrypy"
           - "tornado"
         salt:
-          - "v3005.4"
-          - "v3006.5"
+          - "v3006.9"
+          - "v3007.1"
           - "master"
         exclude:
-          - py: "3.10"
-            salt: "v3005.4"
-          - py: "3.11"
-            salt: "v3005.4"
+          - py: "3.8"
+            salt: "v3007.1"
+          - py: "3.9"
+            salt: "v3007.1"
+          - py: "3.8"
+            salt: "master"
+          - py: "3.9"
+            salt: "master"
     steps:
       - name: Setup python for test ${{ matrix.py }}
         uses: actions/setup-python@v4

@@ -8,28 +8,31 @@ on:
 jobs:
   test:
     name: test ${{ matrix.py }} - ${{ matrix.netapi }} - ${{ matrix.salt }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
         py:
-          - "3.7"
           - "3.8"
           - "3.9"
           - "3.10"
+          - "3.11"
         netapi:
           - "cherrypy"
           - "tornado"
         salt:
-          - "v3004.2"
-          - "v3005.1"
-          - "v3006.0"
+          - "v3006.9"
+          - "v3007.1"
           - "master"
         exclude:
-          - py: "3.10"
-            salt: "v3004.2"
-          - py: "3.10"
-            salt: "v3005.1"
+          - py: "3.8"
+            salt: "v3007.1"
+          - py: "3.9"
+            salt: "v3007.1"
+          - py: "3.8"
+            salt: "master"
+          - py: "3.9"
+            salt: "master"
     steps:
       - name: Setup python for test ${{ matrix.py }}
         uses: actions/setup-python@v4

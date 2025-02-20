@@ -200,50 +200,50 @@ class PepperCli(object):
         '''
         optgroup = optparse.OptionGroup(self.parser, "Targeting Options", "Target which minions to run commands on")
 
-        optgroup.defaults.update({'expr_form': 'glob'})
+        optgroup.defaults.update({'tgt_type': 'glob'})
 
         optgroup.add_option(
-            '-E', '--pcre', dest='expr_form', action='store_const', const='pcre',
+            '-E', '--pcre', dest='tgt_type', action='store_const', const='pcre',
             help="Target hostnames using PCRE regular expressions",
         )
 
         optgroup.add_option(
-            '-L', '--list', dest='expr_form', action='store_const', const='list',
+            '-L', '--list', dest='tgt_type', action='store_const', const='list',
             help="Specify a comma delimited list of hostnames",
         )
 
         optgroup.add_option(
-            '-G', '--grain', dest='expr_form', action='store_const', const='grain',
+            '-G', '--grain', dest='tgt_type', action='store_const', const='grain',
             help="Target based on system properties",
         )
 
         optgroup.add_option(
-            '--grain-pcre', dest='expr_form', action='store_const', const='grain_pcre',
+            '--grain-pcre', dest='tgt_type', action='store_const', const='grain_pcre',
             help="Target based on PCRE matches on system properties",
         )
 
         optgroup.add_option(
-            '-I', '--pillar', dest='expr_form', action='store_const', const='pillar',
+            '-I', '--pillar', dest='tgt_type', action='store_const', const='pillar',
             help="Target based on pillar values",
         )
 
         optgroup.add_option(
-            '--pillar-pcre', dest='expr_form', action='store_const', const='pillar_pcre',
+            '--pillar-pcre', dest='tgt_type', action='store_const', const='pillar_pcre',
             help="Target based on PCRE matches on pillar values"
         )
 
         optgroup.add_option(
-            '-R', '--range', dest='expr_form', action='store_const', const='range',
+            '-R', '--range', dest='tgt_type', action='store_const', const='range',
             help="Target based on range expression",
         )
 
         optgroup.add_option(
-            '-C', '--compound', dest='expr_form', action='store_const', const='compound',
+            '-C', '--compound', dest='tgt_type', action='store_const', const='compound',
             help="Target based on compound expression",
         )
 
         optgroup.add_option(
-            '-N', '--nodegroup', dest='expr_form', action='store_const', const='nodegroup',
+            '-N', '--nodegroup', dest='tgt_type', action='store_const', const='nodegroup',
             help="Target based on a named nodegroup",
         )
 
@@ -500,7 +500,7 @@ class PepperCli(object):
             if len(args) < 2:
                 self.parser.error("Command or target not specified")
 
-            low['tgt_type'] = self.options.expr_form
+            low['tgt_type'] = self.options.tgt_type
             low['tgt'] = args.pop(0)
             low['fun'] = args.pop(0)
             low['batch'] = self.options.batch
@@ -542,7 +542,7 @@ class PepperCli(object):
             if len(args) < 2:
                 self.parser.error("Command or target not specified")
 
-            low['tgt_type'] = self.options.expr_form
+            low['tgt_type'] = self.options.tgt_type
             low['tgt'] = args.pop(0)
             low['fun'] = args.pop(0)
             low['batch'] = self.options.batch

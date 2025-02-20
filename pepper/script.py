@@ -36,6 +36,11 @@ class Pepper(object):
             self.opts = {}
         if self.cli.options.output_file is not None:
             self.opts['output_file'] = self.cli.options.output_file
+        if self.cli.options.state_output is not None:
+            self.opts['state_output'] = self.cli.options.state_output
+        if self.cli.options.state_verbose is not None:
+            self.opts['state_verbose'] = self.cli.options.state_verbose in [ "true", "True", "1" ]
+
 
     @property
     def output(self):

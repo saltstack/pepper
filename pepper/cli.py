@@ -109,6 +109,21 @@ class PepperCli(object):
         )
 
         self.parser.add_option(
+            '--state-output', dest='state_output', default="full", type="choice",
+            choices = [ "full", "full_id", "terse", "terse_id", "mixed", "mixed_id", "changes", "changes_id", "filter", "filter_id" ],
+            help=textwrap.dedent('''
+                Output mode for highstate formatter
+            ''')
+        )
+
+        self.parser.add_option(
+            '--state-verbose', dest='state_verbose', default=None,
+            help=textwrap.dedent('''
+                Set to false to hide results with no changes
+            ''')
+        )
+
+        self.parser.add_option(
             '--output-file', dest='output_file', default=None,
             help=textwrap.dedent('''
                 File to put command output in

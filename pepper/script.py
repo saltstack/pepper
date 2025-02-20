@@ -87,9 +87,11 @@ class Pepper(object):
                                         )
                             elif 'data' in ret:
                                 # unfold runners
-                                outputter = ret.get('outputter', 'nested')
+                                outputter = ret.get('outputter') or ret.get('data', {}).get('outputter') or ret.get('data', {}).get('return', {}).get('outputter', 'nested')
+
                                 if isinstance(ret['data'], dict) and 'return' in ret['data']:
                                     ret = ret['data']['return']
+
                                 salt.output.display_output(
                                     ret,
                                     self.cli.options.output or outputter,

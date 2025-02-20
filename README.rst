@@ -41,7 +41,7 @@ Installation
 Usage
 -----
 
-Basic usage is in heavy flux. You can run pepper using the script in %PYTHONHOME%/scripts/pepper (a pepper.cmd wrapper is provided for convenience to Windows users).
+You can run pepper using the script in %PYTHONHOME%/scripts/pepper (a pepper.cmd wrapper is provided for convenience to Windows users).
 
 .. code-block:: bash
 
@@ -69,6 +69,11 @@ or in a configuration file ``$HOME/.pepperrc`` with the following syntax :
   SALTAPI_USER=saltdev
   SALTAPI_PASS=saltdev
   SALTAPI_EAUTH=pam
+
+  # if you use client-side TLS certificates
+  SALTAPI_CA_BUNDLE=/path/to/ca-chain.cert.pem
+  SALTAPI_CLIENT_CERT=/path/to/client.cert.pem
+  SALTAPI_CLIENT_CERT_KEY=/path/to/client.key.pem
 
 Contributing
 ------------

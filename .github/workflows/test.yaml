@@ -52,6 +52,8 @@ jobs:
             salt: "master"
           - py: "3.9"
             salt: "master"
+    env:
+      SALT_REQUIREMENT: ${{ matrix.salt == 'master' && 'salt@git+https://github.com/saltstack/salt.git@master' || format('salt=={0}', matrix.salt) }}
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.py }}
@@ -74,7 +76,6 @@ jobs:
 
       - name: Install Test Requirements
         env:
-          SALT_REQUIREMENT: salt==${{ matrix.salt }}
           PYTHON_VERSIONS: ${{ matrix.py }}
           API_BACKEND: ${{ matrix.netapi }}
         run: |
@@ -82,7 +83,6 @@ jobs:
 
       - name: Test
         env:
-          SALT_REQUIREMENT: salt==${{ matrix.salt }}
           PYTHON_VERSIONS: ${{ matrix.py }}
           API_BACKEND: ${{ matrix.netapi }}
           SKIP_REQUIREMENTS_INSTALL: YES

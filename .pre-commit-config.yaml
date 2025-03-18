@@ -28,9 +28,9 @@ repos:
     hooks:
       - id: remove-import-headers
 
-  - repo: https://github.com/s0undt3ch/salt-rewrite
+  - repo: https://github.com/saltstack/salt-rewrite
     # Automatically rewrite code with known rules
-    rev: 2.4.2
+    rev: 2.5.2
     hooks:
       - id: salt-rewrite
         alias: rewrite-tests

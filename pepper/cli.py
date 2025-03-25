@@ -109,7 +109,7 @@ class PepperCli(object):
         )
 
         self.parser.add_option(
-            '--output-force-color', dest='output_force_color', default=False, action='store_true',
+            '--force-color', '--force-colour', dest='output_force_color', default=False, action='store_true',
             help=textwrap.dedent('''
                 Force salt outputter to use color when printing.
             ''')

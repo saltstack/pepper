@@ -1,15 +1,17 @@
-'''
+"""
 Pepper is a CLI front-end to salt-api
-'''
-import pkg_resources
+"""
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version
 
-from pepper.libpepper import Pepper, PepperException
+from pepper.libpepper import Pepper
+from pepper.libpepper import PepperException
 
-__all__ = ('__version__', 'Pepper', 'PepperException')
+__all__ = ("__version__", "Pepper", "PepperException")
 
 try:
-    __version__ = pkg_resources.get_distribution('salt_pepper').version
-except pkg_resources.DistributionNotFound:
+    __version__ = version("salt_pepper")
+except PackageNotFoundError:
     # package is not installed
     __version__ = None
 

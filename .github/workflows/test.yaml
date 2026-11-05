@@ -47,6 +47,19 @@ jobs:
           - "v3007.17"
           - "v3008.5"
           - "master"
+        exclude:
+          # The test minion never completes authentication with Salt 3006 on
+          # Python 3.12+ or Salt 3007 on Python 3.13. Salt 3007 on Python 3.12
+          # usually passes, but the minion intermittently fails to start or
+          # stops answering.
+          - py: "3.12"
+            salt: "v3006.30"
+          - py: "3.13"
+            salt: "v3006.30"
+          - py: "3.12"
+            salt: "v3007.17"
+          - py: "3.13"
+            salt: "v3007.17"
     env:
       SALT_REQUIREMENT: ${{ matrix.salt == 'master' && 'salt@git+https://github.com/saltstack/salt.git@master' || format('salt=={0}', matrix.salt) }}
     steps:

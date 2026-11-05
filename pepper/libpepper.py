@@ -159,6 +159,32 @@ class _RedirectHandler(HTTPRedirectHandler):
         return new_req
 
 
+def _parse_event_stream(lines):
+    """
+    Parse a server-sent event stream from salt-api into events
+
+    salt-api sends each event as a ``tag:`` line and a ``data:`` line with the
+    JSON event, followed by a blank line.
+    """
+    data = []
+    for line in lines:
+        if not line:
+            if data:
+                yield _event_json("\n".join(data))
+            data = []
+        elif line.startswith("data:"):
+            data.append(line[5:].lstrip(" "))
+    if data:
+        yield _event_json("\n".join(data))
+
+
+def _event_json(data):
+    try:
+        return json.loads(data)
+    except ValueError:
+        raise PepperException(f"Unable to parse event from salt-api: {data[:200]}")
+
+
 def _error_detail(body):
     """
     Extract the error message from a salt-api error response body
@@ -333,6 +359,31 @@ class Pepper:
         :raises PepperException: if salt-api returns an error
         """
         return self._requests_get(path, stream=True)
+
+    def events(self):
+        """
+        Yield events from salt-api's ``/events`` stream as they arrive
+
+        Each event is a dict with the event ``tag`` and its ``data``. The
+        stream stays open until the generator is closed or salt-api ends it,
+        for example when the token expires. Needs requests.
+
+        >>> for event in api.events():
+        ...     if event["tag"].startswith("salt/job/"):
+        ...         print(event["data"])
+
+        :raises PepperException: if salt-api returns an error
+        """
+        resp = self.req_stream("/events")
+        try:
+            # Server-sent events are always UTF-8. Split the raw bytes, since
+            # str.splitlines() also breaks lines at characters such as U+2028
+            # that salt leaves unescaped in the JSON.
+            yield from _parse_event_stream(
+                line.decode("utf-8") for line in resp.iter_lines()
+            )
+        finally:
+            resp.close()
 
     def req_get(self, path):
         """

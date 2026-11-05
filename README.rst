@@ -122,6 +122,15 @@ revokes nothing on rest_tornado, which has no ``/logout``, or for an eauth
 token from ``token()`` (``--run-uri``): salt-api answers with an authentication
 error, and the token stays valid until it expires.
 
+``Pepper.events()`` yields events from salt-api's ``/events`` stream as they
+arrive (it needs ``requests``):
+
+.. code-block:: python
+
+    for event in api.events():
+        if event["tag"].startswith("salt/job/"):
+            print(event["data"])
+
 ``Pepper.from_config()`` creates a client from a ``.pepperrc`` profile and the
 ``SALTAPI_*`` environment variables, the same way the ``pepper`` command does,
 and logs in. The environment variables are used as the command uses them

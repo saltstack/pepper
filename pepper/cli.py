@@ -11,6 +11,8 @@ import os
 import sys
 import textwrap
 import time
+from configparser import ConfigParser
+from json import JSONDecodeError
 
 import pepper
 from pepper.exceptions import (
@@ -18,28 +20,6 @@ from pepper.exceptions import (
     PepperAuthException,
     PepperException,
 )
-
-# Import Pepper Libraries
-
-
-try:
-    # Python 3
-    from configparser import ConfigParser, RawConfigParser
-except ImportError:
-    # Python 2
-    from ConfigParser import ConfigParser, RawConfigParser
-
-try:
-    # Python 3
-    JSONDecodeError = json.decode.JSONDecodeError
-except AttributeError:
-    # Python 2
-    JSONDecodeError = ValueError
-
-try:
-    input = raw_input
-except NameError:
-    pass
 
 logger = logging.getLogger(__name__)
 
@@ -524,10 +504,7 @@ class PepperCli:
             "SALTAPI_EAUTH": "auto",
         }
 
-        try:
-            config = ConfigParser(interpolation=None)
-        except TypeError:
-            config = RawConfigParser()
+        config = ConfigParser(interpolation=None)
         config.read(self.options.config)
 
         # read file
@@ -577,10 +554,7 @@ class PepperCli:
         """
         url = "https://localhost:8000/"
 
-        try:
-            config = ConfigParser(interpolation=None)
-        except TypeError:
-            config = RawConfigParser()
+        config = ConfigParser(interpolation=None)
         config.read(self.options.config)
 
         # read file

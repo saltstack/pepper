@@ -17,29 +17,16 @@ try:
 except Exception:
     pass
 
-try:
-    import urllib.parse as urlparse
-    from urllib.error import HTTPError, URLError
-    from urllib.request import (
-        HTTPHandler,
-        HTTPSHandler,
-        Request,
-        build_opener,
-        install_opener,
-        urlopen,
-    )
-except ImportError:
-    import urlparse
-    from urllib2 import (
-        HTTPError,
-        HTTPHandler,
-        HTTPSHandler,
-        Request,
-        URLError,
-        build_opener,
-        install_opener,
-        urlopen,
-    )
+import urllib.parse as urlparse
+from urllib.error import HTTPError, URLError
+from urllib.request import (
+    HTTPHandler,
+    HTTPSHandler,
+    Request,
+    build_opener,
+    install_opener,
+    urlopen,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -85,9 +72,9 @@ class Pepper:
         :param api_url: Host or IP address of the salt-api URL;
             include the port number
 
-        :param debug_http: Add a flag to urllib2 to output the HTTP exchange
+        :param debug_http: Add a flag to urllib to output the HTTP exchange
 
-        :param ignore_ssl_errors: Add a flag to urllib2 to ignore invalid SSL certificates
+        :param ignore_ssl_errors: Add a flag to urllib to ignore invalid SSL certificates
 
         :raises PepperException: if the api_url is misformed
 
@@ -203,7 +190,7 @@ class Pepper:
 
     def req(self, path, data=None):
         """
-        A thin wrapper around urllib2 to send requests and return the response
+        A thin wrapper around urllib to send requests and return the response
 
         If the current instance contains an authentication token it will be
         attached to the request as a custom header.

@@ -114,3 +114,26 @@ nox:
     nox -e tests
 
 .. __: https://docs.saltproject.io/en/latest/topics/development/contributing.html
+
+Releasing
+---------
+
+The ``release`` workflow builds the sdist and wheel and publishes them to PyPI
+when a GitHub release is published. It uses PyPI `trusted publishing`_, which
+has to be set up once on PyPI for the ``salt-pepper`` project with this
+repository, the ``release.yaml`` workflow and the ``release`` environment.
+
+To make a release:
+
+1. Collect the changelog fragments into ``CHANGELOG.md`` and commit the result
+   to ``develop``:
+
+   .. code-block:: bash
+
+       pip install towncrier
+       towncrier build --yes --version 0.8.0
+
+2. Publish a GitHub release with a new tag named after the version, for
+   example ``0.8.0``. The version is read from the tag.
+
+.. _trusted publishing: https://docs.pypi.org/trusted-publishers/adding-a-publisher/

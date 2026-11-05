@@ -23,11 +23,36 @@ try:
 except ImportError:
     HAS_SALT = False
 
+try:
+    import yaml
+
+    HAS_YAML = True
+except ImportError:
+    HAS_YAML = False
+
 logger = logging.getLogger(__name__)
 
 NO_MINIONS_MATCHED = (
     "No minions matched the target. No command was sent, no jid was assigned."
 )
+
+
+def _json_output(data):
+    # The same format as salt's json outputter
+    return json.dumps(data, default=repr, indent=4, ensure_ascii=False)
+
+
+def _yaml_output(data):
+    # The same format as salt's yaml outputter
+    return yaml.safe_dump(data, default_flow_style=False, allow_unicode=True).rstrip(
+        "\n"
+    )
+
+
+#: Outputters available when salt is not installed
+FALLBACK_OUTPUTTERS = {"json": _json_output}
+if HAS_YAML:
+    FALLBACK_OUTPUTTERS["yaml"] = _yaml_output
 
 
 class Pepper:
@@ -115,9 +140,59 @@ class Pepper:
             self.write(json.dumps({"return": polled}, sort_keys=True, indent=4))
             polled.clear()
 
+    def outputs(self, data):
+        """
+        Split the results into the data and outputter for each display, the way
+        the salt command shows them
+        """
+        options = self.cli.options
+        for ret in data:
+            if not isinstance(ret, dict):
+                yield {options.client: ret}, options.output or "nested"
+            elif options.client.startswith("local"):
+                for minionid, minionret in ret.items():
+                    # rest_tornado doesnt return full_return directly
+                    # it will always be from get_event, so the output differs slightly
+                    if isinstance(minionret, dict) and "return" in minionret:
+                        # version >= 2017.7
+                        yield {minionid: minionret["return"]}, (
+                            options.output or minionret.get("out") or "nested"
+                        )
+                    # cherrypy returns with ret via full_return
+                    elif isinstance(minionret, dict) and "ret" in minionret:
+                        # version >= 2017.7
+                        yield {minionid: minionret["ret"]}, (
+                            options.output or minionret.get("out") or "nested"
+                        )
+                    else:
+                        yield {minionid: minionret}, options.output or self.output
+            elif "data" in ret:
+                # unfold runners
+                outputter = ret.get("outputter", "nested")
+                if isinstance(ret["data"], dict) and "return" in ret["data"]:
+                    ret = ret["data"]["return"]
+                yield ret, options.output or outputter
+            else:
+                yield {options.client: ret}, (
+                    options.output or ret.get("outputter", "nested")
+                )
+
+    def check_output(self):
+        """
+        Refuse an outputter that cannot be used before running the command
+        """
+        if HAS_SALT or not self.cli.options.output:
+            return
+        if self.cli.options.output not in FALLBACK_OUTPUTTERS:
+            raise PepperArgumentsException(
+                f"--out={self.cli.options.output} needs salt installed. Without "
+                f"salt, {' and '.join(sorted(FALLBACK_OUTPUTTERS))} are available."
+            )
+
     def __call__(self):
         polled = []
         try:
+            self.check_output()
             retcode = None
             for exit_code, result in self.cli.run():
                 data = json.loads(result)
@@ -127,69 +202,11 @@ class Pepper:
 
                 if HAS_SALT and self.opts:
                     logger.debug("Use Salt outputters")
-                    for ret in data:
-                        if isinstance(ret, dict):
-                            if self.cli.options.client.startswith("local"):
-                                for minionid, minionret in ret.items():
-                                    # rest_tornado doesnt return full_return directly
-                                    # it will always be from get_event, so the output differs slightly
-                                    if (
-                                        isinstance(minionret, dict)
-                                        and "return" in minionret
-                                    ):
-                                        # version >= 2017.7
-                                        salt.output.display_output(
-                                            {minionid: minionret["return"]},
-                                            self.cli.options.output
-                                            or minionret.get("out", None)
-                                            or "nested",
-                                            opts=self.opts,
-                                        )
-                                    # cherrypy returns with ret via full_return
-                                    elif (
-                                        isinstance(minionret, dict)
-                                        and "ret" in minionret
-                                    ):
-                                        # version >= 2017.7
-                                        salt.output.display_output(
-                                            {minionid: minionret["ret"]},
-                                            self.cli.options.output
-                                            or minionret.get("out", None)
-                                            or "nested",
-                                            opts=self.opts,
-                                        )
-                                    else:
-                                        salt.output.display_output(
-                                            {minionid: minionret},
-                                            self.cli.options.output or self.output,
-                                            opts=self.opts,
-                                        )
-                            elif "data" in ret:
-                                # unfold runners
-                                outputter = ret.get("outputter", "nested")
-                                if (
-                                    isinstance(ret["data"], dict)
-                                    and "return" in ret["data"]
-                                ):
-                                    ret = ret["data"]["return"]
-                                salt.output.display_output(
-                                    ret,
-                                    self.cli.options.output or outputter,
-                                    opts=self.opts,
-                                )
-                            else:
-                                salt.output.display_output(
-                                    {self.cli.options.client: ret},
-                                    self.cli.options.output
-                                    or ret.get("outputter", "nested"),
-                                    opts=self.opts,
-                                )
-                        else:
-                            salt.output.display_output(
-                                {self.cli.options.client: ret},
-                                self.cli.options.output or "nested",
-                                opts=self.opts,
-                            )
+                    for payload, outputter in self.outputs(data):
+                        salt.output.display_output(payload, outputter, opts=self.opts)
+                elif self.cli.options.output:
+                    for payload, outputter in self.outputs(data):
+                        self.write(FALLBACK_OUTPUTTERS[outputter](payload))
                 elif self.cli.options.fail_if_minions_dont_respond:
                     # The poller yields each minion as it returns. Without
                     # salt's outputters, print them as one JSON document.

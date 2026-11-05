@@ -35,6 +35,8 @@ dynamic = ["version"]
 # Only Pepper.req_get(), Pepper.req_stream() and kerberos logins use requests.
 requests = ["requests"]
 kerberos = ["requests-gssapi>=1.1.0"]
+# --out=yaml without salt installed
+yaml = ["PyYAML"]
 
 [project.scripts]
 pepper = "pepper.script:main"

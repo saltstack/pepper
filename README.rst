@@ -171,6 +171,12 @@ it removes the rejected token from the file.
 Output
 ------
 
+Without salt, pepper prints the JSON it gets from salt-api, and ``--out``
+accepts ``json`` and, with PyYAML installed (``pip install
+'salt-pepper[yaml]'``), ``yaml``, which format each result the same way as
+Salt's outputters. This is the usual case with Salt's onedir packages, whose
+Python cannot be imported from outside them.
+
 When salt is installed, pepper reads Salt outputter settings from a Salt
 configuration file, ``~/.config/pepper/master`` by default (``-m`` or
 ``MASTER_CONFIG`` to change it). As with the ``salt`` command, settings in

@@ -242,7 +242,7 @@ def test_ca_bundle_directory(tmp_path, monkeypatch):
 def test_client_cert_required(https_api, tls_files):
     api = pepper.libpepper.Pepper(https_api, ca_bundle=str(tls_files["ca_cert"]))
     # Depending on timing the client sees the server's alert or a reset
-    with pytest.raises((PepperException, OSError)):
+    with pytest.raises(PepperException):
         api.req("/login", {"username": "pepper"})
 
 

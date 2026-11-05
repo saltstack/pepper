@@ -167,9 +167,8 @@ class Pepper:
             # TODO: mimic CLI and output JID on ctrl-c
             return 0
         except Exception as e:  # pylint: disable=broad-exception-caught
-            print(e)
             print(
-                "Uncaught Pepper error (increase verbosity for the full traceback).",
+                f"Uncaught Pepper error: {e} (increase verbosity for the full traceback).",
                 file=sys.stderr,
             )
             logger.debug("Uncaught traceback:", exc_info=True)
@@ -180,7 +179,5 @@ def main():
     """
     Entry point for the pepper command
     """
-    logging.basicConfig(format="%(levelname)s %(asctime)s %(module)s: %(message)s")
-    logging.getLogger("pepper").addHandler(logging.NullHandler())
     exit_code = Pepper()()
     raise SystemExit(exit_code if exit_code is not None else 0)

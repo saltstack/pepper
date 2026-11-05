@@ -8,6 +8,7 @@ import json
 import logging
 import optparse  # pylint: disable=deprecated-module
 import os
+import sys
 import tempfile
 import textwrap
 import time
@@ -22,6 +23,25 @@ from pepper.exceptions import (
 )
 
 logger = logging.getLogger(__name__)
+
+LOG_FORMAT = "%(levelname)s %(asctime)s %(module)s: %(message)s"
+
+
+class _StderrHandler(logging.StreamHandler):
+    """
+    A handler that writes to whatever sys.stderr is when a record is logged
+    """
+
+    def __init__(self):
+        super().__init__(sys.stderr)
+
+    @property
+    def stream(self):
+        return sys.stderr
+
+    @stream.setter
+    def stream(self, value):
+        pass
 
 
 class PepperCli:
@@ -965,10 +985,17 @@ class PepperCli:
         """
         Parse all arguments and call salt-api
         """
-        # set up logging
-        rootLogger = logging.getLogger(name=None)
-        rootLogger.addHandler(logging.StreamHandler())
-        rootLogger.setLevel(max(logging.ERROR - (self.options.verbose * 10), 1))
+        # Log pepper's messages through one handler on the pepper logger, set
+        # up once since run() can be called more than once in a process. They
+        # do not propagate to the root logger, where importing salt installs a
+        # handler of its own that would print them a second time.
+        pepper_logger = logging.getLogger("pepper")
+        if not any(isinstance(h, _StderrHandler) for h in pepper_logger.handlers):
+            handler = _StderrHandler()
+            handler.setFormatter(logging.Formatter(LOG_FORMAT))
+            pepper_logger.addHandler(handler)
+        pepper_logger.propagate = False
+        pepper_logger.setLevel(max(logging.ERROR - (self.options.verbose * 10), 1))
 
         api = pepper.Pepper(
             self.parse_url(),

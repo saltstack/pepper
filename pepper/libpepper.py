@@ -5,6 +5,7 @@ A Python library for working with Salt's REST API
 
 """
 
+import html
 import http.client
 import json
 import logging
@@ -88,6 +89,31 @@ class _RedirectHandler(HTTPRedirectHandler):
                 if name.lower() in AUTH_HEADERS:
                     del new_req.headers[name]
         return new_req
+
+
+def _error_detail(body):
+    """
+    Extract the error message from a salt-api error response body
+
+    rest_cherrypy answers unexpected errors with JSON and other errors with
+    CherryPy's HTML error page, which has the message in its first paragraph.
+    rest_tornado uses Tornado's HTML error page.
+    """
+    if not body:
+        return ""
+    try:
+        data = json.loads(body)
+    except ValueError:
+        match = re.search(r"<p>(.*?)</p>", body, re.S) or re.search(
+            r"<body>(.*?)</body>", body, re.S
+        )
+        text = match.group(1) if match else body
+        text = html.unescape(re.sub(r"<[^>]+>", " ", text))
+        return " ".join(text.split())[:500]
+    if isinstance(data, dict) and "return" in data:
+        detail = data["return"]
+        return detail if isinstance(detail, str) else json.dumps(detail)
+    return ""
 
 
 class Pepper:
@@ -182,41 +208,10 @@ class Pepper:
         :return: :class:`Response <Response>` object
 
         :rtype: requests.Response
+
+        :raises PepperException: if salt-api returns an error
         """
-        import requests
-
-        headers = {
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-            "X-Requested-With": "XMLHttpRequest",
-        }
-        if self.auth and "token" in self.auth and self.auth["token"]:
-            headers.setdefault("X-Auth-Token", self.auth["token"])
-        else:
-            raise PepperException("Authentication required")
-        params = {
-            "url": self._construct_url(path),
-            "headers": headers,
-            "stream": True,
-            **self._requests_tls(),
-        }
-        try:
-            resp = requests.get(**params)
-
-            if resp.status_code == 401:
-                raise PepperException(str(resp.status_code) + ":Authentication denied")
-
-            if resp.status_code == 500:
-                raise PepperException(str(resp.status_code) + ":Server error.")
-
-            if resp.status_code == 404:
-                raise PepperException(
-                    str(resp.status_code) + " :This request returns nothing."
-                )
-        except PepperException as e:
-            print(e)
-            return
-        return resp
+        return self._requests_get(path, stream=True)
 
     def req_get(self, path):
         """
@@ -224,40 +219,62 @@ class Pepper:
         api = Pepper('http://ipaddress/api/')
         print(api.login('salt','salt','pam'))
         print(api.req_get('/keys'))
+
+        :raises PepperException: if salt-api returns an error
         """
+        try:
+            return self._requests_get(path).json()
+        except ValueError:
+            raise PepperException("Unable to parse the server response.")
+
+    def _requests_get(self, path, stream=False):
         import requests
 
+        if not (self.auth and self.auth.get("token")):
+            raise PepperAuthException("Authentication required")
         headers = {
             "Accept": "application/json",
             "Content-Type": "application/json",
             "X-Requested-With": "XMLHttpRequest",
+            "X-Auth-Token": self.auth["token"],
         }
-        if self.auth and "token" in self.auth and self.auth["token"]:
-            headers.setdefault("X-Auth-Token", self.auth["token"])
-        else:
-            raise PepperException("Authentication required")
-        params = {
-            "url": self._construct_url(path),
-            "headers": headers,
-            **self._requests_tls(),
-        }
+        url = self._construct_url(path)
         try:
-            resp = requests.get(**params)
+            resp = requests.get(
+                url=url,
+                headers=headers,
+                stream=stream,
+                **self._requests_tls(),
+            )
+        except requests.exceptions.RequestException as exc:
+            logger.debug("Error with request", exc_info=True)
+            raise PepperException(f"Unable to connect to {url}: {exc}")
+        if resp.status_code >= 400:
+            raise self._http_error(resp.status_code, resp.reason, resp.text)
+        return resp
 
-            if resp.status_code == 401:
-                raise PepperException(str(resp.status_code) + ":Authentication denied")
+    @staticmethod
+    def _http_error(status, reason, body):
+        """
+        Return a PepperException describing an HTTP error from salt-api
 
-            if resp.status_code == 500:
-                raise PepperException(str(resp.status_code) + ":Server error.")
+        :param status: the HTTP status code
+        :param reason: the HTTP reason phrase
+        :param body: the response body text
+        """
+        exc_class = PepperException
+        if status == 401:
+            exc_class = PepperAuthException
+            message = "Authentication denied"
+        elif status == 500:
+            message = "Server error"
+        else:
+            message = f"HTTP {status} {reason or ''}".strip()
 
-            if resp.status_code == 404:
-                raise PepperException(
-                    str(resp.status_code) + " :This request returns nothing."
-                )
-        except PepperException as e:
-            print(e)
-            return
-        return resp.json()
+        detail = _error_detail(body)
+        if detail.lower() in ("", str(reason).lower(), f"{status}: {reason}".lower()):
+            return exc_class(message)
+        return exc_class(f"{message}: {detail}")
 
     def req(self, path, data=None):
         """
@@ -316,9 +333,13 @@ class Pepper:
             if not self.salt_version and "x-salt-version" in f.headers:
                 self._parse_salt_version(f.headers["x-salt-version"])
 
-        except (HTTPError, URLError) as exc:
+        except HTTPError as exc:
             logger.debug("Error with request", exc_info=True)
-            if isinstance(getattr(exc, "reason", None), ssl.SSLCertVerificationError):
+            body = exc.read().decode("utf-8", "replace")
+            raise self._http_error(exc.code, exc.reason, body)
+        except URLError as exc:
+            logger.debug("Error with request", exc_info=True)
+            if isinstance(exc.reason, ssl.SSLCertVerificationError):
                 raise PepperException(
                     f"TLS certificate verification failed for {url}: "
                     f"{exc.reason.verify_message.rstrip('.')}. Use --ca-bundle "
@@ -326,24 +347,19 @@ class Pepper:
                     "--ignore-ssl-errors (ignore_ssl_errors=True) to skip "
                     "verification."
                 )
-            if isinstance(getattr(exc, "reason", None), ssl.SSLError):
+            if isinstance(exc.reason, ssl.SSLError):
                 raise PepperException(self._tls_error(url, exc.reason))
-            status = getattr(exc, "code", None)
-
-            if status == 401:
-                raise PepperAuthException("Authentication denied")
-
-            if status == 500:
-                raise PepperException("Server error.")
-
-            logger.error(f"Error with request: {exc}")
-            raise
-        except ssl.SSLError as exc:
-            # With TLS 1.3 the server checks the client certificate after the
-            # handshake, so its alert arrives when the response is read
+            raise PepperException(f"Unable to connect to {url}: {exc.reason}")
+        except OSError as exc:
+            # Errors after the request was sent, such as a TLS alert or a
+            # dropped connection while reading the response. With TLS 1.3 the
+            # server checks the client certificate after the handshake, so its
+            # alert arrives here.
             logger.debug("Error with request", exc_info=True)
-            raise PepperException(self._tls_error(url, exc))
-        except AttributeError:
+            if isinstance(exc, ssl.SSLError):
+                raise PepperException(self._tls_error(url, exc))
+            raise PepperException(f"Error talking to {url}: {exc}")
+        except ValueError:
             logger.debug("Error converting response from JSON", exc_info=True)
             raise PepperException("Unable to parse the server response.")
 
@@ -439,18 +455,21 @@ class Pepper:
             "data": json.dumps(data),
         }
         logger.debug(f"postdata {params}")
-        resp = requests.post(**params)
-        if resp.status_code == 401:
-            # TODO should be resp.raise_from_status
-            raise PepperAuthException("Authentication denied")
-        if resp.status_code == 500:
-            # TODO should be resp.raise_from_status
-            raise PepperException("Server error.")
+        try:
+            resp = requests.post(**params)
+        except requests.exceptions.RequestException as exc:
+            logger.debug("Error with request", exc_info=True)
+            raise PepperException(f"Unable to connect to {params['url']}: {exc}")
+        if resp.status_code >= 400:
+            raise self._http_error(resp.status_code, resp.reason, resp.text)
 
         if not self.salt_version and "x-salt-version" in resp.headers:
             self._parse_salt_version(resp.headers["x-salt-version"])
 
-        return resp.json()
+        try:
+            return resp.json()
+        except ValueError:
+            raise PepperException("Unable to parse the server response.")
 
     def low(self, lowstate, path="/"):
         """

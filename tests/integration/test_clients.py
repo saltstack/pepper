@@ -29,7 +29,10 @@ def test_runner_client(pepper_cli):
         "two=what",
         "three={}".format(json.dumps({"hello": "world"})),
     )
-    assert ret == {"args": ["one"], "kwargs": {"three": {"hello": "world"}, "two": "what"}}
+    assert ret == {
+        "args": ["one"],
+        "kwargs": {"three": {"hello": "world"}, "two": "what"},
+    }
 
 
 @pytest.mark.xfail(
@@ -55,7 +58,9 @@ def test_wheel_client_kwargs(pepper_cli, session_master):
     assert ret == "Wrote pepper.conf"
 
     default_include_dir = pathlib.Path(session_master.config["default_include"]).parent
-    pepper_config = pathlib.Path(session_master.config_dir) / default_include_dir / "pepper.conf"
+    pepper_config = (
+        pathlib.Path(session_master.config_dir) / default_include_dir / "pepper.conf"
+    )
     assert pepper_config.exists
 
 

@@ -9,13 +9,11 @@ import textwrap
 import pytest
 import salt.utils.yaml as yaml
 from pytestskipmarkers.utils import ports
-from saltfactories.utils import random_string
-from saltfactories.utils import running_username
+from saltfactories.utils import random_string, running_username
 
 import pepper.script
 
 # Import pytest libraries
-# Import Salt Libraries
 
 log = logging.getLogger(__name__)
 
@@ -77,7 +75,9 @@ def session_ssh_roster_config(session_sshd_server, session_master):
       mine_functions:
         test.arg: ['itworked']
     """.format(
-        session_sshd_server.listen_port, running_username(), session_sshd_server.client_key
+        session_sshd_server.listen_port,
+        running_username(),
+        session_sshd_server.client_key,
     )
     with pytest.helpers.temp_file(
         "roster", roster_contents, session_master.config_dir
@@ -132,7 +132,7 @@ def pepperconfig(salt_api_port):
 
 @pytest.fixture
 def pepper_client(session_salt_api, salt_api_port):
-    client = pepper.Pepper("http://localhost:{}".format(salt_api_port))
+    client = pepper.Pepper(f"http://localhost:{salt_api_port}")
     client.login("pepper", "pepper", "sharedsecret")
     return client
 
@@ -155,16 +155,21 @@ def output_file():
 
 
 @pytest.fixture(params=["/run", "/login"])
-def pepper_cli(request, session_salt_api, salt_api_port, output_file, session_sshd_server):
+def pepper_cli(
+    request, session_salt_api, salt_api_port, output_file, session_sshd_server
+):
     """
     Wrapper to invoke Pepper with common params and inside an empty env
     """
-    if request.config.getoption("--salt-api-backend") == "rest_tornado" and request.param == "/run":
+    if (
+        request.config.getoption("--salt-api-backend") == "rest_tornado"
+        and request.param == "/run"
+    ):
         pytest.xfail("rest_tornado does not support /run endpoint until next release")
 
     def_args = [
         "--out=json",
-        "--output-file={}".format(output_file),
+        f"--output-file={output_file}",
         "-c",
         "tests/.pepperrc",
     ]
@@ -173,7 +178,9 @@ def pepper_cli(request, session_salt_api, salt_api_port, output_file, session_ss
         def_args = ["--run-uri"] + def_args
 
     def _run_pepper_cli(*args, **kwargs):
-        sys.argv = ["pepper", "-p", kwargs.pop("profile", "main")] + def_args + list(args)
+        sys.argv = (
+            ["pepper", "-p", kwargs.pop("profile", "main")] + def_args + list(args)
+        )
         exitcode = pepper.script.Pepper()()
         try:
             with open(output_file) as result:
@@ -182,7 +189,7 @@ def pepper_cli(request, session_salt_api, salt_api_port, output_file, session_ss
                 except yaml.parser.ParserError:
                     result.seek(0)
                     return [
-                        yaml.load("{0}}}".format(ret).strip('"'))
+                        yaml.load(f"{ret}}}".strip('"'))
                         for ret in result.read().split('}"\n')
                         if ret
                     ]
@@ -256,7 +263,9 @@ def session_minion_factory(session_master_factory):
     """Return a factory for a randomly named minion connected to master."""
     minion_factory = session_master_factory.salt_minion_daemon(random_string("minion-"))
     minion_factory.after_terminate(
-        pytest.helpers.remove_stale_minion_key, session_master_factory, minion_factory.id
+        pytest.helpers.remove_stale_minion_key,
+        session_master_factory,
+        minion_factory.id,
     )
     return minion_factory
 

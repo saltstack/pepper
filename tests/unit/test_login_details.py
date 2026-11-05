@@ -1,10 +1,7 @@
 import sys
-from unittest.mock import MagicMock
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pepper.cli
-
-# Import Testing libraries
 
 
 def test_interactive_logins():

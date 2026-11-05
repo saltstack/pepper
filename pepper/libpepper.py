@@ -4,6 +4,7 @@ A Python library for working with Salt's REST API
 (Specifically the rest_cherrypy netapi module.)
 
 """
+
 import json
 import logging
 import re
@@ -17,28 +18,28 @@ except Exception:
     pass
 
 try:
+    import urllib.parse as urlparse
+    from urllib.error import HTTPError, URLError
     from urllib.request import (
         HTTPHandler,
         HTTPSHandler,
         Request,
-        urlopen,
-        install_opener,
         build_opener,
+        install_opener,
+        urlopen,
     )
-    from urllib.error import HTTPError, URLError
-    import urllib.parse as urlparse
 except ImportError:
+    import urlparse
     from urllib2 import (
+        HTTPError,
         HTTPHandler,
         HTTPSHandler,
         Request,
-        urlopen,
-        install_opener,
-        build_opener,
-        HTTPError,
         URLError,
+        build_opener,
+        install_opener,
+        urlopen,
     )
-    import urlparse
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +73,12 @@ class Pepper:
 
     """
 
-    def __init__(self, api_url="https://localhost:8000", debug_http=False, ignore_ssl_errors=False):
+    def __init__(
+        self,
+        api_url="https://localhost:8000",
+        debug_http=False,
+        ignore_ssl_errors=False,
+    ):
         """
         Initialize the class with the URL of the API
 
@@ -88,7 +94,7 @@ class Pepper:
         """
         split = urlparse.urlsplit(api_url)
         if split.scheme not in ["http", "https"]:
-            raise PepperException("salt-api URL missing HTTP(s) protocol: {}".format(api_url))
+            raise PepperException(f"salt-api URL missing HTTP(s) protocol: {api_url}")
 
         self.api_url = api_url
         self.debug_http = int(debug_http)
@@ -141,7 +147,9 @@ class Pepper:
                 return
 
             if resp.status_code == 404:
-                raise PepperException(str(resp.status_code) + " :This request returns nothing.")
+                raise PepperException(
+                    str(resp.status_code) + " :This request returns nothing."
+                )
                 return
         except PepperException as e:
             print(e)
@@ -184,7 +192,9 @@ class Pepper:
                 return
 
             if resp.status_code == 404:
-                raise PepperException(str(resp.status_code) + " :This request returns nothing.")
+                raise PepperException(
+                    str(resp.status_code) + " :This request returns nothing."
+                )
                 return
         except PepperException as e:
             print(e)
@@ -264,7 +274,7 @@ class Pepper:
             if status == 500:
                 raise PepperException("Server error.")
 
-            logger.error("Error with request: {}".format(exc))
+            logger.error(f"Error with request: {exc}")
             raise
         except AttributeError:
             logger.debug("Error converting response from JSON", exc_info=True)
@@ -284,7 +294,7 @@ class Pepper:
 
         """
         import requests
-        from requests_gssapi import HTTPSPNEGOAuth, OPTIONAL
+        from requests_gssapi import OPTIONAL, HTTPSPNEGOAuth
 
         auth = HTTPSPNEGOAuth(mutual_authentication=OPTIONAL)
         headers = {
@@ -302,7 +312,7 @@ class Pepper:
             "auth": auth,
             "data": json.dumps(data),
         }
-        logger.debug("postdata {}".format(params))
+        logger.debug(f"postdata {params}")
         resp = requests.post(**params)
         if resp.status_code == 401:
             # TODO should be resp.raise_from_status
@@ -326,7 +336,9 @@ class Pepper:
         """
         return self.req(path, lowstate)
 
-    def local(self, tgt, fun, arg=None, kwarg=None, expr_form="glob", timeout=None, ret=None):
+    def local(
+        self, tgt, fun, arg=None, kwarg=None, expr_form="glob", timeout=None, ret=None
+    ):
         """
         Run a single command using the ``local`` client
 
@@ -355,7 +367,9 @@ class Pepper:
 
         return self.low([low])
 
-    def local_async(self, tgt, fun, arg=None, kwarg=None, expr_form="glob", timeout=None, ret=None):
+    def local_async(
+        self, tgt, fun, arg=None, kwarg=None, expr_form="glob", timeout=None, ret=None
+    ):
         """
         Run a single command using the ``local_async`` client
 
@@ -384,7 +398,9 @@ class Pepper:
 
         return self.low([low])
 
-    def local_batch(self, tgt, fun, arg=None, kwarg=None, expr_form="glob", batch="50%", ret=None):
+    def local_batch(
+        self, tgt, fun, arg=None, kwarg=None, expr_form="glob", batch="50%", ret=None
+    ):
         """
         Run a single command using the ``local_batch`` client
 
@@ -420,7 +436,7 @@ class Pepper:
         Wraps :meth:`runner`.
         """
 
-        return self.runner("jobs.lookup_jid", jid="{}".format(jid))
+        return self.runner("jobs.lookup_jid", jid=f"{jid}")
 
     def runner(self, fun, arg=None, **kwargs):
         """

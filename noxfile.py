@@ -6,7 +6,6 @@ import shutil
 import nox
 from nox.command import CommandFailed
 
-
 API_BACKEND = os.environ.get("API_BACKEND", "cherrypy tornado").split()
 PYTHON_VERSIONS = os.environ.get("PYTHON_VERSIONS", "3.10 3.11 3.12 3.13").split()
 
@@ -59,11 +58,15 @@ def _install_requirements(
         session.install("--progress-bar=off", "wheel", silent=PIP_INSTALL_SILENT)
         if install_coverage_requirements:
             session.install(
-                "--progress-bar=off", COVERAGE_VERSION_REQUIREMENT, silent=PIP_INSTALL_SILENT
+                "--progress-bar=off",
+                COVERAGE_VERSION_REQUIREMENT,
+                silent=PIP_INSTALL_SILENT,
             )
         # Install the latest salt package
         if install_salt:
-            session.install("--progress-bar=off", SALT_REQUIREMENT, silent=PIP_INSTALL_SILENT)
+            session.install(
+                "--progress-bar=off", SALT_REQUIREMENT, silent=PIP_INSTALL_SILENT
+            )
 
         if install_test_requirements:
             requirements_file = REPO_ROOT / "tests" / "requirements.txt"
@@ -82,7 +85,9 @@ def _install_requirements(
                 EXTRA_REQUIREMENTS_INSTALL,
             )
             install_command = ["--progress-bar=off"]
-            install_command += [req.strip() for req in EXTRA_REQUIREMENTS_INSTALL.split()]
+            install_command += [
+                req.strip() for req in EXTRA_REQUIREMENTS_INSTALL.split()
+            ]
             session.install(*install_command, silent=PIP_INSTALL_SILENT)
 
         if install_source:
@@ -140,7 +145,12 @@ def tests(session, api_backend):
             args.append("tests/")
     try:
         session.run(
-            "coverage", "run", "-m", "pytest", f"--salt-api-backend=rest_{api_backend}", *args
+            "coverage",
+            "run",
+            "-m",
+            "pytest",
+            f"--salt-api-backend=rest_{api_backend}",
+            *args,
         )
     finally:
         # Always combine and generate the XML coverage report
@@ -163,5 +173,7 @@ def tests(session, api_backend):
         finally:
             # Move the coverage DB to artifacts/coverage in order for it to be archived by CI
             if COVERAGE_REPORT_DB.exists():
-                shutil.move(str(COVERAGE_REPORT_DB), str(ARTIFACTS_DIR / COVERAGE_REPORT_DB.name))
-
+                shutil.move(
+                    str(COVERAGE_REPORT_DB),
+                    str(ARTIFACTS_DIR / COVERAGE_REPORT_DB.name),
+                )

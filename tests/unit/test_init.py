@@ -1,7 +1,6 @@
 import importlib.util
 import os
-from importlib.metadata import PackageNotFoundError
-from importlib.metadata import version
+from importlib.metadata import PackageNotFoundError, version
 from unittest.mock import patch
 
 import pepper

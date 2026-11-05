@@ -85,8 +85,9 @@ the minions that did not return either way.
     pepper --fail-if-incomplete -t 30 '*' cmd.run 'sleep 300'
 
 When salt is installed, results are shown with Salt's outputters, and
-``--out``, ``--state-output`` and ``--state-verbose`` work as they do with
-``salt``:
+``--out``, ``--state-output``, ``--state-verbose``, ``--no-color`` and
+``--force-color`` work as they do with ``salt``. Output written with
+``--output-file`` is not colored unless ``--force-color`` is given.
 
 .. code-block:: bash
 

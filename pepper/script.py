@@ -39,6 +39,12 @@ class Pepper:
             self.opts = {}
         if self.cli.options.output_file is not None:
             self.opts["output_file"] = self.cli.options.output_file
+        # Salt colors output when stdout is a terminal, even when it goes to
+        # --output-file, so leave files uncolored unless asked otherwise
+        if self.cli.options.force_color:
+            self.opts["force_color"] = True
+        elif self.cli.options.no_color or self.cli.options.output_file is not None:
+            self.opts["no_color"] = True
         if self.cli.options.state_output is not None:
             self.opts["state_output"] = self.cli.options.state_output
         if self.cli.options.state_verbose is not None:

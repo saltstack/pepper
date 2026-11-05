@@ -138,6 +138,33 @@ class PepperCli:
         )
 
         self.parser.add_option(
+            "--no-color",
+            "--no-colour",
+            dest="no_color",
+            default=False,
+            action="store_true",
+            help=textwrap.dedent(
+                """
+                Disable all colored output. Output written to --output-file is
+                not colored unless --force-color is given.
+            """
+            ),
+        )
+
+        self.parser.add_option(
+            "--force-color",
+            "--force-colour",
+            dest="force_color",
+            default=False,
+            action="store_true",
+            help=textwrap.dedent(
+                """
+                Force colored output.
+            """
+            ),
+        )
+
+        self.parser.add_option(
             "--state-output",
             "--state_output",
             dest="state_output",

@@ -301,6 +301,20 @@ def session_salt_api(session_master, session_salt_api_factory):
         yield session_salt_api_factory
 
 
+@pytest.fixture(autouse=True)
+def isolated_environment(monkeypatch):
+    """
+    Remove pepper and salt-api settings inherited from the calling shell.
+
+    Pepper gives environment variables precedence over the config file, so a
+    developer with SALTAPI_URL exported would otherwise send the test
+    credentials to that salt-api instead of the one started for the tests.
+    """
+    for name in list(os.environ):
+        if name.startswith(("SALTAPI_", "PEPPER")) or name == "MASTER_CONFIG":
+            monkeypatch.delenv(name)
+
+
 def pytest_addoption(parser):
     parser.addoption(
         "--salt-api-backend",

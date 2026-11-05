@@ -8,6 +8,7 @@ import json
 import logging
 import optparse  # pylint: disable=deprecated-module
 import os
+import tempfile
 import textwrap
 import time
 from configparser import ConfigParser
@@ -26,6 +27,7 @@ logger = logging.getLogger(__name__)
 class PepperCli:
     def __init__(self, seconds_to_wait=3):
         self.seconds_to_wait = seconds_to_wait
+        self._cached_auth = False
         self.parser = self.get_parser()
         self.parser.option_groups.extend(
             [
@@ -483,7 +485,8 @@ class PepperCli:
             ),
             help=textwrap.dedent(
                 """
-                Cache file location. Default is a file path in the
+                Token cache file for --make-token. It holds one token for each
+                salt-api URL, user and eauth. Default is a file path in the
                 "PEPPERCACHE" environment variable or ~/.peppercache.
             """
             ),
@@ -739,7 +742,7 @@ class PepperCli:
         cache for returns for the job.
         """
         load[0]["client"] = "local_async"
-        async_ret = self.low(api, load)
+        async_ret = self._call(api, self.low, api, load)
         jid = async_ret["return"][0]["jid"]
         nodes = async_ret["return"][0]["minions"]
         ret_nodes = []
@@ -790,40 +793,136 @@ class PepperCli:
         if failed:
             yield exit_code, [{"Failed": failed}]
 
-    def login(self, api):
-        login = api.token if self.options.userun else api.login
+    def _login_user(self):
+        """
+        The username to log in as, prompting for it if it is not configured
 
-        if self.options.mktoken:
-            token_file = self.options.cache
+        A prompted name is kept in the options, so get_login_details() does not
+        ask again.
+        """
+        user = self.options.username
+        if user is None:
+            user = self.get_config({"SALTAPI_USER": None})["SALTAPI_USER"]
+        if user is None and self.options.interactive:
+            user = self.options.username = input("Username: ")
+        return user
+
+    def _token_cache_key(self, api, user):
+        """
+        Identify the cached token for the salt-api URL, user and eauth in use
+        """
+        eauth = (
+            self.options.eauth
+            or self.get_config({"SALTAPI_EAUTH": "auto"})["SALTAPI_EAUTH"]
+        )
+        return json.dumps([api.api_url, user, eauth])
+
+    def _read_token_cache(self):
+        """
+        Return the cached tokens, as a dict of cache keys to entries with the
+        login response in "auth" and the salt-api version in "salt_version"
+        """
+        try:
+            with open(self.options.cache, encoding="utf-8") as cache_file:
+                cache = json.load(cache_file)
+        except FileNotFoundError:
+            return {}
+        except (OSError, ValueError) as exc:
+            logger.error(
+                "Unable to load login tokens from %s: %s", self.options.cache, exc
+            )
+            return {}
+        if not isinstance(cache, dict):
+            return {}
+        # Earlier versions stored a single login response without the salt-api
+        # it belongs to, which is skipped here
+        return {
+            key: entry
+            for key, entry in cache.items()
+            if isinstance(entry, dict) and isinstance(entry.get("auth"), dict)
+        }
+
+    def _write_token_cache(self, cache):
+        """
+        Replace the token cache file, dropping expired tokens
+
+        The file is written to a temporary file in the same directory, which
+        mkstemp creates readable by the owner only, and then renamed over the
+        cache file so readers never see a partial file.
+        """
+        now = time.time()
+        cache = {
+            key: entry
+            for key, entry in cache.items()
+            if entry["auth"].get("expire", 0) > now
+        }
+        directory = os.path.dirname(os.path.abspath(self.options.cache))
+        try:
+            fd, tmp_path = tempfile.mkstemp(dir=directory, prefix=".peppercache-")
             try:
-                with open(token_file, encoding="utf-8") as f:
-                    auth = json.load(f)
-                if auth["expire"] < time.time() + 30:
-                    logger.error("Login token expired")
-                    raise Exception("Login token expired")
-            except Exception as e:  # pylint: disable=broad-exception-caught
-                if e.args[0] != 2:
-                    logger.error(
-                        f"Unable to load login token from {token_file} {str(e)}"
-                    )
-                    if os.path.isfile(token_file):
-                        os.remove(token_file)
-                auth = login(**self.parse_login())
-                oldumask = os.umask(0)
-                try:
-                    fdsc = os.open(token_file, os.O_WRONLY | os.O_CREAT, 0o600)
-                    with os.fdopen(fdsc, "wt") as f:
-                        json.dump(auth, f)
-                except Exception as e:  # pylint: disable=broad-exception-caught
-                    logger.error(f"Unable to save token to {token_file} {str(e)}")
-                finally:
-                    os.umask(oldumask)
-        else:
+                with os.fdopen(fd, "w", encoding="utf-8") as cache_file:
+                    json.dump(cache, cache_file)
+                os.replace(tmp_path, self.options.cache)
+            except BaseException:
+                os.unlink(tmp_path)
+                raise
+        except OSError as exc:
+            logger.error(
+                "Unable to save login token to %s: %s", self.options.cache, exc
+            )
+
+    def login(self, api, use_cache=True):
+        login = api.token if self.options.userun else api.login
+        self._cached_auth = False
+
+        user = self._login_user() if self.options.mktoken else None
+        if user is None:
+            # No token cache, or no user to key it by, in which case
+            # get_login_details() reports the missing user
             auth = login(**self.parse_login())
+        else:
+            key = self._token_cache_key(api, user)
+            cache = self._read_token_cache()
+            entry = cache.get(key) if use_cache else None
+            if entry and entry["auth"].get("expire", 0) > time.time() + 30:
+                auth = entry["auth"]
+                # The salt-api version normally comes with the login response.
+                # parse_cmd() and low() need it to pass arguments and the
+                # timeout the way current salt-api expects.
+                if entry.get("salt_version") and not api.salt_version:
+                    api.salt_version = tuple(entry["salt_version"])
+                self._cached_auth = True
+            else:
+                auth = login(**self.parse_login())
+                if auth.get("token"):
+                    cache[key] = {"auth": auth, "salt_version": api.salt_version}
+                    self._write_token_cache(cache)
 
         api.auth = auth
         self.auth = auth
         return auth
+
+    def _call(self, api, func, *args):
+        """
+        Call func, logging in again once if salt-api rejects a cached token
+
+        salt-api forgets tokens when it restarts or its token store is
+        cleared, so a token that has not expired can still be refused. It
+        also answers 401 when the user may not run the command, so the cached
+        token is only replaced by a successful login, and the original error
+        is raised when there are no credentials to log in with.
+        """
+        try:
+            return func(*args)
+        except PepperAuthException as exc:
+            if not self._cached_auth:
+                raise
+            logger.warning("salt-api rejected the cached token, logging in again")
+            try:
+                self.login(api, use_cache=False)
+            except PepperAuthException:
+                raise exc
+            return func(*args)
 
     def low(self, api, load):
         path = "/run" if self.options.userun else "/"
@@ -869,6 +968,6 @@ class PepperCli:
             for exit_code, ret in self.poll_for_returns(api, load):  # pragma: no cover
                 yield exit_code, json.dumps(ret, sort_keys=True, indent=4)
         else:
-            ret = self.low(api, load)
+            ret = self._call(api, self.low, api, load)
             exit_code = 0
             yield exit_code, json.dumps(ret, sort_keys=True, indent=4)

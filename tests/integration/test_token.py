@@ -40,7 +40,7 @@ def test_token_expire(tokfile, pepper_cli):
     )
 
     with open(tokfile, encoding="utf-8") as tfile:
-        token = json.load(tfile)
-        diff = (now + float(94670856)) - token["expire"]
+        (entry,) = json.load(tfile).values()
+        diff = (now + float(94670856)) - entry["auth"]["expire"]
         # Allow for 10-second window between request and master-side auth.
         assert diff < 10

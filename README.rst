@@ -82,6 +82,16 @@ or in a configuration file ``$HOME/.pepperrc`` with the following syntax :
   SALTAPI_PASS=saltdev
   SALTAPI_EAUTH=pam
 
+Tokens
+------
+
+``-T`` (``--make-token``) saves the salt-api token in ``~/.peppercache`` (or
+the file given with ``-x`` or ``PEPPERCACHE``) and reuses it until it expires,
+so the password is only needed when a new token has to be requested. The file
+holds one token for each salt-api URL, user and eauth. If salt-api rejects a
+cached token, for example after a restart, pepper logs in again once and
+replaces it.
+
 TLS
 ---
 

@@ -21,7 +21,7 @@ from urllib.request import (
     build_opener,
 )
 
-from pepper.exceptions import PepperException
+from pepper.exceptions import PepperAuthException, PepperException
 
 logger = logging.getLogger(__name__)
 
@@ -330,7 +330,7 @@ class Pepper:
             status = getattr(exc, "code", None)
 
             if status == 401:
-                raise PepperException("Authentication denied")
+                raise PepperAuthException("Authentication denied")
 
             if status == 500:
                 raise PepperException("Server error.")
@@ -441,7 +441,7 @@ class Pepper:
         resp = requests.post(**params)
         if resp.status_code == 401:
             # TODO should be resp.raise_from_status
-            raise PepperException("Authentication denied")
+            raise PepperAuthException("Authentication denied")
         if resp.status_code == 500:
             # TODO should be resp.raise_from_status
             raise PepperException("Server error.")

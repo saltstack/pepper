@@ -265,7 +265,8 @@ class PepperCli:
             help=textwrap.dedent(
                 """
                 Enter JSON at the CLI instead of positional (text) arguments. This
-                is useful for arguments that need complex data structures.
+                is useful for arguments that need complex data structures. Give
+                one command as an object or several as a list of objects.
                 Specifying this argument will cause positional arguments to be
                 ignored.
             """
@@ -681,6 +682,19 @@ class PepperCli:
 
         return ret
 
+    @staticmethod
+    def _lowstate(data):
+        """
+        Accept a single command object as well as a list of them
+        """
+        if isinstance(data, dict):
+            data = [data]
+        if not isinstance(data, list) or not all(isinstance(i, dict) for i in data):
+            raise PepperArgumentsException(
+                "The JSON must be an object or a list of objects."
+            )
+        return data
+
     def parse_cmd(self, api):
         """
         Extract the low data for a command from the passed CLI params
@@ -688,7 +702,7 @@ class PepperCli:
         # Short-circuit if JSON was given.
         if self.options.json_input:
             try:
-                return json.loads(self.options.json_input)
+                return self._lowstate(json.loads(self.options.json_input))
             except JSONDecodeError:
                 raise PepperArgumentsException("Invalid JSON given.")
 
@@ -696,7 +710,7 @@ class PepperCli:
             try:
                 with open(self.options.json_file, encoding="utf-8") as json_content:
                     try:
-                        return json.load(json_content)
+                        return self._lowstate(json.load(json_content))
                     except (JSONDecodeError, UnicodeDecodeError):
                         raise PepperArgumentsException("Invalid JSON given.")
             except FileNotFoundError:

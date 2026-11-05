@@ -42,3 +42,9 @@ def test_local_json_file_bad(pepper_cli):
 def test_local_json_no_file(pepper_cli):
     ret = pepper_cli("--json-file", "/tmp/wahteverfile")
     assert ret == 1
+
+
+def test_local_json_object(pepper_cli, session_minion_id):
+    json = '{"tgt": "*", "fun": "test.ping", "client": "local"}'
+    ret = pepper_cli("--json", json)
+    assert ret[session_minion_id] is True

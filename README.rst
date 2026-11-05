@@ -84,6 +84,14 @@ the minions that did not return either way.
 
     pepper --fail-if-incomplete -t 30 '*' cmd.run 'sleep 300'
 
+When salt is installed, results are shown with Salt's outputters, and
+``--out``, ``--state-output`` and ``--state-verbose`` work as they do with
+``salt``:
+
+.. code-block:: bash
+
+    pepper --state-output=changes --state-verbose=false '*' state.apply
+
 Examples leveraging the runner client.
 
 .. code-block:: bash

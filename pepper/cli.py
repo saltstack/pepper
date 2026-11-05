@@ -138,6 +138,33 @@ class PepperCli:
         )
 
         self.parser.add_option(
+            "--state-output",
+            "--state_output",
+            dest="state_output",
+            default=None,
+            help=textwrap.dedent(
+                """
+                Override the configured state_output value for minion output,
+                as with salt. One of 'full', 'terse', 'mixed', 'changes' or
+                'filter', optionally with an '_id' suffix. Needs salt installed.
+            """
+            ),
+        )
+
+        self.parser.add_option(
+            "--state-verbose",
+            "--state_verbose",
+            dest="state_verbose",
+            default=None,
+            help=textwrap.dedent(
+                """
+                Override the configured state_verbose value for minion output,
+                as with salt. Set to True or False. Needs salt installed.
+            """
+            ),
+        )
+
+        self.parser.add_option(
             "-v",
             dest="verbose",
             default=0,

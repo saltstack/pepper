@@ -93,12 +93,15 @@ When salt is installed, results are shown with Salt's outputters, and
 
     pepper --state-output=changes --state-verbose=false '*' state.apply
 
-Examples leveraging the runner client.
+The runner and wheel clients take arguments the same way as ``salt-run``,
+as positional values and ``key=value`` pairs:
 
 .. code-block:: bash
 
     pepper --client runner reactor.list
     pepper --client runner reactor.add event='test/provision/*' reactors='/srv/salt/state/reactor/test-provision.sls'
+    pepper --client runner test.arg one two=what three='{"hello": "world"}'
+    pepper --client wheel key.delete match=minion1
 
 Library
 -------
@@ -112,6 +115,7 @@ Library
     api.local("*", "test.ping")
     api.local("G@os:Debian", "pkg.version", ["openssl"], tgt_type="compound")
     api.runner("jobs.lookup_jid", jid="20261105120000000000")
+    api.wheel("key.delete", match="minion1")
     api.logout()
 
 ``local(..., full_return=True)`` returns each minion's retcode along with its

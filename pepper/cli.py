@@ -152,6 +152,45 @@ class PepperCli:
             ),
         )
 
+        self.parser.add_option(
+            "--ca-bundle",
+            dest="ca_bundle",
+            default=None,
+            help=textwrap.dedent(
+                """
+                A file of PEM CA certificates, or a directory of them prepared
+                with c_rehash, to verify the salt-api certificate with instead of
+                the system's trusted CA certificates. Can also be set with
+                SALTAPI_CA_BUNDLE.
+            """
+            ),
+        )
+
+        self.parser.add_option(
+            "--client-cert",
+            dest="client_cert",
+            default=None,
+            help=textwrap.dedent(
+                """
+                A PEM file with a client certificate to present to salt-api. It
+                must also contain the private key unless --client-cert-key is
+                given. Can also be set with SALTAPI_CLIENT_CERT.
+            """
+            ),
+        )
+
+        self.parser.add_option(
+            "--client-cert-key",
+            dest="client_cert_key",
+            default=None,
+            help=textwrap.dedent(
+                """
+                A PEM file with the private key for --client-cert. Can also be
+                set with SALTAPI_CLIENT_CERT_KEY.
+            """
+            ),
+        )
+
         self.options, self.args = self.parser.parse_args()
 
         option_names = ["fail_any", "fail_any_none", "fail_all", "fail_all_none"]
@@ -568,6 +607,29 @@ class PepperCli:
 
         return url
 
+    def parse_tls(self):
+        """
+        Determine the CA bundle and client certificate for salt-api
+        """
+        results = self.get_config(
+            {
+                "SALTAPI_CA_BUNDLE": None,
+                "SALTAPI_CLIENT_CERT": None,
+                "SALTAPI_CLIENT_CERT_KEY": None,
+            }
+        )
+        tls = {
+            "ca_bundle": self.options.ca_bundle or results["SALTAPI_CA_BUNDLE"],
+            "client_cert": self.options.client_cert or results["SALTAPI_CLIENT_CERT"],
+            "client_cert_key": self.options.client_cert_key
+            or results["SALTAPI_CLIENT_CERT_KEY"],
+        }
+        if tls["client_cert_key"] and not tls["client_cert"]:
+            raise PepperArgumentsException(
+                "A client certificate key was given without a client certificate"
+            )
+        return tls
+
     def parse_login(self):
         """
         Extract the authentication credentials
@@ -792,6 +854,7 @@ class PepperCli:
             self.parse_url(),
             debug_http=self.options.debug_http,
             ignore_ssl_errors=self.options.ignore_ssl_certificate_errors,
+            **self.parse_tls(),
         )
 
         self.login(api)

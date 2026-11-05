@@ -95,6 +95,24 @@ include key usage extension"). CA certificates made with ``openssl req -x509``
 and its default configuration lack it. Reissue the CA certificate with
 ``keyUsage = critical, keyCertSign, cRLSign``.
 
+To verify against a private CA, or to present a client certificate, use the
+command line options or set them in ``.pepperrc`` or the environment:
+
+.. code-block::
+
+  [main]
+  SALTAPI_URL=https://salt.example.com:8000/
+  SALTAPI_CA_BUNDLE=/path/to/ca-chain.pem
+  SALTAPI_CLIENT_CERT=/path/to/client.pem
+  SALTAPI_CLIENT_CERT_KEY=/path/to/client.key
+
+``SALTAPI_CA_BUNDLE`` (``--ca-bundle``) replaces the system CA certificates
+rather than adding to them. Kerberos logins and the library methods that use
+``requests`` verify against requests' own CA bundle (certifi) unless
+``SALTAPI_CA_BUNDLE`` is set. ``SALTAPI_CLIENT_CERT_KEY``
+(``--client-cert-key``) can be left out when the client certificate file also
+contains the private key.
+
 Contributing
 ------------
 

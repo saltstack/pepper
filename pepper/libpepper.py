@@ -7,6 +7,7 @@ A Python library for working with Salt's REST API
 
 import json
 import logging
+import os
 import re
 import ssl
 import urllib.parse as urlparse
@@ -52,6 +53,9 @@ class Pepper:
         api_url="https://localhost:8000",
         debug_http=False,
         ignore_ssl_errors=False,
+        ca_bundle=None,
+        client_cert=None,
+        client_cert_key=None,
     ):
         """
         Initialize the class with the URL of the API
@@ -63,6 +67,16 @@ class Pepper:
 
         :param ignore_ssl_errors: Do not verify the salt-api TLS certificate
 
+        :param ca_bundle: A file of PEM CA certificates, or a directory of them
+            prepared with ``c_rehash``, to verify the salt-api certificate with
+            instead of the system's trusted CA certificates
+
+        :param client_cert: A PEM file with the client certificate to present
+            to salt-api, and its private key unless ``client_cert_key`` is set
+
+        :param client_cert_key: A PEM file with the private key for
+            ``client_cert``
+
         :raises PepperException: if the api_url is misformed
 
         """
@@ -73,6 +87,10 @@ class Pepper:
         self.api_url = api_url
         self.debug_http = int(debug_http)
         self._ssl_verify = not ignore_ssl_errors
+        self._ca_bundle = ca_bundle
+        self._client_cert = client_cert
+        self._client_cert_key = client_cert_key
+        self._context = None
         self.auth = {}
         self.salt_version = None
 
@@ -105,8 +123,8 @@ class Pepper:
         params = {
             "url": self._construct_url(path),
             "headers": headers,
-            "verify": self._ssl_verify is True,
             "stream": True,
+            **self._requests_tls(),
         }
         try:
             resp = requests.get(**params)
@@ -147,7 +165,7 @@ class Pepper:
         params = {
             "url": self._construct_url(path),
             "headers": headers,
-            "verify": self._ssl_verify is True,
+            **self._requests_tls(),
         }
         try:
             resp = requests.get(**params)
@@ -190,7 +208,12 @@ class Pepper:
 
         opener = build_opener(
             HTTPHandler(debuglevel=self.debug_http),
-            HTTPSHandler(debuglevel=self.debug_http, context=self._ssl_context()),
+            HTTPSHandler(
+                debuglevel=self.debug_http,
+                context=(
+                    self._ssl_context() if self.api_url.startswith("https") else None
+                ),
+            ),
         )
 
         # Build POST data
@@ -228,7 +251,8 @@ class Pepper:
             if isinstance(getattr(exc, "reason", None), ssl.SSLCertVerificationError):
                 raise PepperException(
                     f"TLS certificate verification failed for {url}: "
-                    f"{exc.reason.verify_message.rstrip('.')}. Use "
+                    f"{exc.reason.verify_message.rstrip('.')}. Use --ca-bundle "
+                    "(ca_bundle) if it is signed by a private CA, or "
                     "--ignore-ssl-errors (ignore_ssl_errors=True) to skip "
                     "verification."
                 )
@@ -251,12 +275,47 @@ class Pepper:
     def _ssl_context(self):
         """
         Return the SSL context for HTTPS requests
+
+        It is built once per client, so an encrypted client key is only
+        unlocked once.
+
+        :raises PepperException: if the CA bundle or client certificate cannot
+            be loaded
         """
-        context = ssl.create_default_context()
+        if self._context is not None:
+            return self._context
+        try:
+            if self._ca_bundle and os.path.isdir(self._ca_bundle):
+                context = ssl.create_default_context(capath=self._ca_bundle)
+            else:
+                context = ssl.create_default_context(cafile=self._ca_bundle)
+        except (OSError, ssl.SSLError) as exc:
+            raise PepperException(
+                f"Unable to load the CA bundle {self._ca_bundle}: {exc}"
+            )
         if not self._ssl_verify:
             context.check_hostname = False
             context.verify_mode = ssl.CERT_NONE
+        if self._client_cert:
+            try:
+                context.load_cert_chain(self._client_cert, self._client_cert_key)
+            except (OSError, ssl.SSLError) as exc:
+                raise PepperException(
+                    f"Unable to load the client certificate {self._client_cert}: {exc}"
+                )
+        self._context = context
         return context
+
+    def _requests_tls(self):
+        """
+        Return the verify and cert arguments for requests
+        """
+        verify = self._ssl_verify and (self._ca_bundle or True)
+        if self._client_cert and self._client_cert_key:
+            cert = (self._client_cert, self._client_cert_key)
+        else:
+            cert = self._client_cert
+        return {"verify": verify, "cert": cert}
 
     def req_requests(self, path, data=None):
         """
@@ -284,7 +343,7 @@ class Pepper:
         params = {
             "url": self._construct_url(path),
             "headers": headers,
-            "verify": self._ssl_verify is True,
+            **self._requests_tls(),
             "auth": auth,
             "data": json.dumps(data),
         }

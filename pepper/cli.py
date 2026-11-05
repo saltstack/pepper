@@ -492,6 +492,24 @@ class PepperCli:
 
         return optgroup
 
+    def get_config(self, defaults):
+        """
+        Read settings from the selected profile of the config file, then from
+        the environment, which takes precedence
+
+        :param defaults: a dict of setting names and their default values
+        """
+        config = ConfigParser(interpolation=None)
+        config.read(self.options.config)
+        profile = self.options.profile
+
+        results = dict(defaults)
+        for key in results:
+            if config.has_section(profile) and config.has_option(profile, key):
+                results[key] = config.get(profile, key)
+            results[key] = os.environ.get(key, results[key])
+        return results
+
     def get_login_details(self):
         """
         This parses the config file, environment variables and command line options
@@ -500,26 +518,13 @@ class PepperCli:
             command line options, ~/.pepperrc, environment, defaults
         """
 
-        # setting default values
-        results = {
-            "SALTAPI_USER": None,
-            "SALTAPI_PASS": None,
-            "SALTAPI_EAUTH": "auto",
-        }
-
-        config = ConfigParser(interpolation=None)
-        config.read(self.options.config)
-
-        # read file
-        profile = self.options.profile
-        if config.has_section(profile):
-            for key, value in list(results.items()):
-                if config.has_option(profile, key):
-                    results[key] = config.get(profile, key)
-
-        # get environment values
-        for key, value in list(results.items()):
-            results[key] = os.environ.get(key, results[key])
+        results = self.get_config(
+            {
+                "SALTAPI_USER": None,
+                "SALTAPI_PASS": None,
+                "SALTAPI_EAUTH": "auto",
+            }
+        )
 
         if results["SALTAPI_EAUTH"] == "kerberos":
             results["SALTAPI_PASS"] = None
@@ -555,19 +560,7 @@ class PepperCli:
         """
         Determine api url
         """
-        url = "https://localhost:8000/"
-
-        config = ConfigParser(interpolation=None)
-        config.read(self.options.config)
-
-        # read file
-        profile = self.options.profile
-        if config.has_section(profile):
-            if config.has_option(profile, "SALTAPI_URL"):
-                url = config.get(profile, "SALTAPI_URL")
-
-        # get environment values
-        url = os.environ.get("SALTAPI_URL", url)
+        url = self.get_config({"SALTAPI_URL": "https://localhost:8000/"})["SALTAPI_URL"]
 
         # get eauth prompt options
         if self.options.saltapiurl:

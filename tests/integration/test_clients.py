@@ -2,6 +2,7 @@ import json
 import pathlib
 
 import pytest
+import salt.version
 
 
 def test_local_bad_opts(pepper_cli):
@@ -61,6 +62,10 @@ def test_wheel_client_kwargs(pepper_cli, session_master):
 @pytest.mark.xfail(
     'config.getoption("--salt-api-backend") == "rest_tornado"',
     reason="sshClient unimplemented for now on tornado",
+)
+@pytest.mark.xfail(
+    salt.version.__saltstack_version__.info >= (3008,),
+    reason="salt-api rejects the eauth token for the ssh client on Salt 3008+",
 )
 def test_ssh_client(pepper_cli, session_ssh_roster_config):
     ret = pepper_cli("--client=ssh", "*", "test.ping")

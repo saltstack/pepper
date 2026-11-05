@@ -61,6 +61,13 @@ Windows), which can also be run as ``python -m pepper``.
 not expand wildcards either, so leave the target unquoted there:
 ``pepper * test.ping``.
 
+Like ``salt``, pepper exits with 1 when any minion returns a non-zero retcode,
+and like ``salt-run`` it exits with the job's retcode when a runner fails. The
+``--fail-any``, ``--fail-any-none``, ``--fail-all`` and ``--fail-all-none``
+options replace that rule; see ``pepper --help``. salt-api does not return
+minion retcodes with ``--batch``, or for the local client with ``rest_tornado``,
+so in those cases pepper cannot tell that a minion failed.
+
 Examples leveraging the runner client.
 
 .. code-block:: bash

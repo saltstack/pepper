@@ -26,7 +26,7 @@ def without_salt(monkeypatch):
 @pytest.mark.parametrize(
     "option,payload,expected",
     [
-        (None, PAYLOAD, 0),
+        (None, PAYLOAD, 1),
         ("--fail-any", PAYLOAD, 127),
         ("--fail-any-none", PAYLOAD, 127),
         ("--fail-all", PAYLOAD, 0),

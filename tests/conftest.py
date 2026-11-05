@@ -182,6 +182,7 @@ def pepper_cli(
             ["pepper", "-p", kwargs.pop("profile", "main")] + def_args + list(args)
         )
         exitcode = pepper.script.Pepper()()
+        _run_pepper_cli.exitcode = exitcode
         try:
             with open(output_file, encoding="utf-8") as result:
                 try:

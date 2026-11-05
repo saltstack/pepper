@@ -46,6 +46,23 @@ class Pepper:
             oput = "nested"
         return oput
 
+    def validate(self, data):
+        """
+        Return the exit code for the results, warning like salt does when a
+        minion failed
+        """
+        options = self.cli.options
+        retcode = PepperRetcode().validate(options, data)
+        fail_options = (
+            options.fail_any,
+            options.fail_any_none,
+            options.fail_all,
+            options.fail_all_none,
+        )
+        if retcode and not any(fail_options) and PepperRetcode.minions_failed(data):
+            print("ERROR: Minions returned with non-zero exit code", file=sys.stderr)
+        return retcode
+
     def __call__(self):
         try:
             for exit_code, result in self.cli.run():
@@ -129,7 +146,7 @@ class Pepper:
                         print(result)
                 if exit_code is not None:
                     if exit_code == 0:
-                        return PepperRetcode().validate(self.cli.options, data)
+                        return self.validate(data)
                     return exit_code
         except (PepperException, PepperAuthException, PepperArgumentsException) as exc:
             print(f"Pepper error: {exc}", file=sys.stderr)

@@ -285,9 +285,12 @@ class PepperCli:
             default=False,
             help=textwrap.dedent(
                 """
-                Return a failure exit code if not all minions respond. This option
-                requires the authenticated user have access to run the
-                `jobs.list_jobs` runner function.
+                Send the command with the local_async client, poll for returns
+                with the jobs.lookup_jid runner until all targeted minions
+                respond or --timeout passes, and exit with a failure code if
+                any did not respond. Only works with a single command for the
+                local client, and requires permission to run the
+                jobs.lookup_jid runner function.
             """
             ),
         )
@@ -762,6 +765,11 @@ class PepperCli:
         Run a command with the local_async client and periodically poll the job
         cache for returns for the job.
         """
+        if len(load) != 1 or load[0].get("client") not in ("local", "local_async"):
+            raise PepperArgumentsException(
+                "--fail-if-incomplete only works with a single command for the "
+                "local client"
+            )
         load[0]["client"] = "local_async"
         async_ret = self._call(api, self.low, api, load)
         jid = async_ret["return"][0]["jid"]
@@ -810,9 +818,8 @@ class PepperCli:
                 time.sleep(self.seconds_to_wait)
 
         exit_code = exit_code if self.options.fail_if_minions_dont_respond else 0
-        failed = list(set(ret_nodes) ^ set(nodes))
-        if failed:
-            yield exit_code, [{"Failed": failed}]
+        failed = sorted(set(ret_nodes) ^ set(nodes))
+        yield exit_code, [{"Failed": failed}] if failed else []
 
     def _login_user(self):
         """

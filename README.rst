@@ -67,7 +67,8 @@ or does not respond, and with 2 when the target matches no minions, and like
 ``--fail-any``, ``--fail-any-none``, ``--fail-all`` and ``--fail-all-none``
 options replace that rule; see ``pepper --help``. salt-api does not return
 minion retcodes with ``--batch``, or for the local client with ``rest_tornado``,
-so in those cases pepper cannot tell that a minion failed.
+and the ``--fail-if-incomplete`` poller reads results without them, so in those
+cases pepper cannot tell that a minion failed.
 
 Examples leveraging the runner client.
 

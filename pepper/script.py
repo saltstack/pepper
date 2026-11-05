@@ -75,8 +75,20 @@ class Pepper:
             print("ERROR: Minions returned with non-zero exit code", file=sys.stderr)
         return retcode
 
+    def write(self, result):
+        """
+        Print raw JSON output to stdout or the output file
+        """
+        if self.cli.options.output_file is not None:
+            with open(self.cli.options.output_file, "a", encoding="utf-8") as ofile:
+                print(result, file=ofile)
+        else:
+            print(result)
+
     def __call__(self):
         try:
+            retcode = None
+            polled = []
             for exit_code, result in self.cli.run():
                 data = json.loads(result)
                 # unwrap ret in some cases
@@ -148,18 +160,25 @@ class Pepper:
                                 self.cli.options.output or "nested",
                                 opts=self.opts,
                             )
+                elif self.cli.options.fail_if_minions_dont_respond:
+                    # The poller yields each minion as it returns. Without
+                    # salt's outputters, print them as one JSON document.
+                    polled.extend(data)
                 else:
-                    if self.cli.options.output_file is not None:
-                        with open(
-                            self.cli.options.output_file, "a", encoding="utf-8"
-                        ) as ofile:
-                            print(result, file=ofile)
-                    else:
-                        print(result)
+                    self.write(result)
                 if exit_code is not None:
-                    if exit_code == 0:
-                        return self.validate(data)
-                    return exit_code
+                    if self.cli.options.fail_if_minions_dont_respond:
+                        # jobs.lookup_jid returns no retcodes, so the poller's
+                        # exit code only says whether every minion returned
+                        retcode = exit_code
+                    elif exit_code == 0:
+                        retcode = self.validate(data)
+                    else:
+                        retcode = exit_code
+                    break
+            if polled:
+                self.write(json.dumps({"return": polled}, sort_keys=True, indent=4))
+            return retcode
         except (PepperException, PepperAuthException, PepperArgumentsException) as exc:
             print(f"Pepper error: {exc}", file=sys.stderr)
             return 1

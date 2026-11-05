@@ -682,7 +682,7 @@ redefining-builtins-modules=six.moves,past.builtins,future.builtins,builtins,io
 fileperms-default=0644
 
 # File paths to ignore file permission. Glob patterns allowed.
-fileperms-ignore-paths=setup.py,noxfile.py,scripts/pepper
+fileperms-ignore-paths=noxfile.py
 
 [3RD-PARTY-IMPORTS]
 

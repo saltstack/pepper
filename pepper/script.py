@@ -146,3 +146,13 @@ class Pepper:
             )
             logger.debug("Uncaught traceback:", exc_info=True)
             return 1
+
+
+def main():
+    """
+    Entry point for the pepper command
+    """
+    logging.basicConfig(format="%(levelname)s %(asctime)s %(module)s: %(message)s")
+    logging.getLogger("pepper").addHandler(logging.NullHandler())
+    exit_code = Pepper()()
+    raise SystemExit(exit_code if exit_code is not None else 0)

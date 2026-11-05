@@ -107,7 +107,7 @@ repos:
         name: Lint Pepper
         entry: pylint --rcfile=.pylintrc --disable=I
         language: python
-        files: ^((setup|noxfile)\.py|pepper/.*\.py)$
+        files: ^(noxfile\.py|pepper/.*\.py)$
         additional_dependencies: &lint_deps
           - pylint==3.1.1
           - astroid==3.1.0

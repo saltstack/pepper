@@ -31,6 +31,7 @@ jobs:
   test:
     name: test ${{ matrix.py }} - ${{ matrix.netapi }} - ${{ matrix.salt }}
     runs-on: ubuntu-22.04
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:

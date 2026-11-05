@@ -108,8 +108,9 @@ class PepperCli:
             ),
             help=textwrap.dedent(
                 """
-                Master Configuration file location for configuring outputters.
-                default: ~/.config/pepper/master
+                Salt configuration file for the outputters, such as output,
+                state_output, state_verbose and color. Default is the
+                "MASTER_CONFIG" environment variable or ~/.config/pepper/master.
             """
             ),
         )

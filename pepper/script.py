@@ -45,6 +45,11 @@ class Pepper:
             self.opts["force_color"] = True
         elif self.cli.options.no_color or self.cli.options.output_file is not None:
             self.opts["no_color"] = True
+        if self.cli.options.output is not None:
+            # Salt's outputters prefer an output setting from the master config
+            # file over the outputter they are asked for, so --out has to
+            # replace it
+            self.opts["output"] = self.cli.options.output
         if self.cli.options.state_output is not None:
             self.opts["state_output"] = self.cli.options.state_output
         if self.cli.options.state_verbose is not None:

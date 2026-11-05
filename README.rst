@@ -147,6 +147,19 @@ uses its own). If salt-api rejects a cached token, for example after a
 restart, pepper logs in again once and replaces it. If it cannot log in again,
 it removes the rejected token from the file.
 
+Output
+------
+
+When salt is installed, pepper reads Salt outputter settings from a Salt
+configuration file, ``~/.config/pepper/master`` by default (``-m`` or
+``MASTER_CONFIG`` to change it). Command line options take precedence:
+
+.. code-block:: yaml
+
+  output: json
+  state_output: changes
+  state_verbose: false
+
 TLS
 ---
 

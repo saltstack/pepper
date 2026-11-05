@@ -238,7 +238,10 @@ class PepperCli:
             default=60,
             help=textwrap.dedent(
                 """
-                Specify wait time (in seconds) before returning control to the shell
+                How long to wait for minions to return, in seconds. As with
+                salt -t, minions that are still running the job are waited for
+                beyond this. Add --fail-if-incomplete to stop waiting after this
+                long and report the minions that did not return.
             """
             ),
         )

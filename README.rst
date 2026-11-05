@@ -71,6 +71,16 @@ and the ``--fail-if-incomplete`` poller reads results without them, so in those
 cases pepper cannot tell that a minion failed. For the same reason
 ``--fail-if-incomplete`` cannot be combined with the ``--fail-*`` options.
 
+``-t``/``--timeout`` works like ``salt -t``: salt-api waits that long for
+minions to return, but keeps waiting for minions that are still running the
+job. To put a hard limit on the wait, add ``--fail-if-incomplete``, which polls
+for returns until ``--timeout`` passes and then reports the minions that did not
+return. The job keeps running on those minions either way.
+
+.. code-block:: bash
+
+    pepper --fail-if-incomplete -t 30 '*' cmd.run 'sleep 300'
+
 Examples leveraging the runner client.
 
 .. code-block:: bash

@@ -122,6 +122,19 @@ revokes nothing on rest_tornado, which has no ``/logout``, or for an eauth
 token from ``token()`` (``--run-uri``): salt-api answers with an authentication
 error, and the token stays valid until it expires.
 
+``Pepper.from_config()`` creates a client from a ``.pepperrc`` profile and the
+``SALTAPI_*`` environment variables, the same way the ``pepper`` command does,
+and logs in. As with the command, the environment variables override the
+profile, even one named explicitly, so a ``SALTAPI_URL`` exported in the shell
+wins over the profile's URL; pass ``environment=False`` to use only the file:
+
+.. code-block:: python
+
+    from pepper import Pepper
+
+    api = Pepper.from_config(profile="main")
+    api.local("*", "test.ping")
+
 Configuration
 -------------
 

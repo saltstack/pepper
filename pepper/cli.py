@@ -12,10 +12,10 @@ import sys
 import tempfile
 import textwrap
 import time
-from configparser import ConfigParser
 from json import JSONDecodeError
 
 import pepper
+import pepper.config
 from pepper.exceptions import (
     PepperArgumentsException,
     PepperAuthException,
@@ -76,9 +76,7 @@ class PepperCli:
         self.parser.add_option(
             "-c",
             dest="config",
-            default=os.environ.get(
-                "PEPPERRC", os.path.join(os.path.expanduser("~"), ".pepperrc")
-            ),
+            default=pepper.config.default_path(),
             help=textwrap.dedent(
                 """
                 Configuration file location. Default is a file path in the
@@ -90,7 +88,7 @@ class PepperCli:
         self.parser.add_option(
             "-p",
             dest="profile",
-            default=os.environ.get("PEPPERPROFILE", "main"),
+            default=pepper.config.default_profile(),
             help=textwrap.dedent(
                 """
                 Profile in config file to use. Default is "PEPPERPROFILE" environment
@@ -628,16 +626,7 @@ class PepperCli:
 
         :param defaults: a dict of setting names and their default values
         """
-        config = ConfigParser(interpolation=None)
-        config.read(self.options.config)
-        profile = self.options.profile
-
-        results = dict(defaults)
-        for key in results:
-            if config.has_section(profile) and config.has_option(profile, key):
-                results[key] = config.get(profile, key)
-            results[key] = os.environ.get(key, results[key])
-        return results
+        return pepper.config.read(defaults, self.options.config, self.options.profile)
 
     def get_login_details(self):
         """

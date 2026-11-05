@@ -24,6 +24,7 @@ from urllib.request import (
     build_opener,
 )
 
+from pepper import config
 from pepper.exceptions import PepperAuthException, PepperException
 
 logger = logging.getLogger(__name__)
@@ -260,6 +261,51 @@ class Pepper:
         self._context = None
         self.auth = {}
         self.salt_version = None
+
+    @classmethod
+    def from_config(
+        cls, profile=None, path=None, login=True, environment=True, **kwargs
+    ):
+        """
+        Create a client from a .pepperrc profile and the SALTAPI_* environment
+        variables, the same way the pepper command does, and log in
+
+        As with the pepper command, SALTAPI_* environment variables override
+        the profile, even one named explicitly. Pass environment=False to use
+        only the config file.
+
+        >>> api = Pepper.from_config(profile="prod")
+        >>> api.local("*", "test.ping")
+
+        :param profile: the profile to use, PEPPERPROFILE or main by default
+        :param path: the config file, PEPPERRC or ~/.pepperrc by default
+        :param login: log in with the configured credentials
+        :param environment: let SALTAPI_* environment variables override the
+            profile
+        :param kwargs: other arguments for :class:`Pepper`, which take
+            precedence over the config file
+
+        :raises PepperAuthException: if login is set and the user or password
+            is not configured
+        """
+        settings = config.read(path=path, profile=profile, environment=environment)
+        options = {
+            "ca_bundle": settings["SALTAPI_CA_BUNDLE"],
+            "client_cert": settings["SALTAPI_CLIENT_CERT"],
+            "client_cert_key": settings["SALTAPI_CLIENT_CERT_KEY"],
+        }
+        options.update(kwargs)
+        api = cls(settings["SALTAPI_URL"], **options)
+
+        if login:
+            eauth = settings["SALTAPI_EAUTH"]
+            password = None if eauth == "kerberos" else settings["SALTAPI_PASS"]
+            if settings["SALTAPI_USER"] is None:
+                raise PepperAuthException("SALTAPI_USER required")
+            if password is None and eauth != "kerberos":
+                raise PepperAuthException("SALTAPI_PASS required")
+            api.login(settings["SALTAPI_USER"], password, eauth)
+        return api
 
     def req_stream(self, path):
         """

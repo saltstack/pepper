@@ -24,11 +24,11 @@ daemons as though they were running Salt locally. The long-term goal is to add
 additional CLI scripts maintain the same interface as Salt's own CLI scripts
 (``salt``, ``salt-run``, ``salt-key``, etc).
 
-It does not require any additional dependencies and runs on Python 2.5+ and
-Python 3. (Python 3 support is new, please file an issue if you encounter
-trouble.)
+It runs on Python 3.10 or later, and the CLI only needs the standard library.
+When ``salt`` is installed in the same environment, pepper formats results with
+Salt's outputters.
 
-.. __: https://github.com/saltstack/salt-api
+.. __: https://docs.saltproject.io/en/latest/ref/netapi/all/index.html
 
 Installation
 ------------
@@ -36,16 +36,30 @@ Installation
 
     pip install salt-pepper
 
+Kerberos logins and the library's ``req_get()`` and ``req_stream()`` methods
+need ``requests``, which is available as an extra:
+
+.. code-block:: bash
+
+    pip install 'salt-pepper[kerberos]'
+    pip install 'salt-pepper[requests]'
+
 Usage
 -----
 
-Basic usage is in heavy flux. You can run pepper using the script in %PYTHONHOME%/scripts/pepper (a pepper.cmd wrapper is provided for convenience to Windows users).
+Installing the package provides a ``pepper`` command (``pepper.exe`` on
+Windows), which can also be run as ``python -m pepper``.
 
 .. code-block:: bash
 
     export SALTAPI_USER=saltdev SALTAPI_PASS=saltdev SALTAPI_EAUTH=pam
     pepper '*' test.ping
     pepper '*' test.kwarg hello=dolly
+
+``cmd.exe`` on Windows does not treat single quotes as quoting, so
+``pepper '*' test.ping`` targets the literal string ``'*'``. ``cmd.exe`` does
+not expand wildcards either, so leave the target unquoted there:
+``pepper * test.ping``.
 
 Examples leveraging the runner client.
 

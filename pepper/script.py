@@ -49,15 +49,14 @@ class Pepper:
     def __call__(self):
         try:
             for exit_code, result in self.cli.run():
+                data = json.loads(result)
+                # unwrap ret in some cases
+                if "return" in data:
+                    data = data["return"]
+
                 if HAS_SALT and self.opts:
                     logger.debug("Use Salt outputters")
-                    result = json.loads(result)
-
-                    # unwrap ret in some cases
-                    if "return" in result:
-                        result = result["return"]
-
-                    for ret in result:
+                    for ret in data:
                         if isinstance(ret, dict):
                             if self.cli.options.client.startswith("local"):
                                 for minionid, minionret in ret.items():
@@ -130,7 +129,7 @@ class Pepper:
                         print(result)
                 if exit_code is not None:
                     if exit_code == 0:
-                        return PepperRetcode().validate(self.cli.options, result)
+                        return PepperRetcode().validate(self.cli.options, data)
                     return exit_code
         except (PepperException, PepperAuthException, PepperArgumentsException) as exc:
             print(f"Pepper error: {exc}", file=sys.stderr)

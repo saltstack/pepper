@@ -112,6 +112,7 @@ Library
     api.local("*", "test.ping")
     api.local("G@os:Debian", "pkg.version", ["openssl"], tgt_type="compound")
     api.runner("jobs.lookup_jid", jid="20261105120000000000")
+    api.logout()
 
 ``local(..., full_return=True)`` returns each minion's retcode along with its
 result, as the CLI asks for.

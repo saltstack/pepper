@@ -2,6 +2,7 @@ from unittest.mock import patch
 
 import pytest
 
+from pepper.exceptions import PepperException
 from pepper.libpepper import Pepper
 
 
@@ -71,3 +72,23 @@ def test_local_options(sent):
 def test_local_batch_size(sent):
     Pepper().local_batch("*", "test.ping", batch="10")
     assert sent()[0]["batch"] == "10"
+
+
+def test_logout_forgets_token():
+    api = Pepper()
+    api.auth = {"token": "abc"}
+    with patch.object(
+        Pepper, "req", autospec=True, return_value={"return": "ok"}
+    ) as req:
+        assert api.logout() == {"return": "ok"}
+    assert req.call_args.args[1:] == ("/logout", {})
+    assert api.auth == {}
+
+
+def test_logout_forgets_token_on_error():
+    api = Pepper()
+    api.auth = {"token": "abc"}
+    with patch.object(Pepper, "req", autospec=True, side_effect=PepperException("x")):
+        with pytest.raises(PepperException):
+            api.logout()
+    assert api.auth == {}

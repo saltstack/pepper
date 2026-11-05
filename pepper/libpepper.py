@@ -758,6 +758,18 @@ class Pepper:
         self.auth = self._send_auth("/login", **kwargs).get("return", [{}])[0]
         return self.auth
 
+    def logout(self):
+        """
+        End the salt-api session and forget its token
+
+        Uses rest_cherrypy's /logout. rest_tornado has no /logout and answers
+        with an error, but the token is forgotten either way.
+        """
+        try:
+            return self.req("/logout", {})
+        finally:
+            self.auth = {}
+
     def token(self, **kwargs):
         """
         Get an eauth token from Salt for use with the /run URL

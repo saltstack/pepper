@@ -122,7 +122,9 @@ class Pepper:
                             )
                 else:
                     if self.cli.options.output_file is not None:
-                        with open(self.cli.options.output_file, "a") as ofile:
+                        with open(
+                            self.cli.options.output_file, "a", encoding="utf-8"
+                        ) as ofile:
                             print(result, file=ofile)
                     else:
                         print(result)
@@ -136,7 +138,7 @@ class Pepper:
         except KeyboardInterrupt:
             # TODO: mimic CLI and output JID on ctrl-c
             return 0
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             print(e)
             print(
                 "Uncaught Pepper error (increase verbosity for the full traceback).",

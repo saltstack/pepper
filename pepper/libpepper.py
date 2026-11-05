@@ -14,7 +14,7 @@ from pepper.exceptions import PepperException
 
 try:
     ssl._create_default_https_context = ssl._create_stdlib_context
-except Exception:
+except Exception:  # pylint: disable=broad-exception-caught
     pass
 
 import urllib.parse as urlparse
@@ -115,7 +115,6 @@ class Pepper:
             headers.setdefault("X-Auth-Token", self.auth["token"])
         else:
             raise PepperException("Authentication required")
-            return
         params = {
             "url": self._construct_url(path),
             "headers": headers,
@@ -127,17 +126,14 @@ class Pepper:
 
             if resp.status_code == 401:
                 raise PepperException(str(resp.status_code) + ":Authentication denied")
-                return
 
             if resp.status_code == 500:
                 raise PepperException(str(resp.status_code) + ":Server error.")
-                return
 
             if resp.status_code == 404:
                 raise PepperException(
                     str(resp.status_code) + " :This request returns nothing."
                 )
-                return
         except PepperException as e:
             print(e)
             return
@@ -161,7 +157,6 @@ class Pepper:
             headers.setdefault("X-Auth-Token", self.auth["token"])
         else:
             raise PepperException("Authentication required")
-            return
         params = {
             "url": self._construct_url(path),
             "headers": headers,
@@ -172,17 +167,14 @@ class Pepper:
 
             if resp.status_code == 401:
                 raise PepperException(str(resp.status_code) + ":Authentication denied")
-                return
 
             if resp.status_code == 500:
                 raise PepperException(str(resp.status_code) + ":Server error.")
-                return
 
             if resp.status_code == 404:
                 raise PepperException(
                     str(resp.status_code) + " :This request returns nothing."
                 )
-                return
         except PepperException as e:
             print(e)
             return
@@ -238,7 +230,7 @@ class Pepper:
 
         # Send request
         try:
-            if not (self._ssl_verify):
+            if not self._ssl_verify:
                 con = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
                 f = urlopen(req, context=con)
             else:

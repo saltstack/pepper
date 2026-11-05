@@ -124,7 +124,7 @@ def pepperconfig(salt_api_port):
             salt_api_port
         )
     )
-    with open("tests/.pepperrc", "w") as pepper_file:
+    with open("tests/.pepperrc", "w", encoding="utf-8") as pepper_file:
         print(config, file=pepper_file)
     yield
     os.remove("tests/.pepperrc")
@@ -183,7 +183,7 @@ def pepper_cli(
         )
         exitcode = pepper.script.Pepper()()
         try:
-            with open(output_file) as result:
+            with open(output_file, encoding="utf-8") as result:
                 try:
                     return yaml.load(result)
                 except yaml.parser.ParserError:
@@ -193,7 +193,7 @@ def pepper_cli(
                         for ret in result.read().split('}"\n')
                         if ret
                     ]
-        except Exception as exc:
+        except Exception as exc:  # pylint: disable=broad-exception-caught
             log.error("ExitCode %s: %s", exitcode, exc)
             return exitcode
 

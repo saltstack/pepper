@@ -6,9 +6,8 @@ A CLI interface to a remote salt-api instance
 import getpass
 import json
 import logging
-import optparse
+import optparse  # pylint: disable=deprecated-module
 import os
-import sys
 import textwrap
 import time
 from configparser import ConfigParser
@@ -604,14 +603,14 @@ class PepperCli:
 
         if self.options.json_file:
             try:
-                with open(self.options.json_file) as json_content:
+                with open(self.options.json_file, encoding="utf-8") as json_content:
                     try:
                         return json.load(json_content)
                     except JSONDecodeError:
                         raise PepperArgumentsException("Invalid JSON given.")
             except FileNotFoundError:
                 raise PepperArgumentsException(
-                    "Cannot open file: %s", self.options.json_file
+                    f"Cannot open file: {self.options.json_file}"
                 )
 
         args = list(self.args)
@@ -738,12 +737,12 @@ class PepperCli:
         if self.options.mktoken:
             token_file = self.options.cache
             try:
-                with open(token_file) as f:
+                with open(token_file, encoding="utf-8") as f:
                     auth = json.load(f)
                 if auth["expire"] < time.time() + 30:
                     logger.error("Login token expired")
                     raise Exception("Login token expired")
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-exception-caught
                 if e.args[0] != 2:
                     logger.error(
                         f"Unable to load login token from {token_file} {str(e)}"
@@ -751,12 +750,12 @@ class PepperCli:
                     if os.path.isfile(token_file):
                         os.remove(token_file)
                 auth = login(**self.parse_login())
+                oldumask = os.umask(0)
                 try:
-                    oldumask = os.umask(0)
                     fdsc = os.open(token_file, os.O_WRONLY | os.O_CREAT, 0o600)
                     with os.fdopen(fdsc, "wt") as f:
                         json.dump(auth, f)
-                except Exception as e:
+                except Exception as e:  # pylint: disable=broad-exception-caught
                     logger.error(f"Unable to save token to {token_file} {str(e)}")
                 finally:
                     os.umask(oldumask)

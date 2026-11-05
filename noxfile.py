@@ -100,14 +100,12 @@ def _install_requirements(
             session.install(pkg, silent=PIP_INSTALL_SILENT)
 
 
-"""
-Nox session to run tests for corresponding python versions and salt versions
-"""
-
-
 @nox.session(python=PYTHON_VERSIONS)
 @nox.parametrize("api_backend", API_BACKEND)
 def tests(session, api_backend):
+    """
+    Run the test suite against a salt-api backend
+    """
     _install_requirements(session)
 
     args = [

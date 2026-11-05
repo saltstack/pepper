@@ -282,12 +282,12 @@ class PepperCli:
             self.parser, "Targeting Options", "Target which minions to run commands on"
         )
 
-        optgroup.defaults.update({"expr_form": "glob"})
+        optgroup.defaults.update({"tgt_type": "glob"})
 
         optgroup.add_option(
             "-E",
             "--pcre",
-            dest="expr_form",
+            dest="tgt_type",
             action="store_const",
             const="pcre",
             help="Target hostnames using PCRE regular expressions",
@@ -296,7 +296,7 @@ class PepperCli:
         optgroup.add_option(
             "-L",
             "--list",
-            dest="expr_form",
+            dest="tgt_type",
             action="store_const",
             const="list",
             help="Specify a comma delimited list of hostnames",
@@ -305,7 +305,7 @@ class PepperCli:
         optgroup.add_option(
             "-G",
             "--grain",
-            dest="expr_form",
+            dest="tgt_type",
             action="store_const",
             const="grain",
             help="Target based on system properties",
@@ -313,7 +313,7 @@ class PepperCli:
 
         optgroup.add_option(
             "--grain-pcre",
-            dest="expr_form",
+            dest="tgt_type",
             action="store_const",
             const="grain_pcre",
             help="Target based on PCRE matches on system properties",
@@ -322,7 +322,7 @@ class PepperCli:
         optgroup.add_option(
             "-I",
             "--pillar",
-            dest="expr_form",
+            dest="tgt_type",
             action="store_const",
             const="pillar",
             help="Target based on pillar values",
@@ -330,7 +330,7 @@ class PepperCli:
 
         optgroup.add_option(
             "--pillar-pcre",
-            dest="expr_form",
+            dest="tgt_type",
             action="store_const",
             const="pillar_pcre",
             help="Target based on PCRE matches on pillar values",
@@ -339,7 +339,7 @@ class PepperCli:
         optgroup.add_option(
             "-R",
             "--range",
-            dest="expr_form",
+            dest="tgt_type",
             action="store_const",
             const="range",
             help="Target based on range expression",
@@ -348,7 +348,7 @@ class PepperCli:
         optgroup.add_option(
             "-C",
             "--compound",
-            dest="expr_form",
+            dest="tgt_type",
             action="store_const",
             const="compound",
             help="Target based on compound expression",
@@ -357,7 +357,7 @@ class PepperCli:
         optgroup.add_option(
             "-N",
             "--nodegroup",
-            dest="expr_form",
+            dest="tgt_type",
             action="store_const",
             const="nodegroup",
             help="Target based on a named nodegroup",
@@ -685,7 +685,7 @@ class PepperCli:
             if len(args) < 2:
                 self.parser.error("Command or target not specified")
 
-            low["tgt_type"] = self.options.expr_form
+            low["tgt_type"] = self.options.tgt_type
             low["tgt"] = args.pop(0)
             low["fun"] = args.pop(0)
             low["batch"] = self.options.batch
@@ -727,7 +727,7 @@ class PepperCli:
             if len(args) < 2:
                 self.parser.error("Command or target not specified")
 
-            low["tgt_type"] = self.options.expr_form
+            low["tgt_type"] = self.options.tgt_type
             low["tgt"] = args.pop(0)
             low["fun"] = args.pop(0)
             low["batch"] = self.options.batch

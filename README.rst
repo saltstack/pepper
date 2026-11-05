@@ -68,6 +68,22 @@ Examples leveraging the runner client.
     pepper --client runner reactor.list
     pepper --client runner reactor.add event='test/provision/*' reactors='/srv/salt/state/reactor/test-provision.sls'
 
+Library
+-------
+
+.. code-block:: python
+
+    from pepper import Pepper
+
+    api = Pepper("https://salt.example.com:8000")
+    api.login("saltdev", "saltdev", "pam")
+    api.local("*", "test.ping")
+    api.local("G@os:Debian", "pkg.version", ["openssl"], tgt_type="compound")
+    api.runner("jobs.lookup_jid", jid="20261105120000000000")
+
+``local(..., full_return=True)`` returns each minion's retcode along with its
+result, as the CLI asks for.
+
 Configuration
 -------------
 

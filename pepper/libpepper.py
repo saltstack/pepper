@@ -12,6 +12,7 @@ import os
 import re
 import ssl
 import urllib.parse as urlparse
+import warnings
 from urllib.error import HTTPError, URLError
 from urllib.request import (
     HTTPHandler,
@@ -461,98 +462,147 @@ class Pepper:
         """
         return self.req(path, lowstate)
 
+    def _local_low(
+        self,
+        client,
+        tgt,
+        fun,
+        arg,
+        kwarg,
+        tgt_type,
+        expr_form,
+        full_return=False,
+        **extra,
+    ):
+        """
+        Build and send the low data for the local clients
+        """
+        if expr_form is not None:
+            warnings.warn(
+                "The expr_form argument is deprecated, use tgt_type instead. "
+                "Salt 2019.2 and later ignore expr_form.",
+                DeprecationWarning,
+                stacklevel=3,
+            )
+            tgt_type = expr_form
+
+        low = {
+            "client": client,
+            "tgt": tgt,
+            "fun": fun,
+        }
+
+        if arg:
+            low["arg"] = arg
+
+        if kwarg:
+            low["kwarg"] = kwarg
+
+        if tgt_type:
+            low["tgt_type"] = tgt_type
+
+        if full_return:
+            low["full_return"] = True
+
+        low.update({key: value for key, value in extra.items() if value})
+
+        return self.low([low])
+
     def local(
-        self, tgt, fun, arg=None, kwarg=None, expr_form="glob", timeout=None, ret=None
+        self,
+        tgt,
+        fun,
+        arg=None,
+        kwarg=None,
+        tgt_type="glob",
+        timeout=None,
+        ret=None,
+        *,
+        full_return=False,
+        expr_form=None,
     ):
         """
         Run a single command using the ``local`` client
 
         Wraps :meth:`low`.
+
+        :param full_return: Return the minion retcodes along with the results
+        :param expr_form: Deprecated alias for ``tgt_type``
         """
-        low = {
-            "client": "local",
-            "tgt": tgt,
-            "fun": fun,
-        }
-
-        if arg:
-            low["arg"] = arg
-
-        if kwarg:
-            low["kwarg"] = kwarg
-
-        if expr_form:
-            low["expr_form"] = expr_form
-
-        if timeout:
-            low["timeout"] = timeout
-
-        if ret:
-            low["ret"] = ret
-
-        return self.low([low])
+        return self._local_low(
+            "local",
+            tgt,
+            fun,
+            arg,
+            kwarg,
+            tgt_type,
+            expr_form,
+            full_return,
+            timeout=timeout,
+            ret=ret,
+        )
 
     def local_async(
-        self, tgt, fun, arg=None, kwarg=None, expr_form="glob", timeout=None, ret=None
+        self,
+        tgt,
+        fun,
+        arg=None,
+        kwarg=None,
+        tgt_type="glob",
+        timeout=None,
+        ret=None,
+        *,
+        expr_form=None,
     ):
         """
         Run a single command using the ``local_async`` client
 
         Wraps :meth:`low`.
+
+        :param expr_form: Deprecated alias for ``tgt_type``
         """
-        low = {
-            "client": "local_async",
-            "tgt": tgt,
-            "fun": fun,
-        }
-
-        if arg:
-            low["arg"] = arg
-
-        if kwarg:
-            low["kwarg"] = kwarg
-
-        if expr_form:
-            low["expr_form"] = expr_form
-
-        if timeout:
-            low["timeout"] = timeout
-
-        if ret:
-            low["ret"] = ret
-
-        return self.low([low])
+        return self._local_low(
+            "local_async",
+            tgt,
+            fun,
+            arg,
+            kwarg,
+            tgt_type,
+            expr_form,
+            timeout=timeout,
+            ret=ret,
+        )
 
     def local_batch(
-        self, tgt, fun, arg=None, kwarg=None, expr_form="glob", batch="50%", ret=None
+        self,
+        tgt,
+        fun,
+        arg=None,
+        kwarg=None,
+        tgt_type="glob",
+        batch="50%",
+        ret=None,
+        *,
+        expr_form=None,
     ):
         """
         Run a single command using the ``local_batch`` client
 
         Wraps :meth:`low`.
+
+        :param expr_form: Deprecated alias for ``tgt_type``
         """
-        low = {
-            "client": "local_batch",
-            "tgt": tgt,
-            "fun": fun,
-        }
-
-        if arg:
-            low["arg"] = arg
-
-        if kwarg:
-            low["kwarg"] = kwarg
-
-        if expr_form:
-            low["expr_form"] = expr_form
-
-        if batch:
-            low["batch"] = batch
-
-        if ret:
-            low["ret"] = ret
-
-        return self.low([low])
+        return self._local_low(
+            "local_batch",
+            tgt,
+            fun,
+            arg,
+            kwarg,
+            tgt_type,
+            expr_form,
+            batch=batch,
+            ret=ret,
+        )
 
     def lookup_jid(self, jid):
         """

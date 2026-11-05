@@ -9,24 +9,11 @@ import json
 import logging
 import re
 import ssl
-
-from pepper.exceptions import PepperException
-
-try:
-    ssl._create_default_https_context = ssl._create_stdlib_context
-except Exception:  # pylint: disable=broad-exception-caught
-    pass
-
 import urllib.parse as urlparse
 from urllib.error import HTTPError, URLError
-from urllib.request import (
-    HTTPHandler,
-    HTTPSHandler,
-    Request,
-    build_opener,
-    install_opener,
-    urlopen,
-)
+from urllib.request import HTTPHandler, HTTPSHandler, Request, build_opener
+
+from pepper.exceptions import PepperException
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +61,7 @@ class Pepper:
 
         :param debug_http: Add a flag to urllib to output the HTTP exchange
 
-        :param ignore_ssl_errors: Add a flag to urllib to ignore invalid SSL certificates
+        :param ignore_ssl_errors: Do not verify the salt-api TLS certificate
 
         :raises PepperException: if the api_url is misformed
 
@@ -201,13 +188,10 @@ class Pepper:
             "X-Requested-With": "XMLHttpRequest",
         }
 
-        opener = build_opener()
-        for handler in opener.handlers:
-            if isinstance(handler, HTTPHandler):
-                handler.set_http_debuglevel(self.debug_http)
-            if isinstance(handler, HTTPSHandler):
-                handler.set_http_debuglevel(self.debug_http)
-        install_opener(opener)
+        opener = build_opener(
+            HTTPHandler(debuglevel=self.debug_http),
+            HTTPSHandler(debuglevel=self.debug_http, context=self._ssl_context()),
+        )
 
         # Build POST data
         if data is not None:
@@ -230,11 +214,7 @@ class Pepper:
 
         # Send request
         try:
-            if not self._ssl_verify:
-                con = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-                f = urlopen(req, context=con)
-            else:
-                f = urlopen(req)
+            f = opener.open(req)
             content = f.read().decode("utf-8")
             if self.debug_http:
                 logger.debug("Response: %s", content)
@@ -245,6 +225,13 @@ class Pepper:
 
         except (HTTPError, URLError) as exc:
             logger.debug("Error with request", exc_info=True)
+            if isinstance(getattr(exc, "reason", None), ssl.SSLCertVerificationError):
+                raise PepperException(
+                    f"TLS certificate verification failed for {url}: "
+                    f"{exc.reason.verify_message.rstrip('.')}. Use "
+                    "--ignore-ssl-errors (ignore_ssl_errors=True) to skip "
+                    "verification."
+                )
             status = getattr(exc, "code", None)
 
             if status == 401:
@@ -260,6 +247,16 @@ class Pepper:
             raise PepperException("Unable to parse the server response.")
 
         return ret
+
+    def _ssl_context(self):
+        """
+        Return the SSL context for HTTPS requests
+        """
+        context = ssl.create_default_context()
+        if not self._ssl_verify:
+            context.check_hostname = False
+            context.verify_mode = ssl.CERT_NONE
+        return context
 
     def req_requests(self, path, data=None):
         """

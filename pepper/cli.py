@@ -146,8 +146,8 @@ class PepperCli:
             default=False,
             help=textwrap.dedent(
                 """
-                Ignore any SSL certificate that may be encountered. Note that it is
-                recommended to resolve certificate errors for production.
+                Do not verify the salt-api TLS certificate. Certificates are
+                verified by default.
             """
             ),
         )

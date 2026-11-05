@@ -82,6 +82,13 @@ or in a configuration file ``$HOME/.pepperrc`` with the following syntax :
   SALTAPI_PASS=saltdev
   SALTAPI_EAUTH=pam
 
+TLS
+---
+
+Pepper verifies the salt-api TLS certificate against the system's trusted CA
+certificates. ``--ignore-ssl-errors`` turns verification off, which should only
+be used for testing.
+
 Contributing
 ------------
 

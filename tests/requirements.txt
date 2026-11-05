@@ -1,13 +1,6 @@
-mock
 pytest>=6.0.0
 flake8-pyproject
 pytest-rerunfailures
 pytest-cov
-pytest-salt-factories==1.0.4
+pytest-salt-factories==1.0.5
 CherryPy
-setuptools_scm==7.1.0
-importlib-metadata<5.0.0
-pyzmq>=25.1.2 ; python_version < '3.13'
-pyzmq>=26.2.0 ; python_version >= '3.13'
-cryptography>=42.0.0; python_version < '3.13'
-cryptography==42.0.2; python_version >= '3.13'

@@ -123,6 +123,21 @@ class PepperRetcode:
             return 1
         return 0
 
+    @staticmethod
+    def no_minions_matched(result):
+        """
+        Whether the result of a local command says that no minions matched
+
+        salt-api answers a target that matches no minions with an empty
+        return. A target that matches a minion that does not respond still
+        gets an entry for that minion.
+        """
+        return (
+            isinstance(result, list)
+            and bool(result)
+            and all(isinstance(ret, dict) and not ret for ret in result)
+        )
+
     @classmethod
     def minions_failed(cls, result):
         """

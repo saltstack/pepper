@@ -25,6 +25,10 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+NO_MINIONS_MATCHED = (
+    "No minions matched the target. No command was sent, no jid was assigned."
+)
+
 
 class Pepper:
     def __init__(self):
@@ -59,6 +63,14 @@ class Pepper:
             options.fail_all,
             options.fail_all_none,
         )
+        if (
+            not any(fail_options)
+            and options.client.startswith("local")
+            and PepperRetcode.no_minions_matched(data)
+        ):
+            # The salt command prints this and exits with 2
+            print(NO_MINIONS_MATCHED, file=sys.stderr)
+            return 2
         if retcode and not any(fail_options) and PepperRetcode.minions_failed(data):
             print("ERROR: Minions returned with non-zero exit code", file=sys.stderr)
         return retcode

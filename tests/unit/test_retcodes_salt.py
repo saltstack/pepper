@@ -107,3 +107,35 @@ def test_fail_option_suppresses_warning(capsys):
     ):
         assert pepper.script.Pepper()() == 0
     assert "Minions returned" not in capsys.readouterr().err
+
+
+def _exit(capsys, result, *args):
+    sys.argv = ["pepper", *args, "nomatch", "test.ping"]
+    with (
+        patch("pepper.cli.PepperCli.login", MagicMock()),
+        patch("pepper.cli.PepperCli.low", MagicMock(return_value={"return": result})),
+    ):
+        exit_code = pepper.script.Pepper()()
+    return exit_code, capsys.readouterr().err
+
+
+@pytest.mark.parametrize("args", [[], ["--client=local_async"]], ids=["local", "async"])
+def test_no_minions_matched(capsys, args):
+    # salt-api 3007 and 3008 answer a target that matches nothing with {}
+    exit_code, err = _exit(capsys, [{}], *args)
+    assert exit_code == 2
+    assert "No minions matched the target. No command was sent" in err
+
+
+def test_no_minions_matched_with_fail_option(capsys):
+    # The --fail-* options keep their own rules
+    exit_code, err = _exit(capsys, [{}], "--fail-any")
+    assert exit_code == 0
+    assert "No minions matched" not in err
+
+
+@pytest.mark.parametrize(
+    "result", [[{"a": False}], [], [{}, {"a": {"ret": True, "retcode": 0}}]]
+)
+def test_not_no_minions_matched(result):
+    assert not PepperRetcode.no_minions_matched(result)

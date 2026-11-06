@@ -4,14 +4,12 @@ Pepper
 
 .. image:: https://img.shields.io/pypi/v/salt-pepper.svg
    :target: https://pypi.org/project/salt-pepper
-.. image:: https://travis-ci.com/saltstack/pepper.svg?branch=develop
-   :target: https://travis-ci.com/saltstack/pepper
+.. image:: https://github.com/saltstack/pepper/actions/workflows/test.yaml/badge.svg?branch=develop
+   :target: https://github.com/saltstack/pepper/actions/workflows/test.yaml
 .. image:: https://img.shields.io/pypi/pyversions/salt-pepper.svg
    :target: https://pypi.org/project/salt-pepper
 .. image:: https://img.shields.io/badge/license-Apache2-blue.svg?maxAge=3600
    :target: https://pypi.org/project/salt-pepper
-.. image:: https://codecov.io/gh/saltstack/pepper/branch/develop/graph/badge.svg
-   :target: https://codecov.io/gh/saltstack/pepper/branch/develop
 
 Pepper contains a Python library and CLI scripts for accessing a remote
 `salt-api`__ instance.
@@ -73,11 +71,32 @@ or in a configuration file ``$HOME/.pepperrc`` with the following syntax :
 Contributing
 ------------
 
-Please feel free to get involved by sending pull requests or join us on the
-Salt mailing list or on IRC in #salt or #salt-devel.
+Pull requests are welcome. This repo follows the same `contributing
+guidelines`__ as Salt. Open pull requests against the ``develop`` branch.
 
-This repo follows the same `contributing guidelines`__ as Salt and uses
-separate develop and master branches for in-progress additions and bug-fix
-changes respectively.
+The pre-commit hooks run the same formatters and linters as Salt (black,
+isort, pyupgrade, bandit and pylint):
 
-.. __: https://docs.saltstack.com/en/latest/topics/development/contributing.html
+.. code-block:: bash
+
+    pip install pre-commit
+    pre-commit install
+
+Changes that affect users need a changelog fragment in the ``changelog/``
+directory, named ``<issue number>.<type>.md``, where the type is one of
+``removed``, ``deprecated``, ``changed``, ``fixed``, ``added`` or
+``security``:
+
+.. code-block:: bash
+
+    echo "Fixed the exit code when a runner job fails" > changelog/195.fixed.md
+
+The test suite starts a salt-master, salt-minion and salt-api, and runs under
+nox:
+
+.. code-block:: bash
+
+    pip install nox
+    nox -e tests
+
+.. __: https://docs.saltproject.io/en/latest/topics/development/contributing.html

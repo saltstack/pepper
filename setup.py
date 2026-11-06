@@ -5,7 +5,7 @@ A CLI front-end to a running salt-api system
 """
 import setuptools
 
-with open("README.rst") as fh:
+with open("README.rst", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup_kwargs = {

@@ -1,13 +1,8 @@
 import json
 import sys
-from unittest.mock import MagicMock
-from unittest.mock import mock_open
-from unittest.mock import patch
+from unittest.mock import MagicMock, mock_open, patch
 
 import pepper.cli
-
-# Import Pepper Libraries
-# Import Testing Libraries
 
 
 def test_token():

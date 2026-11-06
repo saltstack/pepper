@@ -93,14 +93,18 @@ When salt is installed, results are shown with Salt's outputters, and
 
     pepper --state-output=changes --state-verbose=false '*' state.apply
 
-The runner and wheel clients take arguments the same way as ``salt-run``,
-as positional values and ``key=value`` pairs:
+The runner client takes positional values and ``key=value`` pairs, and the
+wheel client takes ``key=value`` pairs only. Unlike ``salt-run``, which reads
+values as YAML, pepper sends a ``key=value`` value as JSON when it is valid
+JSON and as a string otherwise, so write ``true``, ``false`` and JSON lists and
+objects: ``refresh=true`` sends a boolean, but ``refresh=True`` sends the
+string ``"True"``.
 
 .. code-block:: bash
 
     pepper --client runner reactor.list
     pepper --client runner reactor.add event='test/provision/*' reactors='/srv/salt/state/reactor/test-provision.sls'
-    pepper --client runner test.arg one two=what three='{"hello": "world"}'
+    pepper --client runner test.arg one two=true three='{"hello": "world"}' four='["a", "b"]'
     pepper --client wheel key.delete match=minion1
 
 Library

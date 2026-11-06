@@ -79,11 +79,22 @@ class PepperRetcode:
                 continue
             if "tag" in ret and isinstance(ret.get("data"), dict):
                 retcode = cls._job_retcode(ret["data"])
+                if (
+                    retcode is None
+                    and str(ret["tag"]).startswith("salt/wheel/")
+                    and ret["data"].get("success") is False
+                ):
+                    # A failed wheel call has no retcode, only success
+                    retcode = 1
                 if retcode is not None:
                     jobs.append(retcode)
                 continue
             for minion_ret in ret.values():
-                if (
+                if minion_ret is False:
+                    # salt-api before 3008 returns a bare False instead of a
+                    # full return for a minion that did not respond
+                    minions.append(1)
+                elif (
                     isinstance(minion_ret, dict)
                     and minion_ret.get("retcode") is not None
                 ):

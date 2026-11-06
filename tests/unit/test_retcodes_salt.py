@@ -28,6 +28,15 @@ ORCH_PASSED = _runner(
     **{"return": {"data": {"master": {}}, "outputter": "highstate", "retcode": 0}}
 )
 
+WHEEL_FAILED = {
+    "tag": "salt/wheel/20261105120000000000",
+    "data": {"fun": "wheel.key.finger", "return": "Error", "success": False},
+}
+WHEEL_PASSED = {
+    "tag": "salt/wheel/20261105120000000000",
+    "data": {"fun": "wheel.key.finger", "return": {}, "success": True},
+}
+
 
 @pytest.mark.parametrize(
     "result,expected",
@@ -43,6 +52,10 @@ ORCH_PASSED = _runner(
         ([_runner(**{"return": {"data": {"retcode": 6}}})], 6),
         ([_runner(**{"return": ["foo", "bar"]})], 0),
         ([{"minion": "no full_return"}], 0),
+        ([{"a": {"ret": True, "retcode": 0}, "b": False}], 1),
+        ([{"a": False}], 1),
+        ([WHEEL_FAILED], 1),
+        ([WHEEL_PASSED], 0),
         ([], 0),
         ("not a list", 0),
     ],

@@ -1,16 +1,16 @@
-# Import Python Libraries
 import sys
-from unittest.mock import MagicMock
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pepper
-
-# Import Pepper Libraries
 
 PAYLOAD = {
     "return": [
         {
-            "saltstack.ezh.msk.ru": {"jid": "20180414193904158892", "ret": "pass", "retcode": 0},
+            "saltstack.ezh.msk.ru": {
+                "jid": "20180414193904158892",
+                "ret": "pass",
+                "retcode": 0,
+            },
             "ezh.msk.ru": {
                 "jid": "20180414193904158892",
                 "ret": "Hello from SaltStack",

@@ -28,6 +28,7 @@ class PepperCli:
     def __init__(self, seconds_to_wait=3):
         self.seconds_to_wait = seconds_to_wait
         self._cached_auth = False
+        self._cache_key = None
         self.parser = self.get_parser()
         self.parser.option_groups.extend(
             [
@@ -809,13 +810,26 @@ class PepperCli:
 
     def _token_cache_key(self, api, user):
         """
-        Identify the cached token for the salt-api URL, user and eauth in use
+        Identify the cached token for the salt-api URL, user and eauth in use,
+        and whether it is a /login session token or a /token eauth token for
+        --run-uri
         """
         eauth = (
             self.options.eauth
             or self.get_config({"SALTAPI_EAUTH": "auto"})["SALTAPI_EAUTH"]
         )
-        return json.dumps([api.api_url, user, eauth])
+        kind = "run" if self.options.userun else "login"
+        return json.dumps([api.api_url, user, eauth, kind])
+
+    @staticmethod
+    def _token_expire(entry):
+        """
+        The expiry time of a cached token, 0 if it is missing or not a number
+        """
+        try:
+            return float(entry["auth"].get("expire", 0))
+        except (TypeError, ValueError):
+            return 0
 
     def _read_token_cache(self):
         """
@@ -854,7 +868,7 @@ class PepperCli:
         cache = {
             key: entry
             for key, entry in cache.items()
-            if entry["auth"].get("expire", 0) > now
+            if self._token_expire(entry) > now
         }
         directory = os.path.dirname(os.path.abspath(self.options.cache))
         try:
@@ -874,6 +888,7 @@ class PepperCli:
     def login(self, api, use_cache=True):
         login = api.token if self.options.userun else api.login
         self._cached_auth = False
+        self._cache_key = None
 
         user = self._login_user() if self.options.mktoken else None
         if user is None:
@@ -884,7 +899,7 @@ class PepperCli:
             key = self._token_cache_key(api, user)
             cache = self._read_token_cache()
             entry = cache.get(key) if use_cache else None
-            if entry and entry["auth"].get("expire", 0) > time.time() + 30:
+            if entry and self._token_expire(entry) > time.time() + 30:
                 auth = entry["auth"]
                 # The salt-api version normally comes with the login response.
                 # parse_cmd() and low() need it to pass arguments and the
@@ -892,6 +907,7 @@ class PepperCli:
                 if entry.get("salt_version") and not api.salt_version:
                     api.salt_version = tuple(entry["salt_version"])
                 self._cached_auth = True
+                self._cache_key = key
             else:
                 auth = login(**self.parse_login())
                 if auth.get("token"):
@@ -918,9 +934,14 @@ class PepperCli:
             if not self._cached_auth:
                 raise
             logger.warning("salt-api rejected the cached token, logging in again")
+            key = self._cache_key
             try:
                 self.login(api, use_cache=False)
             except PepperAuthException:
+                # Do not offer the rejected token again on the next run
+                cache = self._read_token_cache()
+                if cache.pop(key, None) is not None:
+                    self._write_token_cache(cache)
                 raise exc
             return func(*args)
 

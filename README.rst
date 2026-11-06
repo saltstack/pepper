@@ -88,9 +88,10 @@ Tokens
 ``-T`` (``--make-token``) saves the salt-api token in ``~/.peppercache`` (or
 the file given with ``-x`` or ``PEPPERCACHE``) and reuses it until it expires,
 so the password is only needed when a new token has to be requested. The file
-holds one token for each salt-api URL, user and eauth. If salt-api rejects a
-cached token, for example after a restart, pepper logs in again once and
-replaces it.
+holds one token for each salt-api URL, user, eauth and token type (``-r``
+uses its own). If salt-api rejects a cached token, for example after a
+restart, pepper logs in again once and replaces it. If it cannot log in again,
+it removes the rejected token from the file.
 
 TLS
 ---

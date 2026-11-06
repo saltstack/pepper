@@ -188,9 +188,38 @@ def test_rejected_cached_token_without_credentials(make_cli, cache_file):
     low = MagicMock(side_effect=PepperAuthException("Authentication denied: no"))
     with pytest.raises(PepperAuthException, match="Authentication denied: no"):
         cli._call(api, low)
-    # Without credentials to log in with, the cached token is kept
-    assert _tokens(cache_file) == ["valid"]
+    # Without credentials to log in with, the rejected token is dropped so the
+    # next run does not offer it again
+    assert _cached(cache_file) == {}
     api.login.assert_not_called()
+
+
+def test_run_uri_tokens_are_kept_apart(make_cli, cache_file):
+    make_cli().login(_api("https://api1.example.com/", token="session"))
+    api = _api("https://api1.example.com/")
+    api.token = MagicMock(return_value={"token": "eauth", "expire": time.time() + 3600})
+    assert make_cli("api1", "--run-uri").login(api)["token"] == "eauth"
+    assert _tokens(cache_file) == ["eauth", "session"]
+
+    api = _api("https://api1.example.com/", token="unused")
+    assert make_cli().login(api)["token"] == "session"
+    api.login.assert_not_called()
+
+
+@pytest.mark.parametrize("expire", ["soon", None, [1]], ids=["string", "null", "list"])
+def test_non_numeric_expire(make_cli, cache_file, expire):
+    cli = make_cli()
+    api = _api("https://api1.example.com/")
+    other = json.dumps(["https://api2.example.com/", "pepper", "pam", "login"])
+    cache_file.write_text(
+        json.dumps({other: {"auth": {"token": "odd", "expire": expire}}})
+    )
+    assert cli.login(api)["token"] == "new-token"
+    assert _tokens(cache_file) == ["new-token"]
+
+    api = _api("https://api1.example.com/")
+    api.login.return_value = {"token": "odd", "expire": expire}
+    make_cli().login(api)
 
 
 def test_permission_error_keeps_new_token(make_cli, cache_file):

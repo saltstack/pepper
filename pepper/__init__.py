@@ -1,11 +1,10 @@
 """
 Pepper is a CLI front-end to salt-api
 """
-from importlib.metadata import PackageNotFoundError
-from importlib.metadata import version
 
-from pepper.libpepper import Pepper
-from pepper.libpepper import PepperException
+from importlib.metadata import PackageNotFoundError, version
+
+from pepper.libpepper import Pepper, PepperException
 
 __all__ = ("__version__", "Pepper", "PepperException")
 

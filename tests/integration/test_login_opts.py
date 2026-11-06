@@ -1,7 +1,7 @@
 def test_cli_opts(pepper_cli, session_minion_id, salt_api_port):
     """Test the using a profile"""
     ret = pepper_cli(
-        "--saltapi-url=http://localhost:{}/".format(salt_api_port),
+        f"--saltapi-url=http://localhost:{salt_api_port}/",
         "--eauth=sharedsecret",
         "--username=pepper",
         "--password=pepper",
@@ -28,7 +28,7 @@ def test_cli_opts_not_in_profile(pepper_cli, session_minion_id, salt_api_port):
 def test_cli_api_not_in_profile(pepper_cli, session_minion_id, salt_api_port):
     """Test the using a profile"""
     ret = pepper_cli(
-        "--saltapi-url=http://localhost:{}/".format(salt_api_port),
+        f"--saltapi-url=http://localhost:{salt_api_port}/",
         "*",
         "test.ping",
         profile="noapi",

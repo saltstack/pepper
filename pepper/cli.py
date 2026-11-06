@@ -606,7 +606,7 @@ class PepperCli:
                 with open(self.options.json_file, encoding="utf-8") as json_content:
                     try:
                         return json.load(json_content)
-                    except JSONDecodeError:
+                    except (JSONDecodeError, UnicodeDecodeError):
                         raise PepperArgumentsException("Invalid JSON given.")
             except FileNotFoundError:
                 raise PepperArgumentsException(

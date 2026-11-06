@@ -113,6 +113,14 @@ rather than adding to them. Kerberos logins and the library methods that use
 (``--client-cert-key``) can be left out when the client certificate file also
 contains the private key.
 
+A private CA certificate that Python 3.13 rejects for lacking keyUsage can also
+be worked around by passing the salt-api server certificate itself as
+``--ca-bundle``.
+
+Pepper uses these settings when salt-api redirects it from HTTP to HTTPS. It
+refuses to follow a redirect from HTTPS to HTTP, and does not send the salt-api
+token on when a redirect goes to another host or port.
+
 Contributing
 ------------
 

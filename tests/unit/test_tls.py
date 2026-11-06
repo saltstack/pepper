@@ -5,6 +5,8 @@ import json
 import ssl
 import sys
 import threading
+from unittest.mock import MagicMock
+from urllib.error import URLError
 
 import pytest
 
@@ -239,8 +241,27 @@ def test_ca_bundle_directory(tmp_path, monkeypatch):
 @pytest.mark.parametrize("https_api", [True], ids=["client-cert"], indirect=True)
 def test_client_cert_required(https_api, tls_files):
     api = pepper.libpepper.Pepper(https_api, ca_bundle=str(tls_files["ca_cert"]))
-    with pytest.raises(OSError):
+    # Depending on timing the client sees the server's alert or a reset
+    with pytest.raises((PepperException, OSError)):
         api.req("/login", {"username": "pepper"})
+
+
+@pytest.mark.parametrize("wrapped", [False, True], ids=["read", "handshake"])
+def test_certificate_required_alert(monkeypatch, wrapped):
+    alert = ssl.SSLError(
+        1, "[SSL: TLSV13_ALERT_CERTIFICATE_REQUIRED] tlsv13 alert certificate required"
+    )
+    opener = MagicMock()
+    opener.open.side_effect = URLError(alert) if wrapped else alert
+    monkeypatch.setattr(pepper.libpepper, "build_opener", lambda *a: opener)
+    api = pepper.libpepper.Pepper("https://localhost:1/")
+    with pytest.raises(PepperException, match="requires a client certificate"):
+        api.req("/login", {"username": "pepper"})
+
+
+def test_client_cert_key_without_cert():
+    with pytest.raises(PepperException, match="client_cert_key needs client_cert"):
+        pepper.libpepper.Pepper(client_cert_key="client.key")
 
 
 @pytest.mark.parametrize("https_api", [True], ids=["client-cert"], indirect=True)
@@ -347,3 +368,107 @@ def test_uppercase_scheme_uses_tls_options(https_api, tls_files):
     url = https_api.replace("https://", "HTTPS://")
     api = pepper.libpepper.Pepper(url, ca_bundle=str(tls_files["ca_cert"]))
     assert api.req("/login", {"username": "pepper"}) == LOGIN_RESPONSE
+
+
+class _RedirectHandler(http.server.BaseHTTPRequestHandler):
+    """
+    Redirect /redirect to the server's location, answer anything else with a
+    login token, and record the headers of each request
+    """
+
+    def do_GET(self):  # pylint: disable=invalid-name
+        self.server.requests.append((self.path, dict(self.headers)))
+        if self.path == "/redirect":
+            self.send_response(302)
+            self.send_header("Location", self.server.location)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return
+        body = json.dumps(LOGIN_RESPONSE).encode()
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def log_message(self, *args):  # pylint: disable=arguments-differ
+        pass
+
+
+@pytest.fixture
+def redirect_server(tls_files):
+    """
+    Start servers that redirect /redirect to a location set by the test
+
+    Call the fixture with the location and True for HTTPS; it returns the
+    server, whose base URL is in server.url and requests in server.requests.
+    """
+    servers = []
+
+    def _start(location=None, tls=False):
+        server = _QuietHTTPServer(("127.0.0.1", 0), _RedirectHandler)
+        scheme = "http"
+        if tls:
+            context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+            context.load_cert_chain(tls_files["server_cert"], tls_files["server_key"])
+            server.socket = context.wrap_socket(server.socket, server_side=True)
+            scheme = "https"
+        server.location = location
+        server.requests = []
+        server.url = f"{scheme}://127.0.0.1:{server.server_address[1]}"
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        servers.append((server, thread))
+        return server
+
+    yield _start
+    for server, thread in servers:
+        server.shutdown()
+        server.server_close()
+        thread.join()
+
+
+@pytest.mark.parametrize("https_api", [True], ids=["client-cert"], indirect=True)
+def test_redirect_to_https_uses_tls_options(https_api, tls_files, redirect_server):
+    server = redirect_server(location=f"{https_api}/")
+    api = pepper.libpepper.Pepper(
+        server.url,
+        ca_bundle=str(tls_files["ca_cert"]),
+        client_cert=str(tls_files["client_combined"]),
+    )
+    assert api.req("/redirect") == LOGIN_RESPONSE
+
+
+def test_redirect_from_https_to_http_is_refused(tls_files, redirect_server):
+    target = redirect_server()
+    server = redirect_server(location=f"{target.url}/", tls=True)
+    api = pepper.libpepper.Pepper(
+        server.url.replace("127.0.0.1", "localhost"),
+        ca_bundle=str(tls_files["ca_cert"]),
+    )
+    api.auth = {"token": "abc"}
+    with pytest.raises(PepperException, match="Refusing to follow a redirect"):
+        api.req("/redirect")
+    assert target.requests == []
+
+
+def test_redirect_to_another_host_drops_the_token(redirect_server):
+    target = redirect_server()
+    other_host = target.url.replace("127.0.0.1", "localhost")
+    server = redirect_server(location=f"{other_host}/")
+    api = pepper.libpepper.Pepper(server.url)
+    api.auth = {"token": "abc"}
+    assert api.req("/redirect") == LOGIN_RESPONSE
+    assert server.requests[0][1]["X-Auth-Token"] == "abc"
+    ((path, headers),) = target.requests
+    assert path == "/"
+    assert "X-Auth-Token" not in headers
+
+
+def test_redirect_on_the_same_host_keeps_the_token(redirect_server):
+    server = redirect_server()
+    server.location = f"{server.url}/"
+    api = pepper.libpepper.Pepper(server.url)
+    api.auth = {"token": "abc"}
+    assert api.req("/redirect") == LOGIN_RESPONSE
+    assert [h.get("X-Auth-Token") for _, h in server.requests] == ["abc", "abc"]

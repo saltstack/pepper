@@ -5,6 +5,7 @@ A Python library for working with Salt's REST API
 
 """
 
+import http.client
 import json
 import logging
 import os
@@ -12,11 +13,80 @@ import re
 import ssl
 import urllib.parse as urlparse
 from urllib.error import HTTPError, URLError
-from urllib.request import HTTPHandler, HTTPSHandler, Request, build_opener
+from urllib.request import (
+    HTTPHandler,
+    HTTPRedirectHandler,
+    HTTPSHandler,
+    Request,
+    build_opener,
+)
 
 from pepper.exceptions import PepperException
 
 logger = logging.getLogger(__name__)
+
+#: Headers that carry credentials, which are not sent on to another host
+AUTH_HEADERS = ("x-auth-token", "authorization")
+
+
+class _LazyHTTPSHandler(HTTPSHandler):
+    """
+    An HTTPS handler that only builds its SSL context when it opens an HTTPS
+    connection, so a plain HTTP salt-api URL never loads the TLS files and a
+    redirect from HTTP to HTTPS still uses the TLS options
+    """
+
+    def __init__(self, get_context, debuglevel=0):
+        super().__init__(debuglevel=debuglevel)
+        self._get_context = get_context
+
+    def https_open(self, req):
+        return self.do_open(
+            http.client.HTTPSConnection, req, context=self._get_context()
+        )
+
+
+def _origin(url):
+    """
+    The scheme, host and port of a URL, with the default port filled in
+    """
+    split = urlparse.urlsplit(url)
+    scheme = split.scheme.lower()
+    port = split.port or {"http": 80, "https": 443}.get(scheme)
+    return scheme, (split.hostname or "").lower(), port
+
+
+class _RedirectHandler(HTTPRedirectHandler):
+    """
+    Follow redirects like urllib, but refuse to go from HTTPS to HTTP and do
+    not send credentials on to another host, the way requests handles the
+    Authorization header
+    """
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        old_scheme, old_host, old_port = _origin(req.full_url)
+        new_scheme, new_host, new_port = _origin(urlparse.urljoin(req.full_url, newurl))
+        if old_scheme == "https" and new_scheme != "https":
+            raise PepperException(
+                f"Refusing to follow a redirect from {req.full_url} to {newurl}, "
+                "which is not HTTPS"
+            )
+        new_req = super().redirect_request(req, fp, code, msg, headers, newurl)
+        if new_req is None:
+            return None
+        # As requests does, an upgrade from http to https on the default
+        # ports of the same host counts as the same host
+        upgrade = (old_scheme, old_port, new_scheme, new_port) == (
+            "http",
+            80,
+            "https",
+            443,
+        )
+        if new_host != old_host or (new_port != old_port and not upgrade):
+            for name in list(new_req.headers):
+                if name.lower() in AUTH_HEADERS:
+                    del new_req.headers[name]
+        return new_req
 
 
 class Pepper:
@@ -77,15 +147,17 @@ class Pepper:
         :param client_cert_key: A PEM file with the private key for
             ``client_cert``
 
-        :raises PepperException: if the api_url is misformed
+        :raises PepperException: if the api_url is misformed, or
+            client_cert_key is given without client_cert
 
         """
         split = urlparse.urlsplit(api_url)
         if split.scheme not in ["http", "https"]:
             raise PepperException(f"salt-api URL missing HTTP(s) protocol: {api_url}")
+        if client_cert_key and not client_cert:
+            raise PepperException("client_cert_key needs client_cert")
 
         self.api_url = api_url
-        self._https = split.scheme == "https"
         self.debug_http = int(debug_http)
         self._ssl_verify = not ignore_ssl_errors
         self._ca_bundle = ca_bundle
@@ -209,10 +281,8 @@ class Pepper:
 
         opener = build_opener(
             HTTPHandler(debuglevel=self.debug_http),
-            HTTPSHandler(
-                debuglevel=self.debug_http,
-                context=(self._ssl_context() if self._https else None),
-            ),
+            _LazyHTTPSHandler(self._ssl_context, debuglevel=self.debug_http),
+            _RedirectHandler(),
         )
 
         # Build POST data
@@ -255,6 +325,8 @@ class Pepper:
                     "--ignore-ssl-errors (ignore_ssl_errors=True) to skip "
                     "verification."
                 )
+            if isinstance(getattr(exc, "reason", None), ssl.SSLError):
+                raise PepperException(self._tls_error(url, exc.reason))
             status = getattr(exc, "code", None)
 
             if status == 401:
@@ -265,11 +337,30 @@ class Pepper:
 
             logger.error(f"Error with request: {exc}")
             raise
+        except ssl.SSLError as exc:
+            # With TLS 1.3 the server checks the client certificate after the
+            # handshake, so its alert arrives when the response is read
+            logger.debug("Error with request", exc_info=True)
+            raise PepperException(self._tls_error(url, exc))
         except AttributeError:
             logger.debug("Error converting response from JSON", exc_info=True)
             raise PepperException("Unable to parse the server response.")
 
         return ret
+
+    @staticmethod
+    def _tls_error(url, exc):
+        """
+        A message for a TLS error other than a failed certificate verification
+        """
+        reason = getattr(exc, "reason", None) or str(exc)
+        message = f"TLS error from {url}: {reason}"
+        if "CERTIFICATE_REQUIRED" in str(reason).upper():
+            message += (
+                ". The server requires a client certificate; use --client-cert "
+                "(client_cert)."
+            )
+        return message
 
     def _ssl_context(self):
         """

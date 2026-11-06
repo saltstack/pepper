@@ -12,6 +12,7 @@ import logging
 import os
 import re
 import ssl
+import sys
 import urllib.parse as urlparse
 import warnings
 from urllib.error import HTTPError, URLError
@@ -30,6 +31,74 @@ logger = logging.getLogger(__name__)
 #: Headers that carry credentials, which are not sent on to another host
 AUTH_HEADERS = ("x-auth-token", "authorization")
 
+_REDACT_HEADERS = re.compile(
+    r"(?im)^((?:x-auth-token|authorization|cookie|set-cookie)[ \t]*:[ \t]*)[^\r\n]*"
+)
+_REDACT_JSON = re.compile(r'("(?:password|token)"\s*:\s*)"(?:[^"\\]|\\.)*"')
+
+
+def redact(text):
+    """
+    Replace passwords, tokens and session cookies in HTTP headers and JSON
+    bodies with [redacted]
+
+    :param text: a str, or bytes, which are decoded as latin-1
+    """
+    if isinstance(text, bytes):
+        text = text.decode("latin-1")
+    text = _REDACT_HEADERS.sub(r"\1[redacted]", text)
+    return _REDACT_JSON.sub(r'\1"[redacted]"', text)
+
+
+class _DebugResponse(http.client.HTTPResponse):
+    """
+    A response that prints its status and headers with debug_http, with
+    session cookies redacted, to stderr
+    """
+
+    def begin(self):
+        level, self.debuglevel = self.debuglevel, 0
+        try:
+            super().begin()
+        finally:
+            self.debuglevel = level
+        if level > 0:
+            print("reply:", self.status, self.reason, file=sys.stderr)
+            for name, value in self.headers.items():
+                print("header:", redact(f"{name}: {value}"), file=sys.stderr)
+
+
+class _DebugConnectionMixin:
+    """
+    Print what is sent with debug_http, with the password and token redacted,
+    to stderr instead of http.client's own output to stdout
+    """
+
+    response_class = _DebugResponse
+
+    def send(self, data):
+        if self.debuglevel <= 0:
+            return super().send(data)
+        print("send:", repr(redact(data)), file=sys.stderr)
+        level, self.debuglevel = self.debuglevel, 0
+        try:
+            return super().send(data)
+        finally:
+            self.debuglevel = level
+
+
+class _HTTPConnection(_DebugConnectionMixin, http.client.HTTPConnection):
+    pass
+
+
+class _HTTPSConnection(_DebugConnectionMixin, http.client.HTTPSConnection):
+    pass
+
+
+class _HTTPHandler(HTTPHandler):
+    def http_open(self, req):
+        return self.do_open(_HTTPConnection, req)
+
 
 class _LazyHTTPSHandler(HTTPSHandler):
     """
@@ -43,9 +112,7 @@ class _LazyHTTPSHandler(HTTPSHandler):
         self._get_context = get_context
 
     def https_open(self, req):
-        return self.do_open(
-            http.client.HTTPSConnection, req, context=self._get_context()
-        )
+        return self.do_open(_HTTPSConnection, req, context=self._get_context())
 
 
 def _origin(url):
@@ -298,7 +365,7 @@ class Pepper:
         }
 
         opener = build_opener(
-            HTTPHandler(debuglevel=self.debug_http),
+            _HTTPHandler(debuglevel=self.debug_http),
             _LazyHTTPSHandler(self._ssl_context, debuglevel=self.debug_http),
             _RedirectHandler(),
         )
@@ -327,7 +394,7 @@ class Pepper:
             f = opener.open(req)
             content = f.read().decode("utf-8")
             if self.debug_http:
-                logger.debug("Response: %s", content)
+                logger.debug("Response: %s", redact(content))
             ret = json.loads(content)
 
             if not self.salt_version and "x-salt-version" in f.headers:
@@ -454,7 +521,7 @@ class Pepper:
             "auth": auth,
             "data": json.dumps(data),
         }
-        logger.debug(f"postdata {params}")
+        logger.debug("POST %s", params["url"])
         try:
             resp = requests.post(**params)
         except requests.exceptions.RequestException as exc:

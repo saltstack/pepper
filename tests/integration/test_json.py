@@ -17,7 +17,7 @@ def test_local_json_bad(pepper_cli):
 
 def test_local_json_file(pepper_cli, session_minion_id):
     tmpjson = os.path.join(tempfile.mkdtemp(), "json")
-    with open(tmpjson, "w") as tmpfile:
+    with open(tmpjson, "w", encoding="utf-8") as tmpfile:
         print(
             '[{"client": "local", "tgt": "*", "fun": "test.ping"}]',
             file=tmpfile,
@@ -29,7 +29,7 @@ def test_local_json_file(pepper_cli, session_minion_id):
 
 def test_local_json_file_bad(pepper_cli):
     tmpjson = os.path.join(tempfile.mkdtemp(), "json")
-    with open(tmpjson, "w") as tmpfile:
+    with open(tmpjson, "w", encoding="utf-8") as tmpfile:
         print(
             "{what}",
             file=tmpfile,

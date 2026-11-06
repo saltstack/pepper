@@ -4,41 +4,16 @@ A Python library for working with Salt's REST API
 (Specifically the rest_cherrypy netapi module.)
 
 """
+
 import json
 import logging
 import re
 import ssl
+import urllib.parse as urlparse
+from urllib.error import HTTPError, URLError
+from urllib.request import HTTPHandler, HTTPSHandler, Request, build_opener
 
 from pepper.exceptions import PepperException
-
-try:
-    ssl._create_default_https_context = ssl._create_stdlib_context
-except Exception:
-    pass
-
-try:
-    from urllib.request import (
-        HTTPHandler,
-        HTTPSHandler,
-        Request,
-        urlopen,
-        install_opener,
-        build_opener,
-    )
-    from urllib.error import HTTPError, URLError
-    import urllib.parse as urlparse
-except ImportError:
-    from urllib2 import (
-        HTTPHandler,
-        HTTPSHandler,
-        Request,
-        urlopen,
-        install_opener,
-        build_opener,
-        HTTPError,
-        URLError,
-    )
-    import urlparse
 
 logger = logging.getLogger(__name__)
 
@@ -72,23 +47,28 @@ class Pepper:
 
     """
 
-    def __init__(self, api_url="https://localhost:8000", debug_http=False, ignore_ssl_errors=False):
+    def __init__(
+        self,
+        api_url="https://localhost:8000",
+        debug_http=False,
+        ignore_ssl_errors=False,
+    ):
         """
         Initialize the class with the URL of the API
 
         :param api_url: Host or IP address of the salt-api URL;
             include the port number
 
-        :param debug_http: Add a flag to urllib2 to output the HTTP exchange
+        :param debug_http: Add a flag to urllib to output the HTTP exchange
 
-        :param ignore_ssl_errors: Add a flag to urllib2 to ignore invalid SSL certificates
+        :param ignore_ssl_errors: Do not verify the salt-api TLS certificate
 
         :raises PepperException: if the api_url is misformed
 
         """
         split = urlparse.urlsplit(api_url)
         if split.scheme not in ["http", "https"]:
-            raise PepperException("salt-api URL missing HTTP(s) protocol: {}".format(api_url))
+            raise PepperException(f"salt-api URL missing HTTP(s) protocol: {api_url}")
 
         self.api_url = api_url
         self.debug_http = int(debug_http)
@@ -122,7 +102,6 @@ class Pepper:
             headers.setdefault("X-Auth-Token", self.auth["token"])
         else:
             raise PepperException("Authentication required")
-            return
         params = {
             "url": self._construct_url(path),
             "headers": headers,
@@ -134,15 +113,14 @@ class Pepper:
 
             if resp.status_code == 401:
                 raise PepperException(str(resp.status_code) + ":Authentication denied")
-                return
 
             if resp.status_code == 500:
                 raise PepperException(str(resp.status_code) + ":Server error.")
-                return
 
             if resp.status_code == 404:
-                raise PepperException(str(resp.status_code) + " :This request returns nothing.")
-                return
+                raise PepperException(
+                    str(resp.status_code) + " :This request returns nothing."
+                )
         except PepperException as e:
             print(e)
             return
@@ -166,7 +144,6 @@ class Pepper:
             headers.setdefault("X-Auth-Token", self.auth["token"])
         else:
             raise PepperException("Authentication required")
-            return
         params = {
             "url": self._construct_url(path),
             "headers": headers,
@@ -177,15 +154,14 @@ class Pepper:
 
             if resp.status_code == 401:
                 raise PepperException(str(resp.status_code) + ":Authentication denied")
-                return
 
             if resp.status_code == 500:
                 raise PepperException(str(resp.status_code) + ":Server error.")
-                return
 
             if resp.status_code == 404:
-                raise PepperException(str(resp.status_code) + " :This request returns nothing.")
-                return
+                raise PepperException(
+                    str(resp.status_code) + " :This request returns nothing."
+                )
         except PepperException as e:
             print(e)
             return
@@ -193,7 +169,7 @@ class Pepper:
 
     def req(self, path, data=None):
         """
-        A thin wrapper around urllib2 to send requests and return the response
+        A thin wrapper around urllib to send requests and return the response
 
         If the current instance contains an authentication token it will be
         attached to the request as a custom header.
@@ -212,13 +188,10 @@ class Pepper:
             "X-Requested-With": "XMLHttpRequest",
         }
 
-        opener = build_opener()
-        for handler in opener.handlers:
-            if isinstance(handler, HTTPHandler):
-                handler.set_http_debuglevel(self.debug_http)
-            if isinstance(handler, HTTPSHandler):
-                handler.set_http_debuglevel(self.debug_http)
-        install_opener(opener)
+        opener = build_opener(
+            HTTPHandler(debuglevel=self.debug_http),
+            HTTPSHandler(debuglevel=self.debug_http, context=self._ssl_context()),
+        )
 
         # Build POST data
         if data is not None:
@@ -241,11 +214,7 @@ class Pepper:
 
         # Send request
         try:
-            if not (self._ssl_verify):
-                con = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-                f = urlopen(req, context=con)
-            else:
-                f = urlopen(req)
+            f = opener.open(req)
             content = f.read().decode("utf-8")
             if self.debug_http:
                 logger.debug("Response: %s", content)
@@ -256,6 +225,13 @@ class Pepper:
 
         except (HTTPError, URLError) as exc:
             logger.debug("Error with request", exc_info=True)
+            if isinstance(getattr(exc, "reason", None), ssl.SSLCertVerificationError):
+                raise PepperException(
+                    f"TLS certificate verification failed for {url}: "
+                    f"{exc.reason.verify_message.rstrip('.')}. Use "
+                    "--ignore-ssl-errors (ignore_ssl_errors=True) to skip "
+                    "verification."
+                )
             status = getattr(exc, "code", None)
 
             if status == 401:
@@ -264,13 +240,23 @@ class Pepper:
             if status == 500:
                 raise PepperException("Server error.")
 
-            logger.error("Error with request: {}".format(exc))
+            logger.error(f"Error with request: {exc}")
             raise
         except AttributeError:
             logger.debug("Error converting response from JSON", exc_info=True)
             raise PepperException("Unable to parse the server response.")
 
         return ret
+
+    def _ssl_context(self):
+        """
+        Return the SSL context for HTTPS requests
+        """
+        context = ssl.create_default_context()
+        if not self._ssl_verify:
+            context.check_hostname = False
+            context.verify_mode = ssl.CERT_NONE
+        return context
 
     def req_requests(self, path, data=None):
         """
@@ -284,7 +270,7 @@ class Pepper:
 
         """
         import requests
-        from requests_gssapi import HTTPSPNEGOAuth, OPTIONAL
+        from requests_gssapi import OPTIONAL, HTTPSPNEGOAuth
 
         auth = HTTPSPNEGOAuth(mutual_authentication=OPTIONAL)
         headers = {
@@ -302,7 +288,7 @@ class Pepper:
             "auth": auth,
             "data": json.dumps(data),
         }
-        logger.debug("postdata {}".format(params))
+        logger.debug(f"postdata {params}")
         resp = requests.post(**params)
         if resp.status_code == 401:
             # TODO should be resp.raise_from_status
@@ -326,7 +312,9 @@ class Pepper:
         """
         return self.req(path, lowstate)
 
-    def local(self, tgt, fun, arg=None, kwarg=None, expr_form="glob", timeout=None, ret=None):
+    def local(
+        self, tgt, fun, arg=None, kwarg=None, expr_form="glob", timeout=None, ret=None
+    ):
         """
         Run a single command using the ``local`` client
 
@@ -355,7 +343,9 @@ class Pepper:
 
         return self.low([low])
 
-    def local_async(self, tgt, fun, arg=None, kwarg=None, expr_form="glob", timeout=None, ret=None):
+    def local_async(
+        self, tgt, fun, arg=None, kwarg=None, expr_form="glob", timeout=None, ret=None
+    ):
         """
         Run a single command using the ``local_async`` client
 
@@ -384,7 +374,9 @@ class Pepper:
 
         return self.low([low])
 
-    def local_batch(self, tgt, fun, arg=None, kwarg=None, expr_form="glob", batch="50%", ret=None):
+    def local_batch(
+        self, tgt, fun, arg=None, kwarg=None, expr_form="glob", batch="50%", ret=None
+    ):
         """
         Run a single command using the ``local_batch`` client
 
@@ -420,7 +412,7 @@ class Pepper:
         Wraps :meth:`runner`.
         """
 
-        return self.runner("jobs.lookup_jid", jid="{}".format(jid))
+        return self.runner("jobs.lookup_jid", jid=f"{jid}")
 
     def runner(self, fun, arg=None, **kwargs):
         """

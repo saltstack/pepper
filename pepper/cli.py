@@ -2,44 +2,23 @@
 A CLI interface to a remote salt-api instance
 
 """
+
 import getpass
 import json
 import logging
-import optparse
+import optparse  # pylint: disable=deprecated-module
 import os
-import sys
 import textwrap
 import time
+from configparser import ConfigParser
+from json import JSONDecodeError
 
 import pepper
-from pepper.exceptions import PepperArgumentsException
-from pepper.exceptions import PepperAuthException
-from pepper.exceptions import PepperException
-
-# Import Pepper Libraries
-
-
-try:
-    # Python 3
-    from configparser import ConfigParser, RawConfigParser
-except ImportError:
-    # Python 2
-    from ConfigParser import ConfigParser, RawConfigParser
-
-try:
-    # Python 3
-    JSONDecodeError = json.decode.JSONDecodeError
-except AttributeError:
-    # Python 2
-    JSONDecodeError = ValueError
-
-try:
-    input = raw_input
-except NameError:
-    pass
-
-if sys.version_info[0] == 2:
-    FileNotFoundError = IOError
+from pepper.exceptions import (
+    PepperArgumentsException,
+    PepperAuthException,
+    PepperException,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -59,8 +38,12 @@ class PepperCli:
         self.parse()
 
     def get_parser(self):
+        # Name the program pepper, not __main__.py, under python -m pepper
         return optparse.OptionParser(
-            description=__doc__, usage="%prog [opts]", version=pepper.__version__
+            prog="pepper",
+            description=__doc__,
+            usage="%prog [opts]",
+            version=pepper.__version__,
         )
 
     def parse(self):
@@ -70,7 +53,9 @@ class PepperCli:
         self.parser.add_option(
             "-c",
             dest="config",
-            default=os.environ.get("PEPPERRC", os.path.join(os.path.expanduser("~"), ".pepperrc")),
+            default=os.environ.get(
+                "PEPPERRC", os.path.join(os.path.expanduser("~"), ".pepperrc")
+            ),
             help=textwrap.dedent(
                 """
                 Configuration file location. Default is a file path in the
@@ -161,8 +146,47 @@ class PepperCli:
             default=False,
             help=textwrap.dedent(
                 """
-                Ignore any SSL certificate that may be encountered. Note that it is
-                recommended to resolve certificate errors for production.
+                Do not verify the salt-api TLS certificate. Certificates are
+                verified by default.
+            """
+            ),
+        )
+
+        self.parser.add_option(
+            "--ca-bundle",
+            dest="ca_bundle",
+            default=None,
+            help=textwrap.dedent(
+                """
+                A file of PEM CA certificates, or a directory of them prepared
+                with c_rehash, to verify the salt-api certificate with instead of
+                the system's trusted CA certificates. Can also be set with
+                SALTAPI_CA_BUNDLE.
+            """
+            ),
+        )
+
+        self.parser.add_option(
+            "--client-cert",
+            dest="client_cert",
+            default=None,
+            help=textwrap.dedent(
+                """
+                A PEM file with a client certificate to present to salt-api. It
+                must also contain the private key unless --client-cert-key is
+                given. Can also be set with SALTAPI_CLIENT_CERT.
+            """
+            ),
+        )
+
+        self.parser.add_option(
+            "--client-cert-key",
+            dest="client_cert_key",
+            default=None,
+            help=textwrap.dedent(
+                """
+                A PEM file with the private key for --client-cert. Can also be
+                set with SALTAPI_CLIENT_CERT_KEY.
             """
             ),
         )
@@ -472,7 +496,9 @@ class PepperCli:
         ret code validation options
         """
         optgroup = optparse.OptionGroup(
-            self.parser, "retcode Field Validation Options", "Validate return.HOST.retcode fields"
+            self.parser,
+            "retcode Field Validation Options",
+            "Validate return.HOST.retcode fields",
         )
 
         optgroup.add_option(
@@ -505,6 +531,24 @@ class PepperCli:
 
         return optgroup
 
+    def get_config(self, defaults):
+        """
+        Read settings from the selected profile of the config file, then from
+        the environment, which takes precedence
+
+        :param defaults: a dict of setting names and their default values
+        """
+        config = ConfigParser(interpolation=None)
+        config.read(self.options.config)
+        profile = self.options.profile
+
+        results = dict(defaults)
+        for key in results:
+            if config.has_section(profile) and config.has_option(profile, key):
+                results[key] = config.get(profile, key)
+            results[key] = os.environ.get(key, results[key])
+        return results
+
     def get_login_details(self):
         """
         This parses the config file, environment variables and command line options
@@ -513,29 +557,13 @@ class PepperCli:
             command line options, ~/.pepperrc, environment, defaults
         """
 
-        # setting default values
-        results = {
-            "SALTAPI_USER": None,
-            "SALTAPI_PASS": None,
-            "SALTAPI_EAUTH": "auto",
-        }
-
-        try:
-            config = ConfigParser(interpolation=None)
-        except TypeError:
-            config = RawConfigParser()
-        config.read(self.options.config)
-
-        # read file
-        profile = self.options.profile
-        if config.has_section(profile):
-            for key, value in list(results.items()):
-                if config.has_option(profile, key):
-                    results[key] = config.get(profile, key)
-
-        # get environment values
-        for key, value in list(results.items()):
-            results[key] = os.environ.get(key, results[key])
+        results = self.get_config(
+            {
+                "SALTAPI_USER": None,
+                "SALTAPI_PASS": None,
+                "SALTAPI_EAUTH": "auto",
+            }
+        )
 
         if results["SALTAPI_EAUTH"] == "kerberos":
             results["SALTAPI_PASS"] = None
@@ -571,28 +599,36 @@ class PepperCli:
         """
         Determine api url
         """
-        url = "https://localhost:8000/"
-
-        try:
-            config = ConfigParser(interpolation=None)
-        except TypeError:
-            config = RawConfigParser()
-        config.read(self.options.config)
-
-        # read file
-        profile = self.options.profile
-        if config.has_section(profile):
-            if config.has_option(profile, "SALTAPI_URL"):
-                url = config.get(profile, "SALTAPI_URL")
-
-        # get environment values
-        url = os.environ.get("SALTAPI_URL", url)
+        url = self.get_config({"SALTAPI_URL": "https://localhost:8000/"})["SALTAPI_URL"]
 
         # get eauth prompt options
         if self.options.saltapiurl:
             url = self.options.saltapiurl
 
         return url
+
+    def parse_tls(self):
+        """
+        Determine the CA bundle and client certificate for salt-api
+        """
+        results = self.get_config(
+            {
+                "SALTAPI_CA_BUNDLE": None,
+                "SALTAPI_CLIENT_CERT": None,
+                "SALTAPI_CLIENT_CERT_KEY": None,
+            }
+        )
+        tls = {
+            "ca_bundle": self.options.ca_bundle or results["SALTAPI_CA_BUNDLE"],
+            "client_cert": self.options.client_cert or results["SALTAPI_CLIENT_CERT"],
+            "client_cert_key": self.options.client_cert_key
+            or results["SALTAPI_CLIENT_CERT_KEY"],
+        }
+        if tls["client_cert_key"] and not tls["client_cert"]:
+            raise PepperArgumentsException(
+                "A client certificate key was given without a client certificate"
+            )
+        return tls
 
     def parse_login(self):
         """
@@ -626,13 +662,15 @@ class PepperCli:
 
         if self.options.json_file:
             try:
-                with open(self.options.json_file) as json_content:
+                with open(self.options.json_file, encoding="utf-8") as json_content:
                     try:
                         return json.load(json_content)
-                    except JSONDecodeError:
+                    except (JSONDecodeError, UnicodeDecodeError):
                         raise PepperArgumentsException("Invalid JSON given.")
             except FileNotFoundError:
-                raise PepperArgumentsException("Cannot open file: %s", self.options.json_file)
+                raise PepperArgumentsException(
+                    f"Cannot open file: {self.options.json_file}"
+                )
 
         args = list(self.args)
 
@@ -691,7 +729,7 @@ class PepperCli:
             low["batch"] = self.options.batch
             low["arg"] = args
         else:
-            raise PepperException("Client not implemented: {}".format(client))
+            raise PepperException(f"Client not implemented: {client}")
 
         return [low]
 
@@ -758,24 +796,26 @@ class PepperCli:
         if self.options.mktoken:
             token_file = self.options.cache
             try:
-                with open(token_file) as f:
+                with open(token_file, encoding="utf-8") as f:
                     auth = json.load(f)
                 if auth["expire"] < time.time() + 30:
                     logger.error("Login token expired")
                     raise Exception("Login token expired")
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-exception-caught
                 if e.args[0] != 2:
-                    logger.error("Unable to load login token from {} {}".format(token_file, str(e)))
+                    logger.error(
+                        f"Unable to load login token from {token_file} {str(e)}"
+                    )
                     if os.path.isfile(token_file):
                         os.remove(token_file)
                 auth = login(**self.parse_login())
+                oldumask = os.umask(0)
                 try:
-                    oldumask = os.umask(0)
                     fdsc = os.open(token_file, os.O_WRONLY | os.O_CREAT, 0o600)
                     with os.fdopen(fdsc, "wt") as f:
                         json.dump(auth, f)
-                except Exception as e:
-                    logger.error("Unable to save token to {} {}".format(token_file, str(e)))
+                except Exception as e:  # pylint: disable=broad-exception-caught
+                    logger.error(f"Unable to save token to {token_file} {str(e)}")
                 finally:
                     os.umask(oldumask)
         else:
@@ -814,6 +854,7 @@ class PepperCli:
             self.parse_url(),
             debug_http=self.options.debug_http,
             ignore_ssl_errors=self.options.ignore_ssl_certificate_errors,
+            **self.parse_tls(),
         )
 
         self.login(api)

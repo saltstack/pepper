@@ -9,13 +9,11 @@ import textwrap
 import pytest
 import salt.utils.yaml as yaml
 from pytestskipmarkers.utils import ports
-from saltfactories.utils import random_string
-from saltfactories.utils import running_username
+from saltfactories.utils import random_string, running_username
 
 import pepper.script
 
 # Import pytest libraries
-# Import Salt Libraries
 
 log = logging.getLogger(__name__)
 
@@ -77,7 +75,9 @@ def session_ssh_roster_config(session_sshd_server, session_master):
       mine_functions:
         test.arg: ['itworked']
     """.format(
-        session_sshd_server.listen_port, running_username(), session_sshd_server.client_key
+        session_sshd_server.listen_port,
+        running_username(),
+        session_sshd_server.client_key,
     )
     with pytest.helpers.temp_file(
         "roster", roster_contents, session_master.config_dir
@@ -124,7 +124,7 @@ def pepperconfig(salt_api_port):
             salt_api_port
         )
     )
-    with open("tests/.pepperrc", "w") as pepper_file:
+    with open("tests/.pepperrc", "w", encoding="utf-8") as pepper_file:
         print(config, file=pepper_file)
     yield
     os.remove("tests/.pepperrc")
@@ -132,7 +132,7 @@ def pepperconfig(salt_api_port):
 
 @pytest.fixture
 def pepper_client(session_salt_api, salt_api_port):
-    client = pepper.Pepper("http://localhost:{}".format(salt_api_port))
+    client = pepper.Pepper(f"http://localhost:{salt_api_port}")
     client.login("pepper", "pepper", "sharedsecret")
     return client
 
@@ -155,16 +155,21 @@ def output_file():
 
 
 @pytest.fixture(params=["/run", "/login"])
-def pepper_cli(request, session_salt_api, salt_api_port, output_file, session_sshd_server):
+def pepper_cli(
+    request, session_salt_api, salt_api_port, output_file, session_sshd_server
+):
     """
     Wrapper to invoke Pepper with common params and inside an empty env
     """
-    if request.config.getoption("--salt-api-backend") == "rest_tornado" and request.param == "/run":
+    if (
+        request.config.getoption("--salt-api-backend") == "rest_tornado"
+        and request.param == "/run"
+    ):
         pytest.xfail("rest_tornado does not support /run endpoint until next release")
 
     def_args = [
         "--out=json",
-        "--output-file={}".format(output_file),
+        f"--output-file={output_file}",
         "-c",
         "tests/.pepperrc",
     ]
@@ -173,20 +178,22 @@ def pepper_cli(request, session_salt_api, salt_api_port, output_file, session_ss
         def_args = ["--run-uri"] + def_args
 
     def _run_pepper_cli(*args, **kwargs):
-        sys.argv = ["pepper", "-p", kwargs.pop("profile", "main")] + def_args + list(args)
+        sys.argv = (
+            ["pepper", "-p", kwargs.pop("profile", "main")] + def_args + list(args)
+        )
         exitcode = pepper.script.Pepper()()
         try:
-            with open(output_file) as result:
+            with open(output_file, encoding="utf-8") as result:
                 try:
                     return yaml.load(result)
                 except yaml.parser.ParserError:
                     result.seek(0)
                     return [
-                        yaml.load("{0}}}".format(ret).strip('"'))
+                        yaml.load(f"{ret}}}".strip('"'))
                         for ret in result.read().split('}"\n')
                         if ret
                     ]
-        except Exception as exc:
+        except Exception as exc:  # pylint: disable=broad-exception-caught
             log.error("ExitCode %s: %s", exitcode, exc)
             return exitcode
 
@@ -256,7 +263,9 @@ def session_minion_factory(session_master_factory):
     """Return a factory for a randomly named minion connected to master."""
     minion_factory = session_master_factory.salt_minion_daemon(random_string("minion-"))
     minion_factory.after_terminate(
-        pytest.helpers.remove_stale_minion_key, session_master_factory, minion_factory.id
+        pytest.helpers.remove_stale_minion_key,
+        session_master_factory,
+        minion_factory.id,
     )
     return minion_factory
 
@@ -299,6 +308,27 @@ def session_salt_api(session_master, session_salt_api_factory):
     assert session_master.is_running()
     with session_salt_api_factory.started():
         yield session_salt_api_factory
+
+
+@pytest.fixture(autouse=True)
+def isolated_environment(monkeypatch, tmp_path):
+    """
+    Remove pepper and salt-api settings inherited from the calling shell, and
+    point the home directory at an empty one.
+
+    Pepper gives environment variables precedence over the config file, so a
+    developer with SALTAPI_URL exported would otherwise send the test
+    credentials to that salt-api instead of the one started for the tests.
+    With the real home directory, tests would also read the developer's
+    ~/.pepperrc and write their ~/.peppercache.
+    """
+    for name in list(os.environ):
+        if name.startswith(("SALTAPI_", "PEPPER")) or name == "MASTER_CONFIG":
+            monkeypatch.delenv(name)
+    home = tmp_path / "home"
+    home.mkdir()
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setenv("USERPROFILE", str(home))
 
 
 def pytest_addoption(parser):

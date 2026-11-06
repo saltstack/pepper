@@ -38,8 +38,12 @@ class PepperCli:
         self.parse()
 
     def get_parser(self):
+        # Name the program pepper, not __main__.py, under python -m pepper
         return optparse.OptionParser(
-            description=__doc__, usage="%prog [opts]", version=pepper.__version__
+            prog="pepper",
+            description=__doc__,
+            usage="%prog [opts]",
+            version=pepper.__version__,
         )
 
     def parse(self):

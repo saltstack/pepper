@@ -8,3 +8,4 @@ dist/
 salt_pepper.egg-info/
 .nox/
 artifacts/
+tests/.pepperrc

@@ -61,9 +61,12 @@ def test_from_config_environment(rcfile, login, monkeypatch):
     monkeypatch.setenv("PEPPERRC", rcfile)
     monkeypatch.setenv("PEPPERPROFILE", "tls")
     monkeypatch.setenv("SALTAPI_PASS", "from-env")
+    monkeypatch.setenv("SALTAPI_EAUTH", "ldap")
     api = Pepper.from_config()
     assert api.api_url == "https://tls.example.com/"
-    login.assert_called_once_with(api, "pepper", "from-env", "auto")
+    # PEPPERPROFILE names the profile, so the environment only fills in what
+    # the profile does not set
+    login.assert_called_once_with(api, "pepper", "secret", "ldap")
 
 
 def test_from_config_kwargs_win(rcfile, login):
@@ -141,3 +144,13 @@ def test_from_config_environment_only(tmp_path, login, monkeypatch):
     api = Pepper.from_config()
     assert api.api_url == "https://env.example.com/"
     login.assert_called_once_with(api, "pepper", "secret", "auto")
+
+
+def test_from_config_client_key_without_cert(tmp_path, login):
+    rcfile = tmp_path / "pepperrc"
+    rcfile.write_text(
+        "[main]\nSALTAPI_URL=https://main.example.com/\n"
+        "SALTAPI_CLIENT_CERT_KEY=/etc/ssl/client.key\n"
+    )
+    with pytest.raises(PepperException, match="client_cert_key needs client_cert"):
+        Pepper.from_config(path=str(rcfile), login=False)

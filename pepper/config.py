@@ -35,16 +35,22 @@ def default_profile():
     return os.environ.get("PEPPERPROFILE", "main")
 
 
-def read(defaults=None, path=None, profile=None, environment=True, strict=False):
+def read(defaults=None, path=None, profile=None, environment=None, strict=False):
     """
-    Read settings from a profile of the config file, then from the environment,
-    which takes precedence
+    Read settings from a profile of the config file and from the environment
+
+    Environment variables override the default profile. A profile named by
+    the profile argument or PEPPERPROFILE keeps its own settings, and
+    environment variables only fill in the ones it does not set, so an
+    exported SALTAPI_URL cannot send that profile's credentials to another
+    salt-api.
 
     :param defaults: a dict of setting names and their default values,
         :data:`DEFAULTS` if not given
     :param path: the config file, :func:`default_path` if not given
     :param profile: the profile, :func:`default_profile` if not given
-    :param environment: let environment variables override the file
+    :param environment: True to let environment variables override any
+        profile, False to ignore them, None (the default) for the rule above
     :param strict: raise an error if the config file was named, by path or
         PEPPERRC, and cannot be read, or the profile was named, by profile or
         PEPPERPROFILE, and is not in the file
@@ -66,8 +72,11 @@ def read(defaults=None, path=None, profile=None, environment=True, strict=False)
 
     results = dict(DEFAULTS if defaults is None else defaults)
     for key in results:
-        if config.has_section(profile) and config.has_option(profile, key):
+        in_profile = config.has_section(profile) and config.has_option(profile, key)
+        if in_profile:
             results[key] = config.get(profile, key)
-        if environment:
-            results[key] = os.environ.get(key, results[key])
+        if environment is False or key not in os.environ:
+            continue
+        if environment or not (profile_named and in_profile):
+            results[key] = os.environ[key]
     return results

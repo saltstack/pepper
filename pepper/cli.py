@@ -88,11 +88,13 @@ class PepperCli:
         self.parser.add_option(
             "-p",
             dest="profile",
-            default=pepper.config.default_profile(),
+            default=None,
             help=textwrap.dedent(
                 """
                 Profile in config file to use. Default is "PEPPERPROFILE" environment
-                variable or 'main'
+                variable or 'main'. SALTAPI_* environment variables override the
+                default profile, but only fill in settings that a profile named
+                with -p or PEPPERPROFILE does not set.
             """
             ),
         )
@@ -621,8 +623,8 @@ class PepperCli:
 
     def get_config(self, defaults):
         """
-        Read settings from the selected profile of the config file, then from
-        the environment, which takes precedence
+        Read settings from the selected profile of the config file and from
+        the environment, as :func:`pepper.config.read` does
 
         :param defaults: a dict of setting names and their default values
         """

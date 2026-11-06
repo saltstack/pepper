@@ -46,3 +46,28 @@ def test_parse_url_precedence(tmp_path, monkeypatch):
     assert _cli(tmp_path, monkeypatch).parse_url() == "https://env.example.com/"
     cli = _cli(tmp_path, monkeypatch, "-u", "https://cli.example.com/")
     assert cli.parse_url() == "https://cli.example.com/"
+
+
+def test_named_profile_keeps_its_settings(tmp_path, monkeypatch):
+    monkeypatch.setenv("SALTAPI_URL", "https://env.example.com/")
+    monkeypatch.setenv("SALTAPI_USER", "env-user")
+    cli = _cli(tmp_path, monkeypatch, "-p", "other")
+    # The profile's URL is kept, and the user it does not set comes from the
+    # environment
+    assert cli.get_config({"SALTAPI_URL": None, "SALTAPI_USER": None}) == {
+        "SALTAPI_URL": "https://other.example.com/",
+        "SALTAPI_USER": "env-user",
+    }
+    assert cli.parse_url() == "https://other.example.com/"
+
+
+def test_pepperprofile_keeps_its_settings(tmp_path, monkeypatch):
+    monkeypatch.setenv("PEPPERPROFILE", "other")
+    monkeypatch.setenv("SALTAPI_URL", "https://env.example.com/")
+    assert _cli(tmp_path, monkeypatch).parse_url() == "https://other.example.com/"
+
+
+def test_explicit_main_profile_keeps_its_settings(tmp_path, monkeypatch):
+    monkeypatch.setenv("SALTAPI_URL", "https://env.example.com/")
+    cli = _cli(tmp_path, monkeypatch, "-p", "main")
+    assert cli.parse_url() == "https://main.example.com/"

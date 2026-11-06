@@ -271,9 +271,10 @@ class Pepper:
         variables, the same way the pepper command does, and log in
 
         As with the pepper command, SALTAPI_* environment variables override
-        the default profile. A profile named with the profile argument is used
-        as it is, so an exported SALTAPI_URL cannot send its credentials to
-        another salt-api. Pass environment to choose either way.
+        the default profile. A profile named by the profile argument or
+        PEPPERPROFILE keeps its own settings, and environment variables only
+        fill in the ones it does not set, so an exported SALTAPI_URL cannot
+        send its credentials to another salt-api.
 
         >>> api = Pepper.from_config(profile="prod")
         >>> api.local("*", "test.ping")
@@ -281,8 +282,9 @@ class Pepper:
         :param profile: the profile to use, PEPPERPROFILE or main by default
         :param path: the config file, PEPPERRC or ~/.pepperrc by default
         :param login: log in with the configured credentials
-        :param environment: let SALTAPI_* environment variables override the
-            profile; by default only when no profile is passed
+        :param environment: True to let SALTAPI_* environment variables
+            override any profile, False to ignore them, None (the default) for
+            the rule above
         :param kwargs: other arguments for :class:`Pepper`, which take
             precedence over the config file
 
@@ -292,8 +294,6 @@ class Pepper:
         :raises PepperAuthException: if login is set and the user or password
             is not configured
         """
-        if environment is None:
-            environment = profile is None
         settings = config.read(
             path=path, profile=profile, environment=environment, strict=True
         )

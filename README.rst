@@ -124,13 +124,11 @@ error, and the token stays valid until it expires.
 
 ``Pepper.from_config()`` creates a client from a ``.pepperrc`` profile and the
 ``SALTAPI_*`` environment variables, the same way the ``pepper`` command does,
-and logs in. As with the command, the environment variables override the
-default profile. A profile passed with ``profile=`` is used as it is, so a
-``SALTAPI_URL`` exported in the shell cannot send that profile's credentials to
-another salt-api; pass ``environment=True`` or ``environment=False`` to choose
-either way. A config file or profile that was named, by argument or by
-``PEPPERRC`` or ``PEPPERPROFILE``, and cannot be found raises an error instead
-of falling back to the defaults:
+and logs in. The environment variables are used as the command uses them
+(see Configuration); pass ``environment=True`` to let them override any
+profile, or ``environment=False`` to ignore them. A config file or profile that
+was named, by argument or by ``PEPPERRC`` or ``PEPPERPROFILE``, and cannot be
+found raises an error instead of falling back to the defaults:
 
 .. code-block:: python
 
@@ -153,6 +151,12 @@ or in a configuration file ``$HOME/.pepperrc`` with the following syntax :
   SALTAPI_PASS=saltdev
   SALTAPI_EAUTH=pam
 
+Command line options override both. ``SALTAPI_*`` environment variables
+override the default profile, but a profile named with ``-p`` or
+``PEPPERPROFILE`` keeps its own settings: the environment variables only fill in
+the ones it does not set, so a ``SALTAPI_URL`` exported in the shell cannot
+send that profile's credentials to another salt-api.
+
 Tokens
 ------
 
@@ -169,7 +173,10 @@ Output
 
 When salt is installed, pepper reads Salt outputter settings from a Salt
 configuration file, ``~/.config/pepper/master`` by default (``-m`` or
-``MASTER_CONFIG`` to change it). Command line options take precedence:
+``MASTER_CONFIG`` to change it). As with the ``salt`` command, settings in
+``~/.saltrc``, or in ``$XDG_CONFIG_HOME/salt/saltrc`` (``~/.config/salt/saltrc``)
+when that directory exists, or in the file named by ``SALT_CLIENT_CONFIG``,
+override that file. Command line options take precedence:
 
 .. code-block:: yaml
 

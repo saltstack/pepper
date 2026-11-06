@@ -73,9 +73,12 @@ cases pepper cannot tell that a minion failed. For the same reason
 
 ``-t``/``--timeout`` works like ``salt -t``: salt-api waits that long for
 minions to return, but keeps waiting for minions that are still running the
-job. To put a hard limit on the wait, add ``--fail-if-incomplete``, which polls
-for returns until ``--timeout`` passes and then reports the minions that did not
-return. The job keeps running on those minions either way.
+job. To stop sooner, add ``--fail-if-incomplete``, which polls for returns every
+few seconds, stops polling once ``--timeout`` has passed and reports the minions
+that did not return. It does not cut short a poll that is in progress, and
+pepper sets no timeout on its requests to salt-api, so the command can still
+run past ``--timeout`` when salt-api is slow to answer. The job keeps running on
+the minions that did not return either way.
 
 .. code-block:: bash
 

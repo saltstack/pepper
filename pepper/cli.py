@@ -240,8 +240,9 @@ class PepperCli:
                 """
                 How long to wait for minions to return, in seconds. As with
                 salt -t, minions that are still running the job are waited for
-                beyond this. Add --fail-if-incomplete to stop waiting after this
-                long and report the minions that did not return.
+                beyond this. Add --fail-if-incomplete to stop polling for
+                returns once this has passed and report the minions that did
+                not return.
             """
             ),
         )

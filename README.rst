@@ -131,6 +131,12 @@ arrive (it needs ``requests``):
         if event["tag"].startswith("salt/job/"):
             print(event["data"])
 
+The stream has no timeout. On a quiet event bus the loop blocks until the next
+event, and salt-api sends nothing in between to keep the connection alive, so
+a dropped connection is only noticed when the next event is due. Leave the
+loop with ``break``, or call ``close()`` on the generator, to close the
+connection.
+
 ``Pepper.from_config()`` creates a client from a ``.pepperrc`` profile and the
 ``SALTAPI_*`` environment variables, the same way the ``pepper`` command does,
 and logs in. The environment variables are used as the command uses them

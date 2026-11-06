@@ -368,6 +368,13 @@ class Pepper:
         stream stays open until the generator is closed or salt-api ends it,
         for example when the token expires. Needs requests.
 
+        There is no timeout: on a quiet event bus the loop blocks until the
+        next event, and salt-api sends nothing in between to keep the
+        connection alive, so a dropped connection or a logged out token is
+        only noticed when the next event is due. Leave the loop with
+        ``break``, or call ``close()`` on the generator, to close the
+        connection; from a terminal, Ctrl-C stops it.
+
         >>> for event in api.events():
         ...     if event["tag"].startswith("salt/job/"):
         ...         print(event["data"])

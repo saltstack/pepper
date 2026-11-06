@@ -302,17 +302,24 @@ def session_salt_api(session_master, session_salt_api_factory):
 
 
 @pytest.fixture(autouse=True)
-def isolated_environment(monkeypatch):
+def isolated_environment(monkeypatch, tmp_path):
     """
-    Remove pepper and salt-api settings inherited from the calling shell.
+    Remove pepper and salt-api settings inherited from the calling shell, and
+    point the home directory at an empty one.
 
     Pepper gives environment variables precedence over the config file, so a
     developer with SALTAPI_URL exported would otherwise send the test
     credentials to that salt-api instead of the one started for the tests.
+    With the real home directory, tests would also read the developer's
+    ~/.pepperrc and write their ~/.peppercache.
     """
     for name in list(os.environ):
         if name.startswith(("SALTAPI_", "PEPPER")) or name == "MASTER_CONFIG":
             monkeypatch.delenv(name)
+    home = tmp_path / "home"
+    home.mkdir()
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setenv("USERPROFILE", str(home))
 
 
 def pytest_addoption(parser):

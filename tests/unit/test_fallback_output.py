@@ -81,10 +81,23 @@ def test_output_file(capsys, monkeypatch, tmp_path):
     assert _documents(path.read_text()) == [{"m1": {"key": "value"}}, {"m2": [1, 2]}]
 
 
-def test_unavailable_outputter(capsys, monkeypatch):
+@pytest.mark.parametrize("has_yaml", [True, False], ids=["yaml", "no-yaml"])
+def test_unavailable_outputter(capsys, monkeypatch, has_yaml):
+    monkeypatch.setattr(pepper.script, "HAS_YAML", has_yaml)
     exit_code, _, err, low = _run(capsys, monkeypatch, "--out=nested", "*", "test.ping")
     assert exit_code == 1
-    assert "--out=nested needs salt installed" in err
+    assert "--out=nested needs salt installed. Without salt, --out accepts json" in err
+    assert ("salt-pepper[yaml]" in err) is not has_yaml
+    low.assert_not_called()
+
+
+def test_yaml_without_pyyaml(capsys, monkeypatch):
+    monkeypatch.setattr(pepper.script, "HAS_YAML", False)
+    monkeypatch.delitem(pepper.script.FALLBACK_OUTPUTTERS, "yaml", raising=False)
+    exit_code, _, err, low = _run(capsys, monkeypatch, "--out=yaml", "*", "test.ping")
+    assert exit_code == 1
+    assert "--out=yaml needs salt or PyYAML installed" in err
+    assert "pip install 'salt-pepper[yaml]'" in err
     low.assert_not_called()
 
 

@@ -187,11 +187,21 @@ class Pepper:
         """
         if HAS_SALT or not self.cli.options.output:
             return
-        if self.cli.options.output not in FALLBACK_OUTPUTTERS:
+        output = self.cli.options.output
+        if output in FALLBACK_OUTPUTTERS:
+            return
+        install_yaml = "install PyYAML (pip install 'salt-pepper[yaml]')"
+        if output == "yaml":
             raise PepperArgumentsException(
-                f"--out={self.cli.options.output} needs salt installed. Without "
-                f"salt, {' and '.join(sorted(FALLBACK_OUTPUTTERS))} are available."
+                f"--out=yaml needs salt or PyYAML installed; {install_yaml}."
             )
+        if HAS_YAML:
+            available = "--out accepts json and yaml"
+        else:
+            available = f"--out accepts json, and yaml if you {install_yaml}"
+        raise PepperArgumentsException(
+            f"--out={output} needs salt installed. Without salt, {available}."
+        )
 
     def __call__(self):
         polled = []

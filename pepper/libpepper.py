@@ -762,8 +762,11 @@ class Pepper:
         """
         End the salt-api session and forget its token
 
-        Uses rest_cherrypy's /logout. rest_tornado has no /logout and answers
-        with an error, but the token is forgotten either way.
+        Uses rest_cherrypy's /logout, which ends the session of a token from
+        :meth:`login`. It revokes nothing on rest_tornado, which has no /logout,
+        or for an eauth token from :meth:`token`, which salt-api answers with
+        an authentication error and which stays valid until it expires. The
+        token is forgotten either way.
         """
         try:
             return self.req("/logout", {})

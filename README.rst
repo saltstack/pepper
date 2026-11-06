@@ -117,6 +117,11 @@ Library
 ``local(..., full_return=True)`` returns each minion's retcode along with its
 result, as the CLI asks for.
 
+``logout()`` ends the rest_cherrypy session of a token from ``login()``. It
+revokes nothing on rest_tornado, which has no ``/logout``, or for an eauth
+token from ``token()`` (``--run-uri``): salt-api answers with an authentication
+error, and the token stays valid until it expires.
+
 Configuration
 -------------
 

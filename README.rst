@@ -125,8 +125,12 @@ error, and the token stays valid until it expires.
 ``Pepper.from_config()`` creates a client from a ``.pepperrc`` profile and the
 ``SALTAPI_*`` environment variables, the same way the ``pepper`` command does,
 and logs in. As with the command, the environment variables override the
-profile, even one named explicitly, so a ``SALTAPI_URL`` exported in the shell
-wins over the profile's URL; pass ``environment=False`` to use only the file:
+default profile. A profile passed with ``profile=`` is used as it is, so a
+``SALTAPI_URL`` exported in the shell cannot send that profile's credentials to
+another salt-api; pass ``environment=True`` or ``environment=False`` to choose
+either way. A config file or profile that was named, by argument or by
+``PEPPERRC`` or ``PEPPERPROFILE``, and cannot be found raises an error instead
+of falling back to the defaults:
 
 .. code-block:: python
 

@@ -264,15 +264,16 @@ class Pepper:
 
     @classmethod
     def from_config(
-        cls, profile=None, path=None, login=True, environment=True, **kwargs
+        cls, profile=None, path=None, login=True, environment=None, **kwargs
     ):
         """
         Create a client from a .pepperrc profile and the SALTAPI_* environment
         variables, the same way the pepper command does, and log in
 
         As with the pepper command, SALTAPI_* environment variables override
-        the profile, even one named explicitly. Pass environment=False to use
-        only the config file.
+        the default profile. A profile named with the profile argument is used
+        as it is, so an exported SALTAPI_URL cannot send its credentials to
+        another salt-api. Pass environment to choose either way.
 
         >>> api = Pepper.from_config(profile="prod")
         >>> api.local("*", "test.ping")
@@ -281,14 +282,21 @@ class Pepper:
         :param path: the config file, PEPPERRC or ~/.pepperrc by default
         :param login: log in with the configured credentials
         :param environment: let SALTAPI_* environment variables override the
-            profile
+            profile; by default only when no profile is passed
         :param kwargs: other arguments for :class:`Pepper`, which take
             precedence over the config file
 
+        :raises PepperException: if the config file was named, by path or
+            PEPPERRC, and cannot be read, or the profile was named, by profile
+            or PEPPERPROFILE, and is not in the file
         :raises PepperAuthException: if login is set and the user or password
             is not configured
         """
-        settings = config.read(path=path, profile=profile, environment=environment)
+        if environment is None:
+            environment = profile is None
+        settings = config.read(
+            path=path, profile=profile, environment=environment, strict=True
+        )
         options = {
             "ca_bundle": settings["SALTAPI_CA_BUNDLE"],
             "client_cert": settings["SALTAPI_CLIENT_CERT"],

@@ -43,10 +43,14 @@ def _json_output(data):
 
 
 def _yaml_output(data):
-    # The same format as salt's yaml outputter
-    return yaml.safe_dump(data, default_flow_style=False, allow_unicode=True).rstrip(
-        "\n"
-    )
+    # The same format as salt's yaml outputter, which uses libyaml's dumper
+    # when it is available
+    return yaml.dump(
+        data,
+        Dumper=getattr(yaml, "CSafeDumper", yaml.SafeDumper),
+        default_flow_style=False,
+        allow_unicode=True,
+    ).rstrip("\n")
 
 
 #: Outputters available when salt is not installed

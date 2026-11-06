@@ -101,12 +101,33 @@ UNICODE = {
 }
 
 
-@pytest.mark.parametrize("payload", [LOCAL, UNICODE], ids=["ascii", "unicode"])
+EMOJI = {"return": [{"m1": {"jid": "1", "ret": "hi \U0001F600", "retcode": 0}}]}
+
+SCALAR_RUNNER = {
+    "return": [
+        {
+            "tag": "salt/run/1/ret",
+            "data": {"fun": "runner.test.echo", "return": "text"},
+        }
+    ]
+}
+
+
+@pytest.mark.parametrize(
+    "payload,client",
+    [
+        (LOCAL, "local"),
+        (UNICODE, "local"),
+        (EMOJI, "local"),
+        (SCALAR_RUNNER, "runner"),
+    ],
+    ids=["ascii", "unicode", "emoji", "scalar-runner"],
+)
 @pytest.mark.parametrize("out", ["json", "yaml"])
-def test_same_as_salt(capsys, monkeypatch, out, payload):
+def test_same_as_salt(capsys, monkeypatch, out, payload, client):
     pytest.importorskip("salt.output")
     pytest.importorskip("yaml")
-    args = [f"--out={out}", "*", "test.ping"]
+    args = [f"--out={out}", f"--client={client}", "*", "test.ping"]
     _, salt_out, _, _ = _run(capsys, monkeypatch, *args, payload=payload, has_salt=True)
     _, fallback_out, _, _ = _run(capsys, monkeypatch, *args, payload=payload)
     assert fallback_out == salt_out

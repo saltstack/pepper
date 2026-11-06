@@ -341,3 +341,9 @@ def test_http_does_not_load_tls_files(tmp_path, monkeypatch):
     with pytest.raises(Exception) as exc:
         api.req("/login", {"username": "pepper"})
     assert "built a context" not in str(exc.value)
+
+
+def test_uppercase_scheme_uses_tls_options(https_api, tls_files):
+    url = https_api.replace("https://", "HTTPS://")
+    api = pepper.libpepper.Pepper(url, ca_bundle=str(tls_files["ca_cert"]))
+    assert api.req("/login", {"username": "pepper"}) == LOGIN_RESPONSE

@@ -85,6 +85,7 @@ class Pepper:
             raise PepperException(f"salt-api URL missing HTTP(s) protocol: {api_url}")
 
         self.api_url = api_url
+        self._https = split.scheme == "https"
         self.debug_http = int(debug_http)
         self._ssl_verify = not ignore_ssl_errors
         self._ca_bundle = ca_bundle
@@ -210,9 +211,7 @@ class Pepper:
             HTTPHandler(debuglevel=self.debug_http),
             HTTPSHandler(
                 debuglevel=self.debug_http,
-                context=(
-                    self._ssl_context() if self.api_url.startswith("https") else None
-                ),
+                context=(self._ssl_context() if self._https else None),
             ),
         )
 

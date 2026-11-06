@@ -4,14 +4,12 @@ Pepper
 
 .. image:: https://img.shields.io/pypi/v/salt-pepper.svg
    :target: https://pypi.org/project/salt-pepper
-.. image:: https://travis-ci.com/saltstack/pepper.svg?branch=develop
-   :target: https://travis-ci.com/saltstack/pepper
+.. image:: https://github.com/saltstack/pepper/actions/workflows/test.yaml/badge.svg?branch=develop
+   :target: https://github.com/saltstack/pepper/actions/workflows/test.yaml
 .. image:: https://img.shields.io/pypi/pyversions/salt-pepper.svg
    :target: https://pypi.org/project/salt-pepper
 .. image:: https://img.shields.io/badge/license-Apache2-blue.svg?maxAge=3600
    :target: https://pypi.org/project/salt-pepper
-.. image:: https://codecov.io/gh/saltstack/pepper/branch/develop/graph/badge.svg
-   :target: https://codecov.io/gh/saltstack/pepper/branch/develop
 
 Pepper contains a Python library and CLI scripts for accessing a remote
 `salt-api`__ instance.
@@ -26,11 +24,11 @@ daemons as though they were running Salt locally. The long-term goal is to add
 additional CLI scripts maintain the same interface as Salt's own CLI scripts
 (``salt``, ``salt-run``, ``salt-key``, etc).
 
-It does not require any additional dependencies and runs on Python 2.5+ and
-Python 3. (Python 3 support is new, please file an issue if you encounter
-trouble.)
+It runs on Python 3.10 or later, and the CLI only needs the standard library.
+When ``salt`` is installed in the same environment, pepper formats results with
+Salt's outputters.
 
-.. __: https://github.com/saltstack/salt-api
+.. __: https://docs.saltproject.io/en/latest/ref/netapi/all/index.html
 
 Installation
 ------------
@@ -38,16 +36,30 @@ Installation
 
     pip install salt-pepper
 
+Kerberos logins and the library's ``req_get()`` and ``req_stream()`` methods
+need ``requests``, which is available as an extra:
+
+.. code-block:: bash
+
+    pip install 'salt-pepper[kerberos]'
+    pip install 'salt-pepper[requests]'
+
 Usage
 -----
 
-Basic usage is in heavy flux. You can run pepper using the script in %PYTHONHOME%/scripts/pepper (a pepper.cmd wrapper is provided for convenience to Windows users).
+Installing the package provides a ``pepper`` command (``pepper.exe`` on
+Windows), which can also be run as ``python -m pepper``.
 
 .. code-block:: bash
 
     export SALTAPI_USER=saltdev SALTAPI_PASS=saltdev SALTAPI_EAUTH=pam
     pepper '*' test.ping
     pepper '*' test.kwarg hello=dolly
+
+``cmd.exe`` on Windows does not treat single quotes as quoting, so
+``pepper '*' test.ping`` targets the literal string ``'*'``. ``cmd.exe`` does
+not expand wildcards either, so leave the target unquoted there:
+``pepper * test.ping``.
 
 Examples leveraging the runner client.
 
@@ -73,11 +85,32 @@ or in a configuration file ``$HOME/.pepperrc`` with the following syntax :
 Contributing
 ------------
 
-Please feel free to get involved by sending pull requests or join us on the
-Salt mailing list or on IRC in #salt or #salt-devel.
+Pull requests are welcome. This repo follows the same `contributing
+guidelines`__ as Salt. Open pull requests against the ``develop`` branch.
 
-This repo follows the same `contributing guidelines`__ as Salt and uses
-separate develop and master branches for in-progress additions and bug-fix
-changes respectively.
+The pre-commit hooks run the same formatters and linters as Salt (black,
+isort, pyupgrade, bandit and pylint):
 
-.. __: https://docs.saltstack.com/en/latest/topics/development/contributing.html
+.. code-block:: bash
+
+    pip install pre-commit
+    pre-commit install
+
+Changes that affect users need a changelog fragment in the ``changelog/``
+directory, named ``<issue number>.<type>.md``, where the type is one of
+``removed``, ``deprecated``, ``changed``, ``fixed``, ``added`` or
+``security``:
+
+.. code-block:: bash
+
+    echo "Fixed the exit code when a runner job fails" > changelog/195.fixed.md
+
+The test suite starts a salt-master, salt-minion and salt-api, and runs under
+nox:
+
+.. code-block:: bash
+
+    pip install nox
+    nox -e tests
+
+.. __: https://docs.saltproject.io/en/latest/topics/development/contributing.html

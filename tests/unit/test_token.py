@@ -1,13 +1,8 @@
 import json
 import sys
-from unittest.mock import MagicMock
-from unittest.mock import mock_open
-from unittest.mock import patch
+from unittest.mock import MagicMock, mock_open, patch
 
 import pepper.cli
-
-# Import Pepper Libraries
-# Import Testing Libraries
 
 
 def test_token():
@@ -21,12 +16,14 @@ def test_token():
     )
     mock_api = MagicMock()
     mock_api.login = MagicMock(return_value=mock_data)
-    with patch("pepper.cli.open", mock_open(read_data=mock_data)), patch(
-        "pepper.cli.PepperCli.get_login_details", MagicMock(return_value=mock_data)
-    ), patch("pepper.cli.PepperCli.parse_login", MagicMock(return_value={})), patch(
-        "os.remove", MagicMock(return_value=None)
-    ), patch(
-        "json.dump", MagicMock(side_effect=Exception("Test Error"))
+    with (
+        patch("pepper.cli.open", mock_open(read_data=mock_data)),
+        patch(
+            "pepper.cli.PepperCli.get_login_details", MagicMock(return_value=mock_data)
+        ),
+        patch("pepper.cli.PepperCli.parse_login", MagicMock(return_value={})),
+        patch("os.remove", MagicMock(return_value=None)),
+        patch("json.dump", MagicMock(side_effect=Exception("Test Error"))),
     ):
         ret1 = client.login(mock_api)
         with patch("os.path.isfile", MagicMock(return_value=False)):

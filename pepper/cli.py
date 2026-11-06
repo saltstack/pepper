@@ -266,7 +266,9 @@ class PepperCli:
                 """
                 Enter JSON at the CLI instead of positional (text) arguments. This
                 is useful for arguments that need complex data structures. Give
-                one command as an object or several as a list of objects.
+                one command as an object or several as a list of objects. When
+                they all name the same client, the output and exit code follow
+                it instead of --client.
                 Specifying this argument will cause positional arguments to be
                 ignored.
             """
@@ -1051,6 +1053,13 @@ class PepperCli:
         self.login(api)
 
         load = self.parse_cmd(api)
+
+        if self.options.json_input or self.options.json_file:
+            clients = {entry.get("client") for entry in load}
+            if len(clients) == 1 and None not in clients:
+                # Show the results and pick the exit code for the client the
+                # JSON asks for, not --client
+                self.options.client = clients.pop()
 
         for entry in load:
             if not entry.get("client", "").startswith("wheel"):

@@ -46,18 +46,43 @@ def test_returns_are_one_json_document(capsys):
     assert lookup["fun"] == "jobs.lookup_jid"
 
 
-@pytest.mark.parametrize("fail_option", ["--fail-any-none", "--fail-all-none"])
-def test_fail_none_options_with_poller(capsys, fail_option):
-    # The poller's results have no retcodes, so the --fail-* options cannot
-    # make a complete poll fail
-    exit_code, _, _, _ = _run(
+@pytest.mark.parametrize(
+    "fail_option", ["--fail-any", "--fail-any-none", "--fail-all", "--fail-all-none"]
+)
+def test_rejects_fail_options(capsys, fail_option):
+    # The poller's results have no retcodes for the --fail-* options to check
+    exit_code, out, err, low = _run(
+        capsys, fail_option, "*", "test.ping", low_returns=[]
+    )
+    assert exit_code == 1
+    assert "cannot be used with the --fail-* retcode options" in err
+    assert out == ""
+    low.assert_not_called()
+
+
+def test_error_keeps_collected_returns(capsys):
+    exit_code, out, err, _ = _run(
         capsys,
-        fail_option,
         "*",
         "test.ping",
-        low_returns=[ASYNC_RET, {"return": [{"a": True, "b": True}]}],
+        low_returns=[
+            ASYNC_RET,
+            {"return": [{"a": True}]},
+            pepper.script.PepperException("Error with request: Connection refused"),
+        ],
     )
-    assert exit_code == 0
+    assert exit_code == 1
+    assert json.loads(out) == {"return": [{"a": True}]}
+    assert "Connection refused" in err
+
+
+def test_no_minions_matched(capsys):
+    exit_code, out, err, _ = _run(
+        capsys, "nomatch", "test.ping", low_returns=[{"return": [{}]}]
+    )
+    assert exit_code == 1
+    assert out == ""
+    assert "Pepper error: No minions matched the target" in err
 
 
 def test_missing_minions_fail(capsys, monkeypatch):

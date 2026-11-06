@@ -290,7 +290,8 @@ class PepperCli:
                 respond or --timeout passes, and exit with a failure code if
                 any did not respond. Only works with a single command for the
                 local client, and requires permission to run the
-                jobs.lookup_jid runner function.
+                jobs.lookup_jid runner function. jobs.lookup_jid returns no
+                retcodes, so this cannot be combined with the --fail-* options.
             """
             ),
         )
@@ -770,10 +771,28 @@ class PepperCli:
                 "--fail-if-incomplete only works with a single command for the "
                 "local client"
             )
+        if any(
+            (
+                self.options.fail_any,
+                self.options.fail_any_none,
+                self.options.fail_all,
+                self.options.fail_all_none,
+            )
+        ):
+            raise PepperArgumentsException(
+                "--fail-if-incomplete cannot be used with the --fail-* retcode "
+                "options, because jobs.lookup_jid returns no retcodes"
+            )
         load[0]["client"] = "local_async"
         async_ret = self._call(api, self.low, api, load)
-        jid = async_ret["return"][0]["jid"]
-        nodes = async_ret["return"][0]["minions"]
+        job = async_ret["return"][0]
+        if not isinstance(job, dict) or "jid" not in job:
+            raise PepperException(
+                "No minions matched the target. No command was sent, no jid was "
+                "assigned."
+            )
+        jid = job["jid"]
+        nodes = job["minions"]
         ret_nodes = []
         exit_code = 1
 

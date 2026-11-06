@@ -85,10 +85,19 @@ class Pepper:
         else:
             print(result)
 
+    def write_polled(self, polled):
+        """
+        Print the returns the --fail-if-incomplete poller collected as one JSON
+        document
+        """
+        if polled:
+            self.write(json.dumps({"return": polled}, sort_keys=True, indent=4))
+            polled.clear()
+
     def __call__(self):
+        polled = []
         try:
             retcode = None
-            polled = []
             for exit_code, result in self.cli.run():
                 data = json.loads(result)
                 # unwrap ret in some cases
@@ -176,16 +185,19 @@ class Pepper:
                     else:
                         retcode = exit_code
                     break
-            if polled:
-                self.write(json.dumps({"return": polled}, sort_keys=True, indent=4))
+            self.write_polled(polled)
             return retcode
         except (PepperException, PepperAuthException, PepperArgumentsException) as exc:
+            # Keep the returns the poller collected before the error
+            self.write_polled(polled)
             print(f"Pepper error: {exc}", file=sys.stderr)
             return 1
         except KeyboardInterrupt:
+            self.write_polled(polled)
             # TODO: mimic CLI and output JID on ctrl-c
             return 0
         except Exception as e:  # pylint: disable=broad-exception-caught
+            self.write_polled(polled)
             print(
                 f"Uncaught Pepper error: {e} (increase verbosity for the full traceback).",
                 file=sys.stderr,

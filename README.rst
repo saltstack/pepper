@@ -89,6 +89,12 @@ Pepper verifies the salt-api TLS certificate against the system's trusted CA
 certificates. ``--ignore-ssl-errors`` turns verification off, which should only
 be used for testing.
 
+Python 3.13 and later verify certificates with ``VERIFY_X509_STRICT``, which
+rejects a CA certificate without the keyUsage extension ("CA cert does not
+include key usage extension"). CA certificates made with ``openssl req -x509``
+and its default configuration lack it. Reissue the CA certificate with
+``keyUsage = critical, keyCertSign, cRLSign``.
+
 Contributing
 ------------
 

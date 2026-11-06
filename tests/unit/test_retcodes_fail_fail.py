@@ -1,11 +1,7 @@
-# Import Python Libraries
 import sys
-from unittest.mock import MagicMock
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pepper
-
-# Import Pepper Libraries
 
 PAYLOAD = {
     "return": [
@@ -30,7 +26,8 @@ PAYLOAD = {
 def test_default():
     sys.argv = ["pepper", "minion_id", "request"]
     ret_code = pepper.script.Pepper()()
-    assert ret_code == 0
+    # Like salt, any minion with a non-zero retcode fails the command
+    assert ret_code == 1
 
 
 @patch("pepper.cli.PepperCli.login", MagicMock(side_effect=lambda arg: None))

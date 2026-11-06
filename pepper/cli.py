@@ -787,10 +787,10 @@ class PepperCli:
         async_ret = self._call(api, self.low, api, load)
         job = async_ret["return"][0]
         if not isinstance(job, dict) or "jid" not in job:
-            raise PepperException(
-                "No minions matched the target. No command was sent, no jid was "
-                "assigned."
-            )
+            # No minions matched; the empty return says so, as for the local
+            # client, and exits with 2
+            yield 2, [job]
+            return
         jid = job["jid"]
         nodes = job["minions"]
         ret_nodes = []

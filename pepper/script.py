@@ -180,6 +180,8 @@ class Pepper:
                         # jobs.lookup_jid returns no retcodes, so the poller's
                         # exit code only says whether every minion returned
                         retcode = exit_code
+                        if PepperRetcode.no_minions_matched(data):
+                            print(NO_MINIONS_MATCHED, file=sys.stderr)
                     elif exit_code == 0:
                         retcode = self.validate(data)
                     else:

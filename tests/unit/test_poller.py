@@ -77,12 +77,15 @@ def test_error_keeps_collected_returns(capsys):
 
 
 def test_no_minions_matched(capsys):
-    exit_code, out, err, _ = _run(
+    # salt-api answers local_async with an empty return when nothing matches
+    exit_code, out, err, low = _run(
         capsys, "nomatch", "test.ping", low_returns=[{"return": [{}]}]
     )
-    assert exit_code == 1
-    assert out == ""
-    assert "Pepper error: No minions matched the target" in err
+    assert exit_code == 2
+    assert json.loads(out) == {"return": [{}]}
+    assert "No minions matched the target. No command was sent" in err
+    assert "Pepper error" not in err
+    assert low.call_count == 1
 
 
 def test_missing_minions_fail(capsys, monkeypatch):

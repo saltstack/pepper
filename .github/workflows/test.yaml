@@ -6,15 +6,18 @@ on:
   schedule:
     - cron: "0 8 * * *"
 
+permissions:
+  contents: read
+
 jobs:
   pre-commit:
     name: pre-commit
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.10"
       - name: Install dependencies
@@ -28,36 +31,42 @@ jobs:
   test:
     name: test ${{ matrix.py }} - ${{ matrix.netapi }} - ${{ matrix.salt }}
     runs-on: ubuntu-22.04
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
         py:
-          - "3.8"
-          - "3.9"
           - "3.10"
           - "3.11"
+          - "3.12"
+          - "3.13"
         netapi:
           - "cherrypy"
           - "tornado"
         salt:
-          - "v3006.9"
-          - "v3007.1"
+          - "v3006.30"
+          - "v3007.17"
+          - "v3008.5"
           - "master"
         exclude:
-          - py: "3.8"
-            salt: "v3007.1"
-          - py: "3.9"
-            salt: "v3007.1"
-          - py: "3.8"
-            salt: "master"
-          - py: "3.9"
-            salt: "master"
+          # The test minion never completes authentication with Salt 3006 on
+          # Python 3.12+ or Salt 3007 on Python 3.13. Salt 3007 on Python 3.12
+          # usually passes, but the minion intermittently fails to start or
+          # stops answering.
+          - py: "3.12"
+            salt: "v3006.30"
+          - py: "3.13"
+            salt: "v3006.30"
+          - py: "3.12"
+            salt: "v3007.17"
+          - py: "3.13"
+            salt: "v3007.17"
     env:
       SALT_REQUIREMENT: ${{ matrix.salt == 'master' && 'salt@git+https://github.com/saltstack/salt.git@master' || format('salt=={0}', matrix.salt) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
       - name: Set up Python ${{ matrix.py }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: ${{ matrix.py }}
 

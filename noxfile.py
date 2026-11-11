@@ -7,8 +7,8 @@ import nox
 from nox.command import CommandFailed
 
 
-API_BACKEND = [os.environ.get("API_BACKEND")] or ["cherrypy", "tornado"]
-PYTHON_VERSIONS = [os.environ.get("PYTHON_VERSIONS")] or ["3.8", "3.9", "3.10", "3.11"]
+API_BACKEND = os.environ.get("API_BACKEND", "cherrypy tornado").split()
+PYTHON_VERSIONS = os.environ.get("PYTHON_VERSIONS", "3.10 3.11 3.12 3.13").split()
 
 # Nox options
 # Reuse existing virtualenvs
@@ -18,11 +18,11 @@ nox.options.error_on_missing_interpreters = False
 
 # Be verbose when running under a CI context
 CI_RUN = os.environ.get("CI")
-PIP_INSTALL_SILENT = CI_RUN is False
+PIP_INSTALL_SILENT = not CI_RUN
 SKIP_REQUIREMENTS_INSTALL = "SKIP_REQUIREMENTS_INSTALL" in os.environ
 EXTRA_REQUIREMENTS_INSTALL = os.environ.get("EXTRA_REQUIREMENTS_INSTALL")
 SALT_REQUIREMENT = os.environ.get("SALT_REQUIREMENT") or "salt"
-COVERAGE_VERSION_REQUIREMENT = "coverage==5.5"
+COVERAGE_VERSION_REQUIREMENT = "coverage>=7.2"
 
 # Prevent Python from writing bytecode
 os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
